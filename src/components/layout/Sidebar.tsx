@@ -47,7 +47,7 @@ export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
   return (
     <div className="w-64 bg-white shadow-md">
       <div className="p-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-blue-600">Mr. Choma Restaurant</h1>
+        <h1 className="text-xl font-bold text-blue-600">Mister Choma Restaurant</h1>
         <p className="text-sm text-gray-500">Restaurant Management</p>
       </div>
       
