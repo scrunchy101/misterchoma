@@ -38,9 +38,9 @@ export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
   const navItems = [
     { icon: Home, label: "Dashboard", value: "dashboard", to: "/" },
     { icon: Calendar, label: "Reservations", value: "reservations", to: "/reservations" },
-    { icon: Users, label: "Customers", value: "customers", to: "#" },
+    { icon: Users, label: "Customers", value: "customers", to: "/customers" },
     { icon: MessageSquare, label: "Feedback", value: "feedback", to: "#" },
-    { icon: CreditCard, label: "Billing", value: "billing", to: "#" },
+    { icon: CreditCard, label: "Billing", value: "billing", to: "/billing" },
     { icon: FileText, label: "Reports", value: "reports", to: "#" },
   ];
 
