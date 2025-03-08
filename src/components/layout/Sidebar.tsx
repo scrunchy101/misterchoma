@@ -2,6 +2,7 @@
 import React from "react";
 import { Calendar, CreditCard, FileText, Home, MessageSquare, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 interface SidebarProps {
   activeTab: string;
@@ -14,10 +15,12 @@ interface NavItemProps {
   value: string;
   activeTab: string;
   onClick: (value: string) => void;
+  to: string;
 }
 
-const NavItem = ({ icon: Icon, label, value, activeTab, onClick }: NavItemProps) => (
-  <div 
+const NavItem = ({ icon: Icon, label, value, activeTab, onClick, to }: NavItemProps) => (
+  <Link 
+    to={to}
     className={cn(
       "flex items-center px-4 py-3 cursor-pointer",
       activeTab === value 
@@ -28,17 +31,17 @@ const NavItem = ({ icon: Icon, label, value, activeTab, onClick }: NavItemProps)
   >
     <Icon size={18} className="mr-3" />
     <span>{label}</span>
-  </div>
+  </Link>
 );
 
 export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
   const navItems = [
-    { icon: Home, label: "Dashboard", value: "dashboard" },
-    { icon: Calendar, label: "Reservations", value: "reservations" },
-    { icon: Users, label: "Customers", value: "customers" },
-    { icon: MessageSquare, label: "Feedback", value: "feedback" },
-    { icon: CreditCard, label: "Billing", value: "billing" },
-    { icon: FileText, label: "Reports", value: "reports" },
+    { icon: Home, label: "Dashboard", value: "dashboard", to: "/" },
+    { icon: Calendar, label: "Reservations", value: "reservations", to: "/reservations" },
+    { icon: Users, label: "Customers", value: "customers", to: "#" },
+    { icon: MessageSquare, label: "Feedback", value: "feedback", to: "#" },
+    { icon: CreditCard, label: "Billing", value: "billing", to: "#" },
+    { icon: FileText, label: "Reports", value: "reports", to: "#" },
   ];
 
   return (
@@ -57,6 +60,7 @@ export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
             value={item.value}
             activeTab={activeTab}
             onClick={setActiveTab}
+            to={item.to}
           />
         ))}
       </nav>
