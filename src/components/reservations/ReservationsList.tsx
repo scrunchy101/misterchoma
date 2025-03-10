@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +6,7 @@ import { ReservationListHeader } from "./ReservationListHeader";
 import { ReservationDateDisplay } from "./ReservationDateDisplay";
 import { ReservationsTable } from "./ReservationsTable";
 import { AddReservationDialog } from "./AddReservationDialog";
-import { Reservation } from "./types";
+import { Reservation, ReservationStatusType } from "./types";
 
 interface ReservationsListProps {
   selectedDate: Date;
@@ -22,9 +21,6 @@ type OrderRecord = {
   created_at: string | null;
   status: string | null;
 };
-
-// Define the status filter as a string literal type
-export type ReservationStatusType = "all" | "confirmed" | "pending" | "cancelled";
 
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -43,7 +39,6 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      // Using a more basic approach to avoid type issues
       const response = await supabase
         .from('orders')
         .select('id, customer_name, table_number, created_at, status')
@@ -54,7 +49,6 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       const formattedReservations: Reservation[] = [];
       
       if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-        // Process each item manually to avoid type issues
         response.data.forEach((item: OrderRecord) => {
           const orderDate = item.created_at ? new Date(item.created_at) : new Date();
           

@@ -11,3 +11,6 @@ export interface Reservation {
   notes?: string;
   tableNumber?: number;
 }
+
+// Define reservation status type to avoid circular imports
+export type ReservationStatusType = "all" | "confirmed" | "pending" | "cancelled";

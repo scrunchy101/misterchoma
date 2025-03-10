@@ -1,6 +1,6 @@
 
 import React from "react";
-import { ReservationStatusType } from "./ReservationsList";
+import { ReservationStatusType } from "./types";
 
 interface ReservationStatusFilterProps {
   statusFilter: ReservationStatusType;

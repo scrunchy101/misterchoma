@@ -2,7 +2,7 @@
 import React from "react";
 import { Plus } from "lucide-react";
 import { ReservationStatusFilter } from "./ReservationStatusFilter";
-import { ReservationStatusType } from "./ReservationsList";
+import { ReservationStatusType } from "./types";
 
 interface ReservationListHeaderProps {
   statusFilter: ReservationStatusType;
