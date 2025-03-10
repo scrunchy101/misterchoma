@@ -1,5 +1,6 @@
 
 import { PostgrestError, AuthError } from "@supabase/supabase-js";
+import React from "react";
 
 /**
  * Extracts a user-friendly message from a Supabase error
@@ -58,14 +59,17 @@ export const safeAsync = async <T>(promise: Promise<T>): Promise<[T | null, Erro
 
 /**
  * HOC to wrap components with error boundary
+ * This is a factory function that returns a higher-order component
+ * without using JSX directly in the .ts file
  */
-export const withErrorBoundary = (Component: React.ComponentType<any>, fallback?: React.ReactNode) => {
+export const withErrorBoundary = (Component: React.ComponentType<any>, fallbackElement?: React.ReactNode) => {
+  // Create a wrapper component
   const WithErrorBoundary = (props: any) => {
-    const { ErrorBoundary } = require("@/components/ui/error-boundary");
-    return (
-      <ErrorBoundary fallback={fallback}>
-        <Component {...props} />
-      </ErrorBoundary>
+    // Dynamically import ErrorBoundary to avoid jsx in .ts files
+    return React.createElement(
+      require("@/components/ui/error-boundary").ErrorBoundary,
+      { fallback: fallbackElement },
+      React.createElement(Component, props)
     );
   };
   
