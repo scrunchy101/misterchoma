@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +13,8 @@ interface ReservationsListProps {
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
 }
+
+type Order = Database['public']['Tables']['orders']['Row'];
 
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -29,22 +32,25 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      const { data, error } = await supabase
+      const { data: orders, error } = await supabase
         .from('orders')
         .select('*')
         .eq('created_at::date', formattedDate);
 
       if (error) throw error;
 
-      const formattedReservations = (data || []).map(order => ({
+      const formattedReservations = (orders ?? []).map((order: Order): Reservation => ({
         id: order.id,
-        name: order.customer_name || 'Guest',
-        people: order.table_number || 2,
-        time: new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: format(new Date(order.created_at), 'yyyy-MM-dd'),
-        status: (order.status || 'pending') as "confirmed" | "pending" | "cancelled",
+        name: order.customer_name ?? 'Guest',
+        people: order.table_number ?? 2,
+        time: new Date(order.created_at ?? Date.now()).toLocaleTimeString([], { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }),
+        date: format(new Date(order.created_at ?? Date.now()), 'yyyy-MM-dd'),
+        status: (order.status as Reservation['status']) ?? 'pending',
         phone: "(No phone on record)",
-        tableNumber: order.table_number
+        tableNumber: order.table_number ?? undefined
       }));
       
       setReservations(formattedReservations);
