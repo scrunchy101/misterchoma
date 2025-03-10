@@ -2,13 +2,11 @@
 import React from "react";
 import { Plus } from "lucide-react";
 import { ReservationStatusFilter } from "./ReservationStatusFilter";
-
-// Using string literals directly for clarity
-type StatusFilter = "all" | "confirmed" | "pending" | "cancelled";
+import { ReservationStatusType } from "./ReservationsList";
 
 interface ReservationListHeaderProps {
-  statusFilter: StatusFilter;
-  setStatusFilter: (status: StatusFilter) => void;
+  statusFilter: ReservationStatusType;
+  setStatusFilter: (status: ReservationStatusType) => void;
   onAddReservation: () => void;
 }
 

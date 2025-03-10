@@ -1,12 +1,10 @@
 
 import React from "react";
-
-// Using string literals directly for clarity
-type ReservationStatus = "all" | "confirmed" | "pending" | "cancelled";
+import { ReservationStatusType } from "./ReservationsList";
 
 interface ReservationStatusFilterProps {
-  statusFilter: ReservationStatus;
-  setStatusFilter: (status: ReservationStatus) => void;
+  statusFilter: ReservationStatusType;
+  setStatusFilter: (status: ReservationStatusType) => void;
 }
 
 export const ReservationStatusFilter = ({ 

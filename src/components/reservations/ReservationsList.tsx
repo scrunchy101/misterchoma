@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,20 +23,13 @@ type OrderRecord = {
   status: string | null;
 };
 
-// Define the status filter type as a separate const enum
-const enum ReservationStatus {
-  All = "all",
-  Confirmed = "confirmed",
-  Pending = "pending",
-  Cancelled = "cancelled"
-}
-
-type StatusFilter = ReservationStatus;
+// Define the status filter as a string literal type
+export type ReservationStatusType = "all" | "confirmed" | "pending" | "cancelled";
 
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(ReservationStatus.All);
+  const [statusFilter, setStatusFilter] = useState<ReservationStatusType>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
   
@@ -90,7 +84,7 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
     }
   };
   
-  const filteredReservations = statusFilter === ReservationStatus.All 
+  const filteredReservations = statusFilter === 'all' 
     ? reservations 
     : reservations.filter(res => res.status === statusFilter);
 
