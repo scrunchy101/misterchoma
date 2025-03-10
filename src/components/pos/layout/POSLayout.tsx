@@ -23,8 +23,8 @@ export const POSLayout = ({ activeTab, setActiveTab, children }: POSLayoutProps)
         
         {/* POS Content */}
         <div className="flex flex-1 overflow-hidden">
-          {/* Menu Section (Left) */}
-          <div className="w-2/3 flex flex-col">
+          {/* Menu Section */}
+          <div className="flex flex-col flex-1">
             {/* Top Bar with action buttons */}
             <POSTopBar />
             
