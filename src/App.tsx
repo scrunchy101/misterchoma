@@ -22,13 +22,19 @@ const queryClient = new QueryClient({
       retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes
-      onError: (error) => {
-        console.error("Query error:", error);
+      // Use onSettled instead of the direct onError
+      onSettled: (_, error) => {
+        if (error) {
+          console.error("Query error:", error);
+        }
       }
     },
     mutations: {
-      onError: (error) => {
-        console.error("Mutation error:", error);
+      // Use onSettled for mutations too
+      onSettled: (_, error) => {
+        if (error) {
+          console.error("Mutation error:", error);
+        }
       }
     }
   }
