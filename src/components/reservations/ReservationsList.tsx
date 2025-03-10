@@ -46,12 +46,16 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
 
       if (error) throw error;
 
-      // Cast data explicitly to OrderRow[] and handle mapping with clear type definitions
-      const orderRows = data as OrderRow[] || [];
-      const formattedReservations: Reservation[] = orderRows.map((order) => {
+      // Create a new array without relying on complex type inference
+      const orderRows = data as any[] || [];
+      
+      // Map the data with explicit typing to avoid deep instantiation
+      const formattedReservations: Reservation[] = [];
+      
+      for (const order of orderRows) {
         const orderDate = order.created_at ? new Date(order.created_at) : new Date();
         
-        return {
+        formattedReservations.push({
           id: order.id,
           name: order.customer_name ?? 'Guest',
           people: order.table_number ?? 2,
@@ -60,8 +64,8 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
           status: (order.status as "confirmed" | "pending" | "cancelled") ?? 'pending',
           phone: "(No phone on record)",
           tableNumber: order.table_number ?? undefined
-        };
-      });
+        });
+      }
       
       setReservations(formattedReservations);
     } catch (error) {
