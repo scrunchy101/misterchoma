@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,7 +29,7 @@ interface OrderItem {
 export const OrdersList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Set loading to false initially
   const { toast } = useToast();
   const [showNewOrderDialog, setShowNewOrderDialog] = useState(false);
   const [newOrder, setNewOrder] = useState({
@@ -41,74 +40,7 @@ export const OrdersList = () => {
   });
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
   
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch orders
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (ordersError) throw ordersError;
-
-      // Fetch order items to get the counts
-      const { data: orderItemsData, error: itemsError } = await supabase
-        .from('order_items')
-        .select('order_id, quantity');
-
-      if (itemsError) throw itemsError;
-
-      // Process the data to match the component's expected format
-      const processedOrders = ordersData.map(order => {
-        // Count items for this order
-        const orderItems = orderItemsData.filter(item => item.order_id === order.id);
-        const itemCount = orderItems.reduce((sum, item) => sum + item.quantity, 0);
-        
-        // Calculate time ago
-        const orderTime = new Date(order.created_at);
-        const now = new Date();
-        const diffMinutes = Math.floor((now.getTime() - orderTime.getTime()) / (1000 * 60));
-        
-        let timeAgo;
-        if (diffMinutes < 60) {
-          timeAgo = `${diffMinutes} min ago`;
-        } else if (diffMinutes < 1440) {
-          timeAgo = `${Math.floor(diffMinutes / 60)} hr ago`;
-        } else {
-          timeAgo = `${Math.floor(diffMinutes / 1440)} days ago`;
-        }
-
-        return {
-          id: order.id.substring(0, 8).toUpperCase(),
-          customer: order.customer_name || `Table ${order.table_number}`,
-          table: order.table_number,
-          items: itemCount,
-          total: Number(order.total_amount || 0),
-          status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
-          time: timeAgo,
-          paymentStatus: order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1),
-          created_at: order.created_at
-        };
-      });
-
-      setOrders(processedOrders);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load orders data",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // No fetchOrders call on component mount, so no orders will be shown
 
   const filteredOrders = orders.filter(order => 
     order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -185,7 +117,7 @@ export const OrdersList = () => {
       });
       
       setShowNewOrderDialog(false);
-      fetchOrders();
+      // Don't fetch orders after adding to keep the list empty
     } catch (error) {
       console.error('Error creating order:', error);
       toast({
