@@ -3,9 +3,11 @@ import React from "react";
 import { Plus } from "lucide-react";
 import { ReservationStatusFilter } from "./ReservationStatusFilter";
 
+type StatusFilter = 'all' | 'confirmed' | 'pending' | 'cancelled';
+
 interface ReservationListHeaderProps {
-  statusFilter: "all" | "confirmed" | "pending" | "cancelled";
-  setStatusFilter: (status: "all" | "confirmed" | "pending" | "cancelled") => void;
+  statusFilter: StatusFilter;
+  setStatusFilter: (status: StatusFilter) => void;
   onAddReservation: () => void;
 }
 
