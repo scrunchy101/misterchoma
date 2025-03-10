@@ -40,17 +40,17 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      const response = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .select('id, customer_name, table_number, created_at, status')
         .eq('created_at::date', formattedDate);
 
-      if (response.error) throw response.error;
+      if (error) throw error;
       
       const formattedReservations: Reservation[] = [];
       
-      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-        response.data.forEach((item: OrderRecord) => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        data.forEach((item: OrderRecord) => {
           const orderDate = item.created_at ? new Date(item.created_at) : new Date();
           
           formattedReservations.push({
