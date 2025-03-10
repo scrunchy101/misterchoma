@@ -35,9 +35,9 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
     >
       {/* Product Image */}
       <div className="aspect-video bg-gray-100 flex items-center justify-center overflow-hidden">
-        {item.image_url || (item as any).image ? (
+        {item.image_url ? (
           <img 
-            src={(item as any).image || item.image_url} 
+            src={item.image_url} 
             alt={item.name}
             className="w-full h-full object-cover"
           />
