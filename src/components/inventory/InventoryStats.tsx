@@ -27,7 +27,7 @@ export const InventoryStats = () => {
     },
     {
       title: "Inventory Value",
-      value: "$0",
+      value: "TSH 0",
       subtitle: "current value",
       icon: PieChart,
       color: "bg-purple-500",
