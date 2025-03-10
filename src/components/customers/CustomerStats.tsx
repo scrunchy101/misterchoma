@@ -7,25 +7,25 @@ export const CustomerStats = () => {
     { 
       icon: <Users size={20} className="text-blue-500" />, 
       label: "Total Customers", 
-      value: "248",
-      subtitle: "12 new this month" 
+      value: "0",
+      subtitle: "0 new this month" 
     },
     { 
       icon: <Repeat size={20} className="text-green-500" />, 
       label: "Return Rate", 
-      value: "68%",
-      subtitle: "+5% from last month" 
+      value: "0%",
+      subtitle: "0% from last month" 
     },
     { 
       icon: <Star size={20} className="text-yellow-500" />, 
       label: "Avg. Rating", 
-      value: "4.7/5",
-      subtitle: "Based on 156 reviews" 
+      value: "0/5",
+      subtitle: "Based on 0 reviews" 
     },
     { 
       icon: <UserPlus size={20} className="text-purple-500" />, 
       label: "New Customers", 
-      value: "36",
+      value: "0",
       subtitle: "This month" 
     },
   ];

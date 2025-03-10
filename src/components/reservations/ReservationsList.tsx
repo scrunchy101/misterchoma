@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,22 +37,19 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      // Using explicit cast to avoid deep type instantiation
-      const { data, error } = await supabase
+      // Using a more basic approach to avoid type issues
+      const response = await supabase
         .from('orders')
         .select('id, customer_name, table_number, created_at, status')
-        .eq('created_at::date', formattedDate) as { 
-          data: OrderRecord[] | null; 
-          error: Error | null 
-        };
+        .eq('created_at::date', formattedDate);
 
-      if (error) throw error;
+      if (response.error) throw response.error;
       
       const formattedReservations: Reservation[] = [];
       
-      if (data && Array.isArray(data) && data.length > 0) {
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
         // Process each item manually without relying on complex types
-        data.forEach((item) => {
+        response.data.forEach((item: any) => {
           const orderDate = item.created_at ? new Date(item.created_at) : new Date();
           
           formattedReservations.push({

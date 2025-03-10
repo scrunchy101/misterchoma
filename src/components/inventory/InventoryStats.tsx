@@ -6,28 +6,28 @@ export const InventoryStats = () => {
   const stats = [
     {
       title: "Total Items",
-      value: "126",
+      value: "0",
       subtitle: "in inventory",
       icon: Package,
       color: "bg-blue-500",
     },
     {
       title: "Low Stock",
-      value: "12",
+      value: "0",
       subtitle: "items below threshold",
       icon: AlertTriangle,
       color: "bg-amber-500",
     },
     {
       title: "Incoming Orders",
-      value: "8",
+      value: "0",
       subtitle: "due this week",
       icon: Truck,
       color: "bg-green-500",
     },
     {
       title: "Inventory Value",
-      value: "$24,830",
+      value: "$0",
       subtitle: "current value",
       icon: PieChart,
       color: "bg-purple-500",

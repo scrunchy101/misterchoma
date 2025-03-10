@@ -18,14 +18,14 @@ export const ReservationStats = ({ selectedDate }: ReservationStatsProps) => {
     { 
       icon: <Users size={20} className="text-green-500" />, 
       label: "Reservations", 
-      value: "24",
-      subtitle: "8 pending, 16 confirmed" 
+      value: "0",
+      subtitle: "0 pending, 0 confirmed" 
     },
     { 
       icon: <Clock size={20} className="text-purple-500" />, 
       label: "Peak Hours", 
-      value: "7:00 PM - 9:00 PM",
-      subtitle: "12 bookings during peak" 
+      value: "N/A",
+      subtitle: "0 bookings during peak" 
     },
   ];
 

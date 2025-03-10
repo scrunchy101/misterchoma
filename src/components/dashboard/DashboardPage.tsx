@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
@@ -12,22 +11,13 @@ export const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { data, isLoading, error } = useDashboardData();
 
-  // Prepare metrics data for display
+  // Reset metrics data for display
   const getMetrics = () => {
-    if (!data) {
-      return [
-        { name: 'Total Reservations', value: '0', change: '0%', color: 'bg-blue-500' },
-        { name: 'Avg. Table Time', value: '0 min', change: '0%', color: 'bg-green-500' },
-        { name: 'Revenue Today', value: 'TZS 0', change: '0%', color: 'bg-purple-500' },
-        { name: 'Customer Feedback', value: 'N/A', change: '0', color: 'bg-yellow-500' },
-      ];
-    }
-
     return [
-      { name: 'Total Reservations', value: String(data.metrics.totalReservations), change: '+0%', color: 'bg-blue-500' },
-      { name: 'Avg. Table Time', value: data.metrics.avgTableTime, change: '+0%', color: 'bg-green-500' },
-      { name: 'Revenue Today', value: data.metrics.revenueToday, change: '+0%', color: 'bg-purple-500' },
-      { name: 'Customer Feedback', value: data.metrics.customerFeedback, change: '+0', color: 'bg-yellow-500' },
+      { name: 'Total Reservations', value: '0', change: '0%', color: 'bg-blue-500' },
+      { name: 'Avg. Table Time', value: '0 min', change: '0%', color: 'bg-green-500' },
+      { name: 'Revenue Today', value: 'TZS 0', change: '0%', color: 'bg-purple-500' },
+      { name: 'Customer Feedback', value: 'N/A', change: '0', color: 'bg-yellow-500' },
     ];
   };
 
