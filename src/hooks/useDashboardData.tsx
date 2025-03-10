@@ -13,6 +13,13 @@ export interface DashboardData {
   customers: Customer[];
 }
 
+// Define an interface for the order data structure we're working with
+interface OrderData {
+  customer_name: string | null;
+  created_at: string;
+  total_amount?: number;
+}
+
 export const useDashboardData = (refreshTrigger = 0) => {
   return useQuery({
     queryKey: ["dashboardData", refreshTrigger],
@@ -32,7 +39,7 @@ export const useDashboardData = (refreshTrigger = 0) => {
       // Fetch orders data for customer visit counts
       const { data: orders, error: ordersError } = await supabase
         .from("orders")
-        .select("customer_name, created_at")
+        .select("customer_name, created_at, total_amount")
         .order("created_at", { ascending: false });
         
       if (ordersError) {
@@ -41,7 +48,7 @@ export const useDashboardData = (refreshTrigger = 0) => {
       }
       
       // Create a map of customer visits
-      const customerVisitsMap = new Map();
+      const customerVisitsMap = new Map<string, number>();
       orders?.forEach(order => {
         if (order.customer_name) {
           const currentVisits = customerVisitsMap.get(order.customer_name.toLowerCase()) || 0;
@@ -50,21 +57,22 @@ export const useDashboardData = (refreshTrigger = 0) => {
       });
       
       // Get the customer's average spend from orders
-      const customerSpendMap = new Map();
-      const customerLastVisitMap = new Map();
+      const customerSpendMap = new Map<string, number>();
+      const customerLastVisitMap = new Map<string, string>();
       
       if (orders && orders.length > 0) {
-        // Group orders by customer name
-        const ordersByCustomer = orders.reduce((acc, order) => {
-          if (!order.customer_name) return acc;
+        // Group orders by customer name with proper type
+        const ordersByCustomer: Record<string, OrderData[]> = {};
+        
+        orders.forEach(order => {
+          if (!order.customer_name) return;
           
           const name = order.customer_name.toLowerCase();
-          if (!acc[name]) {
-            acc[name] = [];
+          if (!ordersByCustomer[name]) {
+            ordersByCustomer[name] = [];
           }
-          acc[name].push(order);
-          return acc;
-        }, {});
+          ordersByCustomer[name].push(order as OrderData);
+        });
         
         // Calculate average spend and get last visit date
         for (const [name, customerOrders] of Object.entries(ordersByCustomer)) {
