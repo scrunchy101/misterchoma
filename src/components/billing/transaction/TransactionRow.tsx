@@ -6,16 +6,7 @@ import { TransactionDate } from "./TransactionDate";
 import { TransactionCustomer } from "./TransactionCustomer";
 import { TransactionStatusBadge } from "./TransactionStatusBadge";
 import { TransactionPaymentMethod } from "./TransactionPaymentMethod";
-
-interface Transaction {
-  id: string;
-  date: Date;
-  customer: string;
-  amount: number;
-  items: number;
-  paymentMethod: string;
-  status: string;
-}
+import { Transaction } from "@/hooks/useTransactions";
 
 interface TransactionRowProps {
   transaction: Transaction;

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { X } from "lucide-react";
@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ReceiptContent } from "./ReceiptContent";
 import { ReceiptActions } from "./ReceiptActions";
 import { TransactionData, generatePrintableReceiptHtml, generateReceiptTextContent } from "./receiptUtils";
+import { useTransactionItems } from "@/hooks/useTransactionItems";
 
 interface ReceiptViewerProps {
   isOpen: boolean;
@@ -16,6 +17,14 @@ interface ReceiptViewerProps {
 
 export const ReceiptViewer = ({ isOpen, onClose, transactionData }: ReceiptViewerProps) => {
   const { toast } = useToast();
+  const { data: items = [] } = useTransactionItems(transactionData?.id || null);
+  
+  useEffect(() => {
+    if (transactionData && isOpen && items.length > 0) {
+      // Update items if we have new data from the query
+      transactionData.items = items;
+    }
+  }, [transactionData, items, isOpen]);
   
   if (!transactionData) return null;
   
