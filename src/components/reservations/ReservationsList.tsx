@@ -7,13 +7,13 @@ import { ReservationListHeader } from "./ReservationListHeader";
 import { ReservationDateDisplay } from "./ReservationDateDisplay";
 import { ReservationsTable } from "./ReservationsTable";
 import { Reservation } from "./types";
-import { Database } from "@/integrations/supabase/types";
 
 interface ReservationsListProps {
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
 }
 
+// Define a simpler type just with the fields we need
 type OrderRow = {
   id: string;
   customer_name: string | null;
@@ -38,15 +38,16 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
+      // Use a more explicit typing approach for the query
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select('id, customer_name, table_number, created_at, status')
         .eq('created_at::date', formattedDate);
 
       if (error) throw error;
 
       // Convert orders to reservations with explicit type annotation
-      const formattedReservations: Reservation[] = (data || []).map((order: OrderRow) => {
+      const formattedReservations: Reservation[] = (data as OrderRow[] || []).map((order) => {
         const orderDate = order.created_at ? new Date(order.created_at) : new Date();
         
         return {
