@@ -49,17 +49,24 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
 
       if (error) throw error;
       
-      // Transform orders into reservation format
-      const formattedReservations: Reservation[] = (data || []).map(order => ({
-        id: order.id,
-        name: order.customer_name || 'Guest',
-        people: order.table_number || 2,
-        time: new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: format(new Date(order.created_at), 'yyyy-MM-dd'),
-        status: (order.status || 'pending') as "confirmed" | "pending" | "cancelled",
-        phone: "(No phone on record)",
-        tableNumber: order.table_number
-      }));
+      // Transform orders into reservation format with explicit typing
+      const formattedReservations: Reservation[] = [];
+      
+      // Manually map each item to avoid deep type instantiation
+      if (data) {
+        for (const order of data) {
+          formattedReservations.push({
+            id: order.id,
+            name: order.customer_name || 'Guest',
+            people: order.table_number || 2,
+            time: new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            date: format(new Date(order.created_at), 'yyyy-MM-dd'),
+            status: (order.status || 'pending') as "confirmed" | "pending" | "cancelled",
+            phone: "(No phone on record)",
+            tableNumber: order.table_number
+          });
+        }
+      }
       
       setReservations(formattedReservations);
     } catch (error) {
@@ -74,10 +81,13 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
     }
   };
   
-  // Simple direct filtering to fix excessive type instantiation
-  const filteredReservations = statusFilter === 'all' 
-    ? reservations 
-    : reservations.filter(reservation => reservation.status === statusFilter);
+  // Use a simple variable to store filtered reservations
+  let filteredReservations: Reservation[] = reservations;
+  
+  // Only filter if not showing all
+  if (statusFilter !== 'all') {
+    filteredReservations = reservations.filter(res => res.status === statusFilter);
+  }
 
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
