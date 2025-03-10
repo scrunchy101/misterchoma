@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useMenu } from "./MenuContext";
-import { supabase } from "@/integrations/supabase/client";
-import { MenuItemForm, MenuItemFormValues } from "./MenuItemForm";
 import { MenuItem } from "@/hooks/useMenuItems";
+import { MenuItemForm, MenuItemFormValues } from "./MenuItemForm";
+import { createMenuItem } from "./menuUtils";
 
 interface MenuAddDialogProps {
   isOpen: boolean;
@@ -37,19 +37,7 @@ export const MenuAddDialog = ({ isOpen, onOpenChange }: MenuAddDialogProps) => {
     try {
       setIsSubmitting(true);
       
-      const { error } = await supabase
-        .from('menu_items')
-        .insert({
-          name: data.name,
-          category: data.category,
-          price: data.price,
-          description: data.description || null,
-          available: data.available,
-          image_url: data.image_url || null,
-        });
-        
-      if (error) throw error;
-      
+      await createMenuItem(data);
       await refreshMenu();
       
       toast({
