@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { CartItem } from "@/components/pos/CartItem";
-import { CheckoutDialog } from "@/components/pos/CheckoutDialog";
+import { CheckoutDialog } from "@/components/pos/checkout/CheckoutDialog";
 import { EmptyCart } from "@/components/pos/EmptyCart";
 import { CartSummary } from "@/components/pos/CartSummary";
 import { usePOSContext } from "@/components/pos/POSContext";
