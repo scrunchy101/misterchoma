@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
@@ -112,7 +113,10 @@ export const DashboardPage = () => {
               
               {!isLoading && !error && dashboardData && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <ReservationsTable reservations={dashboardData.reservations} />
+                  <ReservationsTable 
+                    reservations={dashboardData.reservations} 
+                    onCancelReservation={refreshData} 
+                  />
                   <CustomersCard customers={dashboardData.customers} />
                 </div>
               )}
