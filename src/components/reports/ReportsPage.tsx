@@ -13,6 +13,7 @@ export const ReportsPage = () => {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const { loading, reportData, generateReport } = useReports();
+  const [activeTab, setActiveTab] = useState('reports');
 
   const formatCurrency = (value: number) => {
     return `TZS ${value.toLocaleString()}`;
@@ -29,7 +30,7 @@ export const ReportsPage = () => {
 
   return (
     <div className="flex h-screen bg-gray-800 text-white">
-      <Sidebar />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header title="Reports & Analytics" />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-800 p-6">
@@ -69,3 +70,4 @@ export const ReportsPage = () => {
     </div>
   );
 };
+

@@ -57,7 +57,7 @@ export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
     { icon: Package, label: "Inventory", value: "inventory", to: "/inventory" },
     { icon: MessageSquare, label: "Feedback", value: "feedback", to: "#" },
     { icon: CreditCard, label: "Billing", value: "billing", to: "/billing" },
-    { icon: FileText, label: "Reports", value: "reports", to: "#" },
+    { icon: FileText, label: "Reports", value: "reports", to: "/reports" },
   ];
 
   return (
