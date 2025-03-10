@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +6,7 @@ import { ReservationListHeader } from "./ReservationListHeader";
 import { ReservationDateDisplay } from "./ReservationDateDisplay";
 import { ReservationsTable } from "./ReservationsTable";
 import { Reservation } from "./types";
+import { Database } from "@/integrations/supabase/types";
 
 interface ReservationsListProps {
   selectedDate: Date;
@@ -27,35 +27,25 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
     try {
       setLoading(true);
       
-      // Format the selected date for the query
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      // Fetch orders for the selected date
       const { data, error } = await supabase
         .from('orders')
         .select('*')
         .eq('created_at::date', formattedDate);
 
       if (error) throw error;
-      
-      // Transform orders into reservation format
-      const formattedReservations: Reservation[] = [];
-      
-      // Manually map each item to avoid deep type instantiation
-      if (data) {
-        data.forEach(order => {
-          formattedReservations.push({
-            id: order.id,
-            name: order.customer_name || 'Guest',
-            people: order.table_number || 2,
-            time: new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            date: format(new Date(order.created_at), 'yyyy-MM-dd'),
-            status: (order.status || 'pending') as "confirmed" | "pending" | "cancelled",
-            phone: "(No phone on record)",
-            tableNumber: order.table_number
-          });
-        });
-      }
+
+      const formattedReservations = (data || []).map(order => ({
+        id: order.id,
+        name: order.customer_name || 'Guest',
+        people: order.table_number || 2,
+        time: new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: format(new Date(order.created_at), 'yyyy-MM-dd'),
+        status: (order.status || 'pending') as "confirmed" | "pending" | "cancelled",
+        phone: "(No phone on record)",
+        tableNumber: order.table_number
+      }));
       
       setReservations(formattedReservations);
     } catch (error) {
@@ -70,7 +60,6 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
     }
   };
   
-  // Filter reservations based on status
   const filteredReservations = statusFilter === 'all' 
     ? reservations 
     : reservations.filter(res => res.status === statusFilter);
