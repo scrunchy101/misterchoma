@@ -38,12 +38,12 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
 
       if (error) throw error;
       
-      // Transform orders into reservation format with explicit typing
+      // Transform orders into reservation format
       const formattedReservations: Reservation[] = [];
       
       // Manually map each item to avoid deep type instantiation
       if (data) {
-        for (const order of data) {
+        data.forEach(order => {
           formattedReservations.push({
             id: order.id,
             name: order.customer_name || 'Guest',
@@ -54,7 +54,7 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
             phone: "(No phone on record)",
             tableNumber: order.table_number
           });
-        }
+        });
       }
       
       setReservations(formattedReservations);
