@@ -31,8 +31,8 @@ const App = () => (
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/pos" element={<POS />} />
           <Route path="/menu" element={<MenuManagement />} />
-          {/* Redirect from reservations to home to prevent errors */}
-          <Route path="/reservations" element={<Navigate to="/" replace />} />
+          {/* Since reservations content is actually in Orders page, redirect there */}
+          <Route path="/reservations" element={<Navigate to="/orders" replace />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

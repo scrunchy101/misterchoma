@@ -3,6 +3,7 @@ import React from "react";
 import { Clock, Plus, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 export interface Reservation {
   id: string;
@@ -21,6 +22,7 @@ interface ReservationsTableProps {
 
 export const ReservationsTable = ({ reservations, onCancelReservation }: ReservationsTableProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleCancelReservation = async (id: string) => {
     try {
@@ -51,12 +53,25 @@ export const ReservationsTable = ({ reservations, onCancelReservation }: Reserva
       });
     }
   };
+  
+  const handleViewAllReservations = () => {
+    // Navigate to the reservations page
+    navigate('/orders');
+  };
+
+  const handleAddNewReservation = () => {
+    // Navigate to the reservations page with a query parameter to open the add dialog
+    navigate('/orders?action=add');
+  };
 
   return (
     <div className="lg:col-span-2 bg-white rounded-lg shadow-sm">
       <div className="p-4 border-b border-gray-100 flex justify-between items-center">
         <h3 className="font-semibold">Today's Reservations</h3>
-        <button className="text-blue-600 text-sm flex items-center hover:text-blue-800">
+        <button 
+          className="text-blue-600 text-sm flex items-center hover:text-blue-800"
+          onClick={handleAddNewReservation}
+        >
           <Plus size={16} className="mr-1" />
           Add New
         </button>
@@ -137,7 +152,12 @@ export const ReservationsTable = ({ reservations, onCancelReservation }: Reserva
           </table>
         </div>
         <div className="mt-4 text-center">
-          <button className="text-blue-600 hover:text-blue-800 text-sm">View All Reservations</button>
+          <button 
+            className="text-blue-600 hover:text-blue-800 text-sm"
+            onClick={handleViewAllReservations}
+          >
+            View All Reservations
+          </button>
         </div>
       </div>
     </div>
