@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Customer } from "@/components/dashboard/CustomersCard";
@@ -14,9 +15,9 @@ export interface DashboardData {
   customers: Customer[];
 }
 
-export const useDashboardData = () => {
+export const useDashboardData = (refreshTrigger = 0) => {
   return useQuery({
-    queryKey: ["dashboardData"],
+    queryKey: ["dashboardData", refreshTrigger],
     queryFn: async (): Promise<DashboardData> => {
       // Fetch recent orders to calculate metrics
       const { data: orders, error: ordersError } = await supabase

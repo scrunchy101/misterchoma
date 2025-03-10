@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { MetricsCard } from "@/components/dashboard/MetricsCard";
@@ -12,11 +11,16 @@ import { AlertCircle } from "lucide-react";
 
 export const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { data: dashboardData, isLoading: isDashboardLoading, error: dashboardError } = useDashboardData();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
-  // Fetch inventory data for metrics
+  const refreshData = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
+  
+  const { data: dashboardData, isLoading: isDashboardLoading, error: dashboardError } = useDashboardData(refreshTrigger);
+  
   const { data: inventoryData, isLoading: isInventoryLoading } = useQuery({
-    queryKey: ["inventoryMetrics"],
+    queryKey: ["inventoryMetrics", refreshTrigger],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory')
@@ -24,7 +28,6 @@ export const DashboardPage = () => {
       
       if (error) throw error;
       
-      // Calculate inventory metrics
       const totalItems = data?.length || 0;
       const totalCost = data?.reduce((acc, item) => acc + (Number(item.cost) * Number(item.stock)), 0) || 0;
       const lowStockItems = data?.filter(item => Number(item.stock) <= Number(item.threshold)).length || 0;

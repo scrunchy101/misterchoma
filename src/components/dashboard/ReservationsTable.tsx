@@ -1,6 +1,8 @@
 
 import React from "react";
 import { Clock, Plus, Users } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Reservation {
   id: string;
@@ -17,6 +19,36 @@ interface ReservationsTableProps {
 }
 
 export const ReservationsTable = ({ reservations }: ReservationsTableProps) => {
+  const { toast } = useToast();
+
+  const handleCancelReservation = async (id: string) => {
+    try {
+      // Update the order status to 'cancelled' in the database
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Show success toast
+      toast({
+        title: "Reservation cancelled",
+        description: "The reservation has been successfully cancelled.",
+      });
+      
+      // Refresh the page to update the displayed data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error cancelling reservation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel reservation. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="lg:col-span-2 bg-white rounded-lg shadow-sm">
       <div className="p-4 border-b border-gray-100 flex justify-between items-center">
@@ -69,6 +101,8 @@ export const ReservationsTable = ({ reservations }: ReservationsTableProps) => {
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       reservation.status === 'confirmed' 
                         ? 'bg-green-100 text-green-800' 
+                        : reservation.status === 'cancelled'
+                        ? 'bg-red-100 text-red-800'
                         : 'bg-yellow-100 text-yellow-800'
                     }`}>
                       {reservation.status}
@@ -76,7 +110,16 @@ export const ReservationsTable = ({ reservations }: ReservationsTableProps) => {
                   </td>
                   <td className="py-3">
                     <button className="text-blue-600 hover:text-blue-800 mr-3">Edit</button>
-                    <button className="text-gray-500 hover:text-gray-700">Cancel</button>
+                    {reservation.status !== 'cancelled' && (
+                      <button 
+                        onClick={() => handleCancelReservation(reservation.id)}
+                        className="text-gray-500 hover:text-red-700">
+                        Cancel
+                      </button>
+                    )}
+                    {reservation.status === 'cancelled' && (
+                      <span className="text-gray-400">Cancelled</span>
+                    )}
                   </td>
                 </tr>
               ))}
