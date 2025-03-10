@@ -43,3 +43,32 @@ export const formatErrorForLogging = (error: any, context: string = ""): string 
   
   return `[${timestamp}] Error${context ? ` in ${context}` : ""}: ${errorMessage}\n${stack}`;
 };
+
+/**
+ * Safely executes a promise and returns a tuple with [data, error]
+ */
+export const safeAsync = async <T>(promise: Promise<T>): Promise<[T | null, Error | null]> => {
+  try {
+    const data = await promise;
+    return [data, null];
+  } catch (err) {
+    return [null, err instanceof Error ? err : new Error(String(err))];
+  }
+};
+
+/**
+ * HOC to wrap components with error boundary
+ */
+export const withErrorBoundary = (Component: React.ComponentType<any>, fallback?: React.ReactNode) => {
+  const WithErrorBoundary = (props: any) => {
+    const { ErrorBoundary } = require("@/components/ui/error-boundary");
+    return (
+      <ErrorBoundary fallback={fallback}>
+        <Component {...props} />
+      </ErrorBoundary>
+    );
+  };
+  
+  WithErrorBoundary.displayName = `WithErrorBoundary(${Component.displayName || Component.name || 'Component'})`;
+  return WithErrorBoundary;
+};

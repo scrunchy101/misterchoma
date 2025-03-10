@@ -1,11 +1,13 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { OrderTable } from "@/components/orders/OrderTable";
 import { OrderSearchBar } from "@/components/orders/OrderSearchBar";
 import { NewOrderDialog } from "@/components/orders/NewOrderDialog";
 import { OrdersHeader } from "./OrdersHeader";
 import { useOrders, OrderForm, OrderItem } from "@/hooks/useOrders";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { useAsyncHandler } from "@/utils/asyncErrorHandler";
 
 export const OrdersList = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,6 +21,8 @@ export const OrdersList = () => {
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
   
   const { orders, loading, createOrder } = useOrders();
+  const { handleError } = useErrorHandler();
+  const { execute: executeAddOrder, loading: addingOrder } = useAsyncHandler<boolean>();
 
   const filteredOrders = orders.filter(order => 
     order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -38,9 +42,19 @@ export const OrdersList = () => {
   };
 
   const handleAddOrder = async () => {
-    const success = await createOrder(newOrder, selectedItems);
-    if (success) {
-      setShowNewOrderDialog(false);
+    try {
+      // Use the async handler to wrap our async operation
+      const success = await executeAddOrder(
+        () => createOrder(newOrder, selectedItems),
+        { context: "Creating order", showToast: true }
+      );
+      
+      if (success) {
+        setShowNewOrderDialog(false);
+      }
+    } catch (error) {
+      // This is handled by executeAddOrder, but you could add additional handling here
+      console.error("Error in handleAddOrder:", error);
     }
   };
 
@@ -63,6 +77,7 @@ export const OrdersList = () => {
           open={showNewOrderDialog} 
           onOpenChange={setShowNewOrderDialog}
           onAddOrder={handleAddOrder}
+          isSubmitting={addingOrder}
         />
       </div>
     </ErrorBoundary>

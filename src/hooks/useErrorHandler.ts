@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { getSupabaseErrorMessage, isNetworkError, formatErrorForLogging } from "@/utils/errorUtils";
 
 export type ErrorSeverity = "error" | "warning" | "info";
 
@@ -8,12 +9,14 @@ interface ErrorOptions {
   showToast?: boolean;
   severity?: ErrorSeverity;
   logToConsole?: boolean;
+  context?: string;
 }
 
 const defaultOptions: ErrorOptions = {
   showToast: true,
   severity: "error",
-  logToConsole: true
+  logToConsole: true,
+  context: ""
 };
 
 export const useErrorHandler = () => {
@@ -29,9 +32,37 @@ export const useErrorHandler = () => {
     setIsError(true);
 
     if (mergedOptions.logToConsole) {
-      console.error("Error caught by useErrorHandler:", errorObj);
+      console.error(formatErrorForLogging(errorObj, mergedOptions.context || ""));
     }
 
+    // Handle network errors with a specific message
+    if (isNetworkError(errorObj)) {
+      toast({
+        title: "Network Error",
+        description: "Unable to connect to the server. Please check your internet connection.",
+        variant: "destructive"
+      });
+      return errorObj;
+    }
+
+    // Handle Supabase specific errors
+    if (errorObj.message.includes("supabase") || 
+        errorObj.name === "PostgrestError" || 
+        errorObj.name === "AuthError") {
+      const errorMessage = getSupabaseErrorMessage(errorObj);
+      
+      if (mergedOptions.showToast) {
+        toast({
+          title: mergedOptions.severity === "error" ? "Database Error" : 
+                mergedOptions.severity === "warning" ? "Warning" : "Information",
+          description: errorMessage,
+          variant: mergedOptions.severity === "error" ? "destructive" : "default"
+        });
+      }
+      return errorObj;
+    }
+
+    // Handle general errors
     if (mergedOptions.showToast) {
       toast({
         title: mergedOptions.severity === "error" ? "Error" : 
@@ -49,10 +80,22 @@ export const useErrorHandler = () => {
     setIsError(false);
   };
 
+  // Wrap async functions with error handling
+  const withErrorHandling = <T,>(
+    asyncFn: () => Promise<T>,
+    options?: ErrorOptions
+  ): Promise<T> => {
+    return asyncFn().catch(err => {
+      handleError(err, options);
+      throw err; // Re-throw to allow the caller to also handle if needed
+    });
+  };
+
   return { 
     error, 
     isError, 
     handleError, 
-    clearError 
+    clearError,
+    withErrorHandling
   };
 };
