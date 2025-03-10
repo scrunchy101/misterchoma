@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, fetchOrderDetails } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface CartItem {
@@ -25,6 +26,8 @@ interface POSContextType {
   isProcessingOrder: boolean;
   processOrder: (orderDetails: OrderDetails) => Promise<boolean>;
   formatCurrency: (amount: number) => string;
+  getLastOrderId: () => string | null;
+  getOrderReceipt: (orderId: string) => Promise<any>;
 }
 
 const POSContext = createContext<POSContextType | undefined>(undefined);
@@ -32,6 +35,7 @@ const POSContext = createContext<POSContextType | undefined>(undefined);
 export const POSProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
@@ -72,6 +76,27 @@ export const POSProvider = ({ children }: { children: ReactNode }) => {
 
   const cartTotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
 
+  const getLastOrderId = () => {
+    return lastOrderId;
+  };
+
+  const getOrderReceipt = async (orderId: string) => {
+    try {
+      const orderDetails = await fetchOrderDetails(orderId);
+      return {
+        id: orderId.substring(0, 8).toUpperCase(),
+        date: new Date(orderDetails.order.created_at),
+        customer: orderDetails.order.customer_name || "Walk-in Customer",
+        items: orderDetails.items,
+        paymentMethod: orderDetails.order.payment_method,
+        total: orderDetails.order.total_amount
+      };
+    } catch (error) {
+      console.error("Error getting order receipt:", error);
+      throw error;
+    }
+  };
+
   const processOrder = async (orderDetails: OrderDetails): Promise<boolean> => {
     if (cartItems.length === 0) {
       toast({
@@ -99,6 +124,8 @@ export const POSProvider = ({ children }: { children: ReactNode }) => {
         .single();
 
       if (orderError) throw orderError;
+
+      setLastOrderId(orderData.id);
 
       const orderItems = cartItems.map(item => ({
         order_id: orderData.id,
@@ -143,7 +170,9 @@ export const POSProvider = ({ children }: { children: ReactNode }) => {
     cartTotal,
     isProcessingOrder,
     processOrder,
-    formatCurrency
+    formatCurrency,
+    getLastOrderId,
+    getOrderReceipt
   };
 
   return (
