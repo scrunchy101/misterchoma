@@ -13,6 +13,15 @@ interface ReservationsListProps {
   setSelectedDate: (date: Date) => void;
 }
 
+// Define a basic type for the database response
+interface OrderRecord {
+  id: string;
+  customer_name: string | null;
+  table_number: number | null;
+  created_at: string | null;
+  status: string | null;
+}
+
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +38,7 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      // Fetch data with basic typing
+      // Use explicit type casting to prevent deep type instantiation
       const { data, error } = await supabase
         .from('orders')
         .select('id, customer_name, table_number, created_at, status')
@@ -37,13 +46,14 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
 
       if (error) throw error;
 
-      // Avoid complex mapping that causes deep type instantiation
+      // Cast the data to our simple interface
+      const orders = data as OrderRecord[];
+      
+      // Transform the data using a simple approach
       const formattedReservations: Reservation[] = [];
       
-      // Use a simple loop instead of complex map operations
-      if (data) {
-        for (let i = 0; i < data.length; i++) {
-          const order = data[i];
+      if (orders && orders.length > 0) {
+        for (const order of orders) {
           const orderDate = order.created_at ? new Date(order.created_at) : new Date();
           
           formattedReservations.push({
