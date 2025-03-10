@@ -125,7 +125,7 @@ export const OrderTable = ({ orders, loading }: OrderTableProps) => {
                     </div>
                   </td>
                   <td className="py-4">{order.items} items</td>
-                  <td className="py-4">TZS {order.total.toLocaleString()}</td>
+                  <td className="py-4">TSH {order.total.toLocaleString()}</td>
                   <td className="py-4">
                     <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(order.status)}`}>
                       {order.status}

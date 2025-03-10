@@ -29,7 +29,7 @@ interface OrderItem {
 export const OrdersList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false); // Set loading to false initially
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [showNewOrderDialog, setShowNewOrderDialog] = useState(false);
   const [newOrder, setNewOrder] = useState({
@@ -39,8 +39,6 @@ export const OrdersList = () => {
     paymentStatus: "pending"
   });
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
-  
-  // No fetchOrders call on component mount, so no orders will be shown
 
   const filteredOrders = orders.filter(order => 
     order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,7 +72,6 @@ export const OrdersList = () => {
         return;
       }
 
-      // Insert order
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert([
@@ -96,7 +93,6 @@ export const OrdersList = () => {
       
       const orderId = orderData[0].id;
       
-      // Insert order items
       const orderItems = selectedItems.map(item => ({
         order_id: orderId,
         menu_item_id: item.id,
@@ -117,7 +113,6 @@ export const OrdersList = () => {
       });
       
       setShowNewOrderDialog(false);
-      // Don't fetch orders after adding to keep the list empty
     } catch (error) {
       console.error('Error creating order:', error);
       toast({

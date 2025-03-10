@@ -28,7 +28,7 @@ export const OrderItemsList = ({
             <div key={item.id} className="flex justify-between items-center bg-gray-700 p-2 rounded">
               <div className="flex-1">
                 <div className="font-medium">{item.name}</div>
-                <div className="text-gray-400">${item.price.toFixed(2)}</div>
+                <div className="text-gray-400">TSH {item.price.toLocaleString()}</div>
               </div>
               <div className="flex items-center">
                 <button
@@ -45,7 +45,7 @@ export const OrderItemsList = ({
                   +
                 </button>
               </div>
-              <div className="ml-4 font-medium">${(item.price * item.quantity).toFixed(2)}</div>
+              <div className="ml-4 font-medium">TSH {(item.price * item.quantity).toLocaleString()}</div>
             </div>
           ))}
         </div>
@@ -56,7 +56,7 @@ export const OrderItemsList = ({
       )}
       
       <div className="flex justify-end mt-4 text-lg font-bold">
-        Total: ${calculateTotal().toFixed(2)}
+        Total: TSH {calculateTotal().toLocaleString()}
       </div>
     </div>
   );
