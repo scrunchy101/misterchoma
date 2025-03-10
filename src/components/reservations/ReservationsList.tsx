@@ -13,15 +13,6 @@ interface ReservationsListProps {
   setSelectedDate: (date: Date) => void;
 }
 
-// Define a simpler type just with the fields we need
-type OrderRow = {
-  id: string;
-  customer_name: string | null;
-  table_number: number | null;
-  created_at: string | null;
-  status: string | null;
-}
-
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +29,7 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      // Use a simple select query with explicit type casting
+      // Fetch data with basic typing
       const { data, error } = await supabase
         .from('orders')
         .select('id, customer_name, table_number, created_at, status')
@@ -46,25 +37,26 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
 
       if (error) throw error;
 
-      // Create a new array without relying on complex type inference
-      const orderRows = data as any[] || [];
-      
-      // Map the data with explicit typing to avoid deep instantiation
+      // Avoid complex mapping that causes deep type instantiation
       const formattedReservations: Reservation[] = [];
       
-      for (const order of orderRows) {
-        const orderDate = order.created_at ? new Date(order.created_at) : new Date();
-        
-        formattedReservations.push({
-          id: order.id,
-          name: order.customer_name ?? 'Guest',
-          people: order.table_number ?? 2,
-          time: orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          date: format(orderDate, 'yyyy-MM-dd'),
-          status: (order.status as "confirmed" | "pending" | "cancelled") ?? 'pending',
-          phone: "(No phone on record)",
-          tableNumber: order.table_number ?? undefined
-        });
+      // Use a simple loop instead of complex map operations
+      if (data) {
+        for (let i = 0; i < data.length; i++) {
+          const order = data[i];
+          const orderDate = order.created_at ? new Date(order.created_at) : new Date();
+          
+          formattedReservations.push({
+            id: order.id,
+            name: order.customer_name ?? 'Guest',
+            people: order.table_number ?? 2,
+            time: orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            date: format(orderDate, 'yyyy-MM-dd'),
+            status: (order.status as "confirmed" | "pending" | "cancelled") ?? 'pending',
+            phone: "(No phone on record)",
+            tableNumber: order.table_number ?? undefined
+          });
+        }
       }
       
       setReservations(formattedReservations);
