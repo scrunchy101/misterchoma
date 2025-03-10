@@ -14,7 +14,13 @@ interface ReservationsListProps {
   setSelectedDate: (date: Date) => void;
 }
 
-type Order = Database['public']['Tables']['orders']['Row'];
+type OrderRow = {
+  id: string;
+  customer_name: string | null;
+  table_number: number | null;
+  created_at: string | null;
+  status: string | null;
+}
 
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -32,26 +38,28 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      const { data: orders, error } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .select('*')
         .eq('created_at::date', formattedDate);
 
       if (error) throw error;
 
-      const formattedReservations = (orders ?? []).map((order: Order): Reservation => ({
-        id: order.id,
-        name: order.customer_name ?? 'Guest',
-        people: order.table_number ?? 2,
-        time: new Date(order.created_at ?? Date.now()).toLocaleTimeString([], { 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }),
-        date: format(new Date(order.created_at ?? Date.now()), 'yyyy-MM-dd'),
-        status: (order.status as Reservation['status']) ?? 'pending',
-        phone: "(No phone on record)",
-        tableNumber: order.table_number ?? undefined
-      }));
+      // Convert orders to reservations with explicit type annotation
+      const formattedReservations: Reservation[] = (data || []).map((order: OrderRow) => {
+        const orderDate = order.created_at ? new Date(order.created_at) : new Date();
+        
+        return {
+          id: order.id,
+          name: order.customer_name ?? 'Guest',
+          people: order.table_number ?? 2,
+          time: orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: format(orderDate, 'yyyy-MM-dd'),
+          status: (order.status as "confirmed" | "pending" | "cancelled") ?? 'pending',
+          phone: "(No phone on record)",
+          tableNumber: order.table_number ?? undefined
+        };
+      });
       
       setReservations(formattedReservations);
     } catch (error) {
