@@ -1,7 +1,9 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Plus, Filter, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface InventoryItem {
   id: string;
@@ -12,92 +14,59 @@ interface InventoryItem {
   threshold: number;
   status: string;
   cost: number;
-  lastUpdated: string;
+  supplier?: string;
+  last_updated: string;
 }
 
 export const InventoryList = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
-  // Sample data for inventory
-  const inventoryItems: InventoryItem[] = [
-    {
-      id: "INV-1001",
-      name: "Beef Sirloin",
-      category: "Meat",
-      stock: 45,
-      unit: "kg",
-      threshold: 10,
-      status: "In Stock",
-      cost: 12.99,
-      lastUpdated: "2023-10-15"
-    },
-    {
-      id: "INV-1002",
-      name: "Tomatoes",
-      category: "Vegetables",
-      stock: 8,
-      unit: "kg",
-      threshold: 10,
-      status: "Low Stock",
-      cost: 3.50,
-      lastUpdated: "2023-10-18"
-    },
-    {
-      id: "INV-1003",
-      name: "Olive Oil",
-      category: "Oils",
-      stock: 24,
-      unit: "bottle",
-      threshold: 5,
-      status: "In Stock",
-      cost: 15.75,
-      lastUpdated: "2023-10-10"
-    },
-    {
-      id: "INV-1004",
-      name: "Chicken Breast",
-      category: "Meat",
-      stock: 3,
-      unit: "kg",
-      threshold: 7,
-      status: "Low Stock",
-      cost: 9.50,
-      lastUpdated: "2023-10-17"
-    },
-    {
-      id: "INV-1005",
-      name: "Red Wine",
-      category: "Beverages",
-      stock: 32,
-      unit: "bottle",
-      threshold: 10,
-      status: "In Stock",
-      cost: 22.99,
-      lastUpdated: "2023-10-05"
-    },
-    {
-      id: "INV-1006",
-      name: "Potatoes",
-      category: "Vegetables",
-      stock: 60,
-      unit: "kg",
-      threshold: 15,
-      status: "In Stock",
-      cost: 2.25,
-      lastUpdated: "2023-10-16"
-    },
-    {
-      id: "INV-1007",
-      name: "Garlic",
-      category: "Spices",
-      stock: 4,
-      unit: "kg",
-      threshold: 5,
-      status: "Low Stock",
-      cost: 6.75,
-      lastUpdated: "2023-10-14"
-    },
-  ];
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('inventory')
+          .select('*');
+
+        if (error) throw error;
+
+        // Process the data to match the component's expected format
+        const processedItems = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          stock: Number(item.stock),
+          unit: item.unit,
+          threshold: Number(item.threshold),
+          status: Number(item.stock) > Number(item.threshold) 
+            ? 'In Stock' 
+            : Number(item.stock) > 0 
+              ? 'Low Stock' 
+              : 'Out of Stock',
+          cost: Number(item.cost),
+          supplier: item.supplier,
+          last_updated: new Date(item.last_updated).toISOString().split('T')[0]
+        }));
+
+        setInventoryItems(processedItems);
+      } catch (error) {
+        console.error('Error fetching inventory:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load inventory data",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInventory();
+  }, [toast]);
 
   const filteredItems = inventoryItems.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -147,62 +116,76 @@ export const InventoryList = () => {
         </Button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-gray-400 border-b border-gray-600">
-              <th className="pb-3 font-medium">Item Name</th>
-              <th className="pb-3 font-medium">Category</th>
-              <th className="pb-3 font-medium">Stock</th>
-              <th className="pb-3 font-medium">Unit</th>
-              <th className="pb-3 font-medium">Status</th>
-              <th className="pb-3 font-medium">Cost</th>
-              <th className="pb-3 font-medium">Last Updated</th>
-              <th className="pb-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredItems.map(item => (
-              <tr key={item.id} className="border-b border-gray-600">
-                <td className="py-4 font-medium">{item.name}</td>
-                <td className="py-4">{item.category}</td>
-                <td className="py-4">
-                  <div className="flex items-center">
-                    <div className="w-24 bg-gray-600 rounded-full h-2.5 mr-2">
-                      <div 
-                        className={`h-2.5 rounded-full ${
-                          item.stock > item.threshold * 1.5 ? 'bg-green-600' : 
-                          item.stock > item.threshold ? 'bg-yellow-600' : 'bg-red-600'
-                        }`}
-                        style={{ width: `${Math.min((item.stock / (item.threshold * 2)) * 100, 100)}%` }}
-                      />
-                    </div>
-                    <span>{item.stock}</span>
-                  </div>
-                </td>
-                <td className="py-4">{item.unit}</td>
-                <td className="py-4">
-                  <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(item.status)}`}>
-                    {item.status}
-                  </span>
-                </td>
-                <td className="py-4">${item.cost.toFixed(2)}</td>
-                <td className="py-4 text-gray-400">{item.lastUpdated}</td>
-                <td className="py-4">
-                  <div className="flex space-x-2">
-                    <button className="text-blue-400 hover:text-blue-300">
-                      <Edit size={18} />
-                    </button>
-                    <button className="text-red-400 hover:text-red-300">
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-400 border-b border-gray-600">
+                <th className="pb-3 font-medium">Item Name</th>
+                <th className="pb-3 font-medium">Category</th>
+                <th className="pb-3 font-medium">Stock</th>
+                <th className="pb-3 font-medium">Unit</th>
+                <th className="pb-3 font-medium">Status</th>
+                <th className="pb-3 font-medium">Cost</th>
+                <th className="pb-3 font-medium">Last Updated</th>
+                <th className="pb-3 font-medium">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredItems.length > 0 ? (
+                filteredItems.map(item => (
+                  <tr key={item.id} className="border-b border-gray-600">
+                    <td className="py-4 font-medium">{item.name}</td>
+                    <td className="py-4">{item.category}</td>
+                    <td className="py-4">
+                      <div className="flex items-center">
+                        <div className="w-24 bg-gray-600 rounded-full h-2.5 mr-2">
+                          <div 
+                            className={`h-2.5 rounded-full ${
+                              item.stock > item.threshold * 1.5 ? 'bg-green-600' : 
+                              item.stock > item.threshold ? 'bg-yellow-600' : 'bg-red-600'
+                            }`}
+                            style={{ width: `${Math.min((item.stock / (item.threshold * 2)) * 100, 100)}%` }}
+                          />
+                        </div>
+                        <span>{item.stock}</span>
+                      </div>
+                    </td>
+                    <td className="py-4">{item.unit}</td>
+                    <td className="py-4">
+                      <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(item.status)}`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="py-4">${item.cost.toFixed(2)}</td>
+                    <td className="py-4 text-gray-400">{item.last_updated}</td>
+                    <td className="py-4">
+                      <div className="flex space-x-2">
+                        <button className="text-blue-400 hover:text-blue-300">
+                          <Edit size={18} />
+                        </button>
+                        <button className="text-red-400 hover:text-red-300">
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-gray-400">
+                    {loading ? "Loading inventory..." : "No inventory items found"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
