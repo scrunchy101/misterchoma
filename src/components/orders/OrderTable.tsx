@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Eye, CreditCard, FileText } from "lucide-react";
+import { Eye, CreditCard, FileText, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ReceiptViewer } from "@/components/billing/ReceiptViewer";
 import { fetchOrderDetails } from "@/integrations/supabase/client";
@@ -21,26 +21,27 @@ interface Order {
 interface OrderTableProps {
   orders: Order[];
   loading: boolean;
+  onRefresh?: () => void;
 }
 
-export const OrderTable = ({ orders, loading }: OrderTableProps) => {
+export const OrderTable = ({ orders, loading, onRefresh }: OrderTableProps) => {
   const [receiptData, setReceiptData] = useState(null);
   const [showReceiptViewer, setShowReceiptViewer] = useState(false);
   const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
-    switch(status) {
-      case "Completed":
+    switch(status.toLowerCase()) {
+      case "completed":
         return "bg-green-900 text-green-300";
-      case "In-progress":
-      case "In Progress":
+      case "in-progress":
+      case "in progress":
         return "bg-blue-900 text-blue-300";
-      case "Ready for Pickup":
-      case "Ready":
+      case "ready for pickup":
+      case "ready":
         return "bg-yellow-900 text-yellow-300";
-      case "Pending":
+      case "pending":
         return "bg-amber-900 text-amber-300";
-      case "Cancelled":
+      case "cancelled":
         return "bg-red-900 text-red-300";
       default:
         return "bg-gray-900 text-gray-300";
@@ -48,10 +49,10 @@ export const OrderTable = ({ orders, loading }: OrderTableProps) => {
   };
 
   const getPaymentStatusColor = (status: string) => {
-    switch(status) {
-      case "Paid":
+    switch(status.toLowerCase()) {
+      case "paid":
         return "bg-green-900 text-green-300";
-      case "Pending":
+      case "pending":
         return "bg-amber-900 text-amber-300";
       default:
         return "bg-gray-900 text-gray-300";
@@ -61,7 +62,7 @@ export const OrderTable = ({ orders, loading }: OrderTableProps) => {
   const handleViewReceipt = async (orderId: string) => {
     try {
       // Get the full ID from the order
-      const fullOrderId = orderId.toLowerCase(); // This assumes the display ID is uppercase
+      const fullOrderId = orderId; // Using the ID directly
       
       // Fetch order details from Supabase
       const orderDetails = await fetchOrderDetails(fullOrderId);
@@ -87,16 +88,25 @@ export const OrderTable = ({ orders, loading }: OrderTableProps) => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
-      </div>
-    );
-  }
-
   return (
     <>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-gray-300 text-sm">
+          {orders.length} order{orders.length !== 1 ? 's' : ''} found
+        </h3>
+        {onRefresh && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onRefresh} 
+            className="text-gray-300 border-gray-600 hover:bg-gray-700"
+          >
+            <RefreshCw size={14} className="mr-1" />
+            Refresh
+          </Button>
+        )}
+      </div>
+      
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -112,10 +122,19 @@ export const OrderTable = ({ orders, loading }: OrderTableProps) => {
             </tr>
           </thead>
           <tbody>
-            {orders.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={8} className="py-8 text-center text-gray-400">
+                  <div className="flex justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white"></div>
+                  </div>
+                  <p>Loading orders...</p>
+                </td>
+              </tr>
+            ) : orders.length > 0 ? (
               orders.map(order => (
                 <tr key={order.id} className="border-b border-gray-600">
-                  <td className="py-4 font-medium">{order.id}</td>
+                  <td className="py-4 font-medium">{order.id.substring(0, 8)}</td>
                   <td className="py-4">
                     <div>
                       <span>{order.customer}</span>
@@ -146,7 +165,7 @@ export const OrderTable = ({ orders, loading }: OrderTableProps) => {
                       >
                         <Eye size={18} />
                       </Button>
-                      {order.paymentStatus === "Pending" && (
+                      {order.paymentStatus.toLowerCase() === "pending" && (
                         <Button 
                           variant="ghost" 
                           size="icon" 

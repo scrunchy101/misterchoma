@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { OrderTable } from "@/components/orders/OrderTable";
 import { OrderSearchBar } from "@/components/orders/OrderSearchBar";
 import { NewOrderDialog } from "@/components/orders/NewOrderDialog";
+import { format } from "date-fns";
 
 interface Order {
   id: string;
@@ -39,6 +41,61 @@ export const OrdersList = () => {
     paymentStatus: "pending"
   });
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
+
+  // Fetch orders when component mounts
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      
+      // Get all orders with their order items
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select(`
+          id, 
+          customer_name, 
+          table_number, 
+          status, 
+          payment_status, 
+          total_amount,
+          created_at,
+          order_items (count)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (ordersError) {
+        throw ordersError;
+      }
+
+      // Format orders for display
+      const formattedOrders: Order[] = (ordersData || []).map(order => ({
+        id: order.id,
+        customer: order.customer_name || "Guest",
+        table: order.table_number,
+        items: order.order_items?.length || 0,
+        total: order.total_amount || 0,
+        status: order.status || "Pending",
+        time: format(new Date(order.created_at), 'h:mm a'),
+        paymentStatus: order.payment_status || "Pending",
+        created_at: order.created_at
+      }));
+
+      setOrders(formattedOrders);
+      console.log("Fetched orders:", formattedOrders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load orders",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredOrders = orders.filter(order => 
     order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -112,6 +169,9 @@ export const OrdersList = () => {
         description: "New order created successfully",
       });
       
+      // Refresh orders list
+      fetchOrders();
+      
       setShowNewOrderDialog(false);
     } catch (error) {
       console.error('Error creating order:', error);
@@ -141,6 +201,7 @@ export const OrdersList = () => {
       <OrderTable 
         orders={filteredOrders} 
         loading={loading} 
+        onRefresh={fetchOrders}
       />
 
       <NewOrderDialog 
