@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ReservationListHeader } from "./ReservationListHeader";
 import { ReservationDateDisplay } from "./ReservationDateDisplay";
 import { ReservationsTable } from "./ReservationsTable";
+import { AddReservationDialog } from "./AddReservationDialog";
 import { Reservation } from "./types";
 
 interface ReservationsListProps {
@@ -12,19 +14,20 @@ interface ReservationsListProps {
   setSelectedDate: (date: Date) => void;
 }
 
-// Define a basic type for the database response
-interface OrderRecord {
+// Simple type for the database response
+type OrderRecord = {
   id: string;
   customer_name: string | null;
   table_number: number | null;
   created_at: string | null;
   status: string | null;
-}
+};
 
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<"all" | "confirmed" | "pending" | "cancelled">('all');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -48,8 +51,8 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       const formattedReservations: Reservation[] = [];
       
       if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-        // Process each item manually without relying on complex types
-        response.data.forEach((item: any) => {
+        // Process each item manually to avoid type issues
+        response.data.forEach((item: OrderRecord) => {
           const orderDate = item.created_at ? new Date(item.created_at) : new Date();
           
           formattedReservations.push({
@@ -86,11 +89,16 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
     setSelectedDate(date);
   };
 
+  const handleAddReservation = () => {
+    setIsAddDialogOpen(true);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm">
       <ReservationListHeader 
         statusFilter={statusFilter} 
-        setStatusFilter={setStatusFilter} 
+        setStatusFilter={setStatusFilter}
+        onAddReservation={handleAddReservation}
       />
       
       <ReservationDateDisplay 
@@ -108,6 +116,13 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
           <ReservationsTable reservations={filteredReservations} />
         )}
       </div>
+
+      <AddReservationDialog 
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        onSuccess={fetchReservations}
+        selectedDate={selectedDate}
+      />
     </div>
   );
 };

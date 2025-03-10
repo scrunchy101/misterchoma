@@ -6,11 +6,13 @@ import { ReservationStatusFilter } from "./ReservationStatusFilter";
 interface ReservationListHeaderProps {
   statusFilter: "all" | "confirmed" | "pending" | "cancelled";
   setStatusFilter: (status: "all" | "confirmed" | "pending" | "cancelled") => void;
+  onAddReservation: () => void;
 }
 
 export const ReservationListHeader = ({ 
   statusFilter, 
-  setStatusFilter 
+  setStatusFilter,
+  onAddReservation
 }: ReservationListHeaderProps) => {
   return (
     <div className="p-4 border-b border-gray-100 flex justify-between items-center">
@@ -18,7 +20,10 @@ export const ReservationListHeader = ({
         statusFilter={statusFilter} 
         setStatusFilter={setStatusFilter} 
       />
-      <button className="text-blue-600 text-sm flex items-center hover:text-blue-800">
+      <button 
+        className="text-blue-600 text-sm flex items-center hover:text-blue-800"
+        onClick={onAddReservation}
+      >
         <Plus size={16} className="mr-1" />
         Add New Reservation
       </button>
