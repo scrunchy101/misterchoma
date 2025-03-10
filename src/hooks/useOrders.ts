@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { getSupabaseErrorMessage } from "@/utils/errorUtils";
 
 export interface Order {
   id: string;
@@ -34,6 +36,7 @@ export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { handleError } = useErrorHandler();
 
   const fetchOrders = async () => {
     try {
@@ -72,11 +75,10 @@ export const useOrders = () => {
       setOrders(formattedOrders);
       console.log("Fetched orders:", formattedOrders);
     } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load orders",
-        variant: "destructive"
+      handleError(error, {
+        showToast: true,
+        severity: "error",
+        logToConsole: true
       });
     } finally {
       setLoading(false);
@@ -107,7 +109,9 @@ export const useOrders = () => {
         }])
         .select();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        throw orderError;
+      }
       
       if (!orderData || orderData.length === 0) {
         throw new Error("Failed to create order");
@@ -127,7 +131,9 @@ export const useOrders = () => {
         .from('order_items')
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        throw itemsError;
+      }
       
       toast({
         title: "Success",
@@ -137,11 +143,10 @@ export const useOrders = () => {
       await fetchOrders();
       return true;
     } catch (error) {
-      console.error('Error creating order:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create new order",
-        variant: "destructive"
+      const errorMessage = getSupabaseErrorMessage(error);
+      handleError(new Error(errorMessage), {
+        showToast: true,
+        severity: "error"
       });
       return false;
     }
@@ -158,4 +163,3 @@ export const useOrders = () => {
     createOrder
   };
 };
-

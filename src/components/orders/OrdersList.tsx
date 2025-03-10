@@ -5,6 +5,7 @@ import { OrderSearchBar } from "@/components/orders/OrderSearchBar";
 import { NewOrderDialog } from "@/components/orders/NewOrderDialog";
 import { OrdersHeader } from "./OrdersHeader";
 import { useOrders, OrderForm, OrderItem } from "@/hooks/useOrders";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 export const OrdersList = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,25 +45,26 @@ export const OrdersList = () => {
   };
 
   return (
-    <div className="bg-gray-700 rounded-lg shadow-lg p-6">
-      <OrdersHeader onNewOrder={handleOpenNewOrderDialog} />
+    <ErrorBoundary>
+      <div className="bg-gray-700 rounded-lg shadow-lg p-6">
+        <OrdersHeader onNewOrder={handleOpenNewOrderDialog} />
 
-      <OrderSearchBar 
-        searchTerm={searchTerm} 
-        onSearchChange={setSearchTerm} 
-      />
+        <OrderSearchBar 
+          searchTerm={searchTerm} 
+          onSearchChange={setSearchTerm} 
+        />
 
-      <OrderTable 
-        orders={filteredOrders} 
-        loading={loading}
-      />
+        <OrderTable 
+          orders={filteredOrders} 
+          loading={loading}
+        />
 
-      <NewOrderDialog 
-        open={showNewOrderDialog} 
-        onOpenChange={setShowNewOrderDialog}
-        onAddOrder={handleAddOrder}
-      />
-    </div>
+        <NewOrderDialog 
+          open={showNewOrderDialog} 
+          onOpenChange={setShowNewOrderDialog}
+          onAddOrder={handleAddOrder}
+        />
+      </div>
+    </ErrorBoundary>
   );
 };
-
