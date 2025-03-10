@@ -22,13 +22,20 @@ type OrderRecord = {
   status: string | null;
 };
 
-// Define status filter type explicitly without using itself in the definition
-type StatusFilter = "all" | "confirmed" | "pending" | "cancelled";
+// Define the status filter type as a separate const enum
+const enum ReservationStatus {
+  All = "all",
+  Confirmed = "confirmed",
+  Pending = "pending",
+  Cancelled = "cancelled"
+}
+
+type StatusFilter = ReservationStatus;
 
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(ReservationStatus.All);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
   
@@ -83,7 +90,7 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
     }
   };
   
-  const filteredReservations = statusFilter === 'all' 
+  const filteredReservations = statusFilter === ReservationStatus.All 
     ? reservations 
     : reservations.filter(res => res.status === statusFilter);
 
