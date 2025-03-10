@@ -1,8 +1,9 @@
 
-import { ReservationsPage } from "@/components/reservations/ReservationsPage";
+import { Navigate } from "react-router-dom";
 
 const Reservations = () => {
-  return <ReservationsPage />;
+  // Redirect to home page if someone tries to access this route directly
+  return <Navigate to="/" replace />;
 };
 
 export default Reservations;
