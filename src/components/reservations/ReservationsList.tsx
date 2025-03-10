@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +22,7 @@ type OrderRecord = {
   status: string | null;
 };
 
-// Define status filter as a string union directly
+// Define status filter type explicitly without using itself in the definition
 type StatusFilter = "all" | "confirmed" | "pending" | "cancelled";
 
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
