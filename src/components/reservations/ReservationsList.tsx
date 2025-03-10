@@ -15,13 +15,13 @@ interface ReservationsListProps {
 }
 
 // Simple type for the database response
-type OrderRecord = {
+interface OrderRecord {
   id: string;
   customer_name: string | null;
   table_number: number | null;
   created_at: string | null;
   status: string | null;
-};
+}
 
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -50,7 +50,8 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       const formattedReservations: Reservation[] = [];
       
       if (data && Array.isArray(data) && data.length > 0) {
-        data.forEach((item: OrderRecord) => {
+        // Use type assertion to avoid deep instantiation issues
+        (data as OrderRecord[]).forEach((item) => {
           const orderDate = item.created_at ? new Date(item.created_at) : new Date();
           
           formattedReservations.push({
