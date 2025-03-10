@@ -38,7 +38,7 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      // Use a more explicit typing approach for the query
+      // Use a simple select query with explicit type casting
       const { data, error } = await supabase
         .from('orders')
         .select('id, customer_name, table_number, created_at, status')
@@ -46,8 +46,9 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
 
       if (error) throw error;
 
-      // Convert orders to reservations with explicit type annotation
-      const formattedReservations: Reservation[] = (data as OrderRow[] || []).map((order) => {
+      // Cast data explicitly to OrderRow[] and handle mapping with clear type definitions
+      const orderRows = data as OrderRow[] || [];
+      const formattedReservations: Reservation[] = orderRows.map((order) => {
         const orderDate = order.created_at ? new Date(order.created_at) : new Date();
         
         return {
