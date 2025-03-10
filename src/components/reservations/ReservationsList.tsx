@@ -70,13 +70,10 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
     }
   };
   
-  // Use a simple variable to store filtered reservations
-  let filteredReservations: Reservation[] = reservations;
-  
-  // Only filter if not showing all
-  if (statusFilter !== 'all') {
-    filteredReservations = reservations.filter(res => res.status === statusFilter);
-  }
+  // Filter reservations based on status
+  const filteredReservations = statusFilter === 'all' 
+    ? reservations 
+    : reservations.filter(res => res.status === statusFilter);
 
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
