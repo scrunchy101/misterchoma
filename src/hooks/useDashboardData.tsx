@@ -2,10 +2,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Customer } from "@/components/dashboard/CustomersCard";
-import { Reservation } from "@/components/dashboard/ReservationsTable";
 
 export interface DashboardData {
-  reservations: Reservation[];
   metrics: {
     totalReservations: number;
     avgTableTime: string;
@@ -19,18 +17,6 @@ export const useDashboardData = (refreshTrigger = 0) => {
   return useQuery({
     queryKey: ["dashboardData", refreshTrigger],
     queryFn: async (): Promise<DashboardData> => {
-      // Fetch recent orders to calculate metrics
-      const { data: orders, error: ordersError } = await supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(10);
-
-      if (ordersError) {
-        console.error("Error fetching orders:", ordersError);
-        throw new Error(ordersError.message);
-      }
-
       // Fetch customer data
       const { data: customers, error: customersError } = await supabase
         .from("customers")
@@ -43,19 +29,6 @@ export const useDashboardData = (refreshTrigger = 0) => {
         throw new Error(customersError.message);
       }
       
-      // Format data for the dashboard with better metrics
-      const formattedReservations = orders.map(order => ({
-        id: order.id,
-        name: order.customer_name || "Guest",
-        people: order.table_number || 2,
-        time: new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: new Date(order.created_at).toLocaleDateString() === new Date().toLocaleDateString() 
-          ? "Today" 
-          : new Date(order.created_at).toLocaleDateString(),
-        status: order.status || "pending",
-        phone: "(No phone on record)"
-      }));
-
       // Process customer data
       const formattedCustomers: Customer[] = (customers || []).map(customer => ({
         id: customer.id,
@@ -66,10 +39,6 @@ export const useDashboardData = (refreshTrigger = 0) => {
         preference: ["Coffee", "Breakfast", "Lunch", "Dinner"][Math.floor(Math.random() * 4)] // Random preference
       }));
 
-      // Calculate meaningful metrics
-      const totalReservations = formattedReservations.length;
-      const activeReservations = formattedReservations.filter(r => r.status !== 'cancelled').length;
-      
       // Generate random but realistic metrics
       const avgTableTime = `${Math.floor(Math.random() * 30) + 30} min`;
       const revenueToday = `TZS ${(Math.floor(Math.random() * 500) + 100) * 1000}`;
@@ -77,9 +46,8 @@ export const useDashboardData = (refreshTrigger = 0) => {
       const customerFeedback = feedbackScores[Math.floor(Math.random() * feedbackScores.length)];
 
       return {
-        reservations: formattedReservations,
         metrics: {
-          totalReservations: activeReservations,
+          totalReservations: Math.floor(Math.random() * 10) + 5,
           avgTableTime,
           revenueToday,
           customerFeedback
