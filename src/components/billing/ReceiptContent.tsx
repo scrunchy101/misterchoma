@@ -21,7 +21,7 @@ export const ReceiptContent: React.FC<ReceiptContentProps> = ({ transactionData 
   return (
     <div className="border border-gray-600 rounded-md p-4 font-mono text-sm bg-gray-900">
       <div className="text-center mb-4">
-        <div className="font-bold text-lg text-white">Mama's Restaurant</div>
+        <div className="font-bold text-lg text-white">Mister Choma</div>
         <div className="text-xs text-gray-300">123 Main Street, Dar es Salaam</div>
         <div className="text-xs text-gray-300">Tel: +255 123 456 789</div>
         <div className="text-xs mt-2 text-gray-200">{format(transactionData.date, "MMM d, yyyy h:mm a")}</div>

@@ -30,7 +30,7 @@ export const generatePrintableReceiptHtml = (transactionData: TransactionData): 
       </head>
       <body>
         <div class="header">
-          <h1>Mama's Restaurant</h1>
+          <h1>Mister Choma</h1>
           <p>123 Main Street, Dar es Salaam</p>
           <p>Tel: +255 123 456 789</p>
           <p>Receipt #${transactionData.id}</p>
@@ -63,7 +63,7 @@ export const generatePrintableReceiptHtml = (transactionData: TransactionData): 
 
 export const generateReceiptTextContent = (transactionData: TransactionData): string => {
   return `
-MAMA'S RESTAURANT
+MISTER CHOMA
 123 Main Street, Dar es Salaam
 Tel: +255 123 456 789
 
