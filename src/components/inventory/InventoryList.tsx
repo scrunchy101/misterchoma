@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from "react";
-import { Search, Plus, Filter, Edit, Trash2 } from "lucide-react";
+import { Search, Plus, Filter, Edit, Trash2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Card } from "@/components/ui/card";
 
 interface InventoryItem {
   id: string;
@@ -22,12 +23,15 @@ export const InventoryList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
   useEffect(() => {
     const fetchInventory = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
         const { data, error } = await supabase
           .from('inventory')
           .select('*');
@@ -55,6 +59,7 @@ export const InventoryList = () => {
         setInventoryItems(processedItems);
       } catch (error) {
         console.error('Error fetching inventory:', error);
+        setError('Failed to load inventory data. Please try again later.');
         toast({
           title: "Error",
           description: "Failed to load inventory data",
@@ -66,6 +71,22 @@ export const InventoryList = () => {
     };
 
     fetchInventory();
+    
+    // Set up a subscription for real-time updates
+    const subscription = supabase
+      .channel('inventory_changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'inventory' 
+      }, (payload) => {
+        fetchInventory();
+      })
+      .subscribe();
+      
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [toast]);
 
   const filteredItems = inventoryItems.filter(item => 
@@ -85,6 +106,101 @@ export const InventoryList = () => {
       default:
         return "bg-gray-900 text-gray-300";
     }
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <Card className="p-6 bg-red-900/20 border-red-800">
+          <div className="flex items-center gap-2 text-red-400">
+            <AlertCircle size={20} />
+            <p>{error}</p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="mt-4 border-red-700 text-red-400 hover:bg-red-950"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
+        </Card>
+      );
+    }
+
+    if (filteredItems.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-400">
+          <p>{inventoryItems.length === 0 ? "No inventory items found" : "No matching items found"}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-gray-400 border-b border-gray-600">
+              <th className="pb-3 font-medium">Item Name</th>
+              <th className="pb-3 font-medium">Category</th>
+              <th className="pb-3 font-medium">Stock</th>
+              <th className="pb-3 font-medium">Unit</th>
+              <th className="pb-3 font-medium">Status</th>
+              <th className="pb-3 font-medium">Cost</th>
+              <th className="pb-3 font-medium">Last Updated</th>
+              <th className="pb-3 font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredItems.map(item => (
+              <tr key={item.id} className="border-b border-gray-600">
+                <td className="py-4 font-medium">{item.name}</td>
+                <td className="py-4">{item.category}</td>
+                <td className="py-4">
+                  <div className="flex items-center">
+                    <div className="w-24 bg-gray-600 rounded-full h-2.5 mr-2">
+                      <div 
+                        className={`h-2.5 rounded-full ${
+                          item.stock > item.threshold * 1.5 ? 'bg-green-600' : 
+                          item.stock > item.threshold ? 'bg-yellow-600' : 'bg-red-600'
+                        }`}
+                        style={{ width: `${Math.min((item.stock / (item.threshold * 2)) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <span>{item.stock}</span>
+                  </div>
+                </td>
+                <td className="py-4">{item.unit}</td>
+                <td className="py-4">
+                  <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(item.status)}`}>
+                    {item.status}
+                  </span>
+                </td>
+                <td className="py-4">${item.cost.toFixed(2)}</td>
+                <td className="py-4 text-gray-400">{item.last_updated}</td>
+                <td className="py-4">
+                  <div className="flex space-x-2">
+                    <button className="text-blue-400 hover:text-blue-300">
+                      <Edit size={18} />
+                    </button>
+                    <button className="text-red-400 hover:text-red-300">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
   };
 
   return (
@@ -116,76 +232,7 @@ export const InventoryList = () => {
         </Button>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-400 border-b border-gray-600">
-                <th className="pb-3 font-medium">Item Name</th>
-                <th className="pb-3 font-medium">Category</th>
-                <th className="pb-3 font-medium">Stock</th>
-                <th className="pb-3 font-medium">Unit</th>
-                <th className="pb-3 font-medium">Status</th>
-                <th className="pb-3 font-medium">Cost</th>
-                <th className="pb-3 font-medium">Last Updated</th>
-                <th className="pb-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.length > 0 ? (
-                filteredItems.map(item => (
-                  <tr key={item.id} className="border-b border-gray-600">
-                    <td className="py-4 font-medium">{item.name}</td>
-                    <td className="py-4">{item.category}</td>
-                    <td className="py-4">
-                      <div className="flex items-center">
-                        <div className="w-24 bg-gray-600 rounded-full h-2.5 mr-2">
-                          <div 
-                            className={`h-2.5 rounded-full ${
-                              item.stock > item.threshold * 1.5 ? 'bg-green-600' : 
-                              item.stock > item.threshold ? 'bg-yellow-600' : 'bg-red-600'
-                            }`}
-                            style={{ width: `${Math.min((item.stock / (item.threshold * 2)) * 100, 100)}%` }}
-                          />
-                        </div>
-                        <span>{item.stock}</span>
-                      </div>
-                    </td>
-                    <td className="py-4">{item.unit}</td>
-                    <td className="py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(item.status)}`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="py-4">${item.cost.toFixed(2)}</td>
-                    <td className="py-4 text-gray-400">{item.last_updated}</td>
-                    <td className="py-4">
-                      <div className="flex space-x-2">
-                        <button className="text-blue-400 hover:text-blue-300">
-                          <Edit size={18} />
-                        </button>
-                        <button className="text-red-400 hover:text-red-300">
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-gray-400">
-                    {loading ? "Loading inventory..." : "No inventory items found"}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {renderContent()}
     </div>
   );
 };
