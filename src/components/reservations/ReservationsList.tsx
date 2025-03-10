@@ -38,33 +38,35 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      // Using any to avoid TypeScript recursion issue
-      const { data, error } = await supabase
+      // Fetch data without type generics
+      const response = await supabase
         .from('orders')
         .select('id, customer_name, table_number, created_at, status')
-        .eq('created_at::date', formattedDate) as { data: any, error: any };
+        .eq('created_at::date', formattedDate);
+      
+      // Destructure after the query to avoid deep type instantiation
+      const { data, error } = response;
 
       if (error) throw error;
       
-      // Transform the data using a simple approach
       const formattedReservations: Reservation[] = [];
       
-      if (data && data.length > 0) {
-        for (let i = 0; i < data.length; i++) {
-          const order = data[i];
-          const orderDate = order.created_at ? new Date(order.created_at) : new Date();
+      if (data && Array.isArray(data) && data.length > 0) {
+        // Process each item manually without relying on complex types
+        data.forEach((item: any) => {
+          const orderDate = item.created_at ? new Date(item.created_at) : new Date();
           
           formattedReservations.push({
-            id: order.id,
-            name: order.customer_name ?? 'Guest',
-            people: order.table_number ?? 2,
+            id: item.id,
+            name: item.customer_name ?? 'Guest',
+            people: item.table_number ?? 2,
             time: orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             date: format(orderDate, 'yyyy-MM-dd'),
-            status: (order.status as "confirmed" | "pending" | "cancelled") ?? 'pending',
+            status: (item.status as "confirmed" | "pending" | "cancelled") ?? 'pending',
             phone: "(No phone on record)",
-            tableNumber: order.table_number ?? undefined
+            tableNumber: item.table_number ?? undefined
           });
-        }
+        });
       }
       
       setReservations(formattedReservations);
