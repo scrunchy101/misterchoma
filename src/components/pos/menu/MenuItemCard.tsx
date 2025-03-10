@@ -31,10 +31,10 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
 
   return (
     <Card 
-      className="overflow-hidden hover:shadow-md transition-shadow border border-gray-200"
+      className="overflow-hidden hover:shadow-md transition-shadow border border-gray-200 h-full"
     >
       {/* Product Image */}
-      <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
+      <div className="aspect-video bg-gray-100 flex items-center justify-center overflow-hidden">
         {item.image_url || (item as any).image ? (
           <img 
             src={(item as any).image || item.image_url} 
@@ -48,17 +48,17 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
       
       {/* Product Info */}
       <div className="p-3">
-        <h3 className="font-medium text-gray-800">{item.name}</h3>
+        <h3 className="font-medium text-gray-800 truncate">{item.name}</h3>
         {item.description && (
           <p className="text-gray-500 text-sm mt-1 line-clamp-2">{item.description}</p>
         )}
         <div className="mt-2 flex justify-between items-center">
           <p className="font-bold text-gray-800">{formatCurrency(item.price)}</p>
           <button 
-            className="text-gray-500 hover:text-gray-700"
+            className="flex items-center justify-center p-1.5 rounded-full bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
             onClick={handleAddToCart}
           >
-            <Plus size={20} />
+            <Plus size={18} />
           </button>
         </div>
       </div>

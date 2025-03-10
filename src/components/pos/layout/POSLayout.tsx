@@ -12,7 +12,7 @@ interface POSLayoutProps {
 
 export const POSLayout = ({ activeTab, setActiveTab, children }: POSLayoutProps) => {
   return (
-    <div className="flex h-screen bg-white text-gray-800">
+    <div className="flex h-screen bg-gray-50 text-gray-800">
       {/* Sidebar */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
@@ -22,17 +22,8 @@ export const POSLayout = ({ activeTab, setActiveTab, children }: POSLayoutProps)
         <Header title="Point of Sale" />
         
         {/* POS Content */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Menu Section */}
-          <div className="flex flex-col flex-1">
-            {/* Top Bar with action buttons */}
-            <POSTopBar />
-            
-            {/* Menu content */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-              {children}
-            </div>
-          </div>
+        <div className="flex-1 overflow-hidden p-4">
+          {children}
         </div>
       </div>
     </div>

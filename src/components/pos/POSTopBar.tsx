@@ -1,26 +1,33 @@
 
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, List, Clock, TableRestaurant, Bell } from "lucide-react";
 
 export const POSTopBar = () => {
   return (
-    <div className="bg-gray-100 p-2 border-b border-gray-200">
+    <div className="bg-white p-3 border-b border-gray-200 flex items-center justify-between">
       <div className="flex space-x-2">
-        <button className="bg-green-500 text-white px-4 py-2 rounded">
-          New
-        </button>
-        <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded">
+        <Button className="bg-green-500 hover:bg-green-600">
+          <PlusCircle size={16} className="mr-2" />
+          New Order
+        </Button>
+        <Button variant="outline" className="border-gray-200">
+          <List size={16} className="mr-2" />
           Orders
-        </button>
-        <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded">
-          Hold
-        </button>
-        <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded">
-          Table
-        </button>
-        <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded">
-          Request
-        </button>
+        </Button>
+        <Button variant="outline" className="border-gray-200">
+          <Clock size={16} className="mr-2" />
+          Pending
+        </Button>
+        <Button variant="outline" className="border-gray-200">
+          <TableRestaurant size={16} className="mr-2" />
+          Tables
+        </Button>
       </div>
+      <Button variant="outline" className="border-gray-200">
+        <Bell size={16} className="mr-2" />
+        Notifications
+      </Button>
     </div>
   );
 };
