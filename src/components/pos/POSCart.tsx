@@ -22,7 +22,7 @@ export const POSCart = () => {
           <div className="flex-1 overflow-y-auto mb-4">
             {cartItems.map((item) => (
               <CartItem 
-                key={item.id}
+                key={`${item.id}-${item.quantity}`}
                 id={item.id}
                 name={item.name}
                 price={item.price}

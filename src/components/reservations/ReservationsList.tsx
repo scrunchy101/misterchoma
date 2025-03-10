@@ -23,7 +23,7 @@ type OrderRecord = {
   status: string | null;
 };
 
-// Define status filter as a string union directly without computed types
+// Define status filter as a string union directly
 type StatusFilter = "all" | "confirmed" | "pending" | "cancelled";
 
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {

@@ -67,6 +67,11 @@ export const POSProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const updateItemQuantity = useCallback((id: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeItemFromCart(id);
+      return;
+    }
+    
     setCartItems(prevItems => 
       prevItems.map(item => 
         item.id === id ? { ...item, quantity } : item
