@@ -1,11 +1,13 @@
-
 import React from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, CreditCard, Download, Search, Users } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export const RecentTransactions = () => {
+  const { toast } = useToast();
+  
   // Sample transaction data
   const transactions = [
     {
@@ -54,6 +56,13 @@ export const RecentTransactions = () => {
       status: "completed"
     }
   ];
+
+  const handleDownloadReceipt = (transactionId: string) => {
+    toast({
+      title: "Download Started",
+      description: `Downloading receipt for transaction ${transactionId}`,
+    });
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -115,7 +124,12 @@ export const RecentTransactions = () => {
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <Button variant="outline" size="sm" className="h-8">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8"
+                    onClick={() => handleDownloadReceipt(transaction.id)}
+                  >
                     <Download size={14} className="mr-1" />
                     Receipt
                   </Button>

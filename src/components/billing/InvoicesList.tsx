@@ -1,12 +1,13 @@
-
 import React from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download, FileText } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export const InvoicesList = () => {
-  // Sample invoice data
+  const { toast } = useToast();
+  
   const invoices = [
     {
       id: "INV-2023-001",
@@ -50,6 +51,20 @@ export const InvoicesList = () => {
     }
   ];
 
+  const handleViewInvoice = (invoiceId: string) => {
+    toast({
+      title: "View Invoice",
+      description: `Viewing invoice ${invoiceId}`,
+    });
+  };
+
+  const handleDownloadAll = () => {
+    toast({
+      title: "Download Started",
+      description: "Your invoices will be downloaded shortly.",
+    });
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <div className="p-4 border-b border-gray-100">
@@ -89,7 +104,12 @@ export const InvoicesList = () => {
               </div>
             </div>
             
-            <Button variant="outline" size="sm" className="w-full">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={() => handleViewInvoice(invoice.id)}
+            >
               <FileText size={14} className="mr-1" />
               View Invoice
             </Button>
@@ -98,7 +118,7 @@ export const InvoicesList = () => {
       </div>
       
       <div className="p-4 border-t border-gray-100 text-center">
-        <Button className="w-full">
+        <Button className="w-full" onClick={handleDownloadAll}>
           <Download size={14} className="mr-1" />
           Download All Invoices
         </Button>
