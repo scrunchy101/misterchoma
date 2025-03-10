@@ -29,42 +29,48 @@ const sampleProducts = [
     name: "Hot Fudge Sundae",
     price: 40.00,
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    image: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png"
+    image: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png",
+    category: "Desserts & Drinks"
   },
   {
     id: "prod2",
     name: "Hot Caramel Sundae",
     price: 32.00,
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    image: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png"
+    image: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png",
+    category: "Desserts & Drinks"
   },
   {
     id: "prod3",
     name: "McFlurry w/ Oreo",
     price: 53.00,
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    image: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png"
+    image: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png",
+    category: "Desserts & Drinks"
   },
   {
     id: "prod4",
     name: "ItemBurger",
     price: 10.00,
     description: "test",
-    image: ""
+    image: "",
+    category: "Group Meals"
   },
   {
     id: "prod5",
     name: "baklava",
     price: 7000.00,
     description: "",
-    image: ""
+    image: "",
+    category: "Breakfast"
   },
   {
     id: "prod6",
     name: "test item",
     price: 6.49,
     description: "sdfasdf",
-    image: ""
+    image: "",
+    category: "Featured"
   }
 ];
 
