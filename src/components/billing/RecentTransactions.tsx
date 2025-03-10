@@ -44,6 +44,22 @@ export const RecentTransactions = () => {
     }
   };
 
+  const handleViewDetails = (transactionId: string) => {
+    toast({
+      title: "View Details",
+      description: `Details for transaction ${transactionId}`
+    });
+    // This would typically navigate to a transaction details page or open a modal
+  };
+
+  const handleProcessPayment = (transactionId: string) => {
+    toast({
+      title: "Process Payment",
+      description: `Payment processing for transaction ${transactionId}`
+    });
+    // This would typically open a payment processing dialog/modal
+  };
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
@@ -77,7 +93,9 @@ export const RecentTransactions = () => {
         <>
           <TransactionTable 
             transactions={paginatedTransactions} 
-            onViewReceipt={handleViewReceipt} 
+            onViewReceipt={handleViewReceipt}
+            onViewDetails={handleViewDetails}
+            onProcessPayment={handleProcessPayment}
           />
           
           <TransactionPagination 

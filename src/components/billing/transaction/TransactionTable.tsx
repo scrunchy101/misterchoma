@@ -6,11 +6,15 @@ import { Transaction } from "@/hooks/useTransactions";
 interface TransactionTableProps {
   transactions: Transaction[];
   onViewReceipt: (transactionId: string) => void;
+  onViewDetails?: (transactionId: string) => void;
+  onProcessPayment?: (transactionId: string) => void;
 }
 
 export const TransactionTable: React.FC<TransactionTableProps> = ({ 
   transactions, 
-  onViewReceipt 
+  onViewReceipt,
+  onViewDetails,
+  onProcessPayment
 }) => {
   return (
     <div className="overflow-x-auto">
@@ -30,7 +34,9 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             <TransactionRow 
               key={transaction.id} 
               transaction={transaction} 
-              onViewReceipt={onViewReceipt} 
+              onViewReceipt={onViewReceipt}
+              onViewDetails={onViewDetails}
+              onProcessPayment={onProcessPayment}
             />
           ))}
         </tbody>
