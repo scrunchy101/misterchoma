@@ -1,19 +1,7 @@
 
 import React from "react";
 import { InventoryTableRow } from "./InventoryTableRow";
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  category: string;
-  stock: number;
-  unit: string;
-  threshold: number;
-  status: string;
-  cost: number;
-  supplier?: string;
-  last_updated: string;
-}
+import { InventoryItem } from "./InventoryContext";
 
 interface InventoryTableProps {
   items: InventoryItem[];

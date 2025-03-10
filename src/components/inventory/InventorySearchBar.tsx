@@ -2,13 +2,20 @@
 import React from "react";
 import { Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useInventory } from "./InventoryContext";
+import { useToast } from "@/hooks/use-toast";
 
-interface InventorySearchBarProps {
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-}
+export const InventorySearchBar = () => {
+  const { searchTerm, setSearchTerm } = useInventory();
+  const { toast } = useToast();
 
-export const InventorySearchBar = ({ searchTerm, setSearchTerm }: InventorySearchBarProps) => {
+  const handleFilterClick = () => {
+    toast({
+      title: "Filter",
+      description: "Filter functionality will be implemented soon.",
+    });
+  };
+  
   return (
     <div className="flex flex-col md:flex-row gap-4 mb-6">
       <div className="relative flex-1">
@@ -23,7 +30,11 @@ export const InventorySearchBar = ({ searchTerm, setSearchTerm }: InventorySearc
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      <Button variant="outline" className="text-white border-gray-600 bg-gray-800 hover:bg-gray-700">
+      <Button 
+        variant="outline" 
+        className="text-white border-gray-600 bg-gray-800 hover:bg-gray-700"
+        onClick={handleFilterClick}
+      >
         <Filter size={16} className="mr-2" />
         Filter
       </Button>

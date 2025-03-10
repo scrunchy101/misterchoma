@@ -4,19 +4,7 @@ import { Edit, Trash2 } from "lucide-react";
 import { InventoryStatusBadge } from "./InventoryStatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  category: string;
-  stock: number;
-  unit: string;
-  threshold: number;
-  status: string;
-  cost: number;
-  supplier?: string;
-  last_updated: string;
-}
+import { InventoryItem, useInventory } from "./InventoryContext";
 
 interface InventoryTableRowProps {
   item: InventoryItem;
@@ -24,6 +12,7 @@ interface InventoryTableRowProps {
 
 export const InventoryTableRow = ({ item }: InventoryTableRowProps) => {
   const { toast } = useToast();
+  const { refreshInventory } = useInventory();
 
   const handleEdit = async () => {
     toast({
@@ -41,6 +30,8 @@ export const InventoryTableRow = ({ item }: InventoryTableRowProps) => {
 
       if (error) throw error;
 
+      await refreshInventory();
+      
       toast({
         title: "Item Deleted",
         description: "The inventory item has been removed successfully.",
