@@ -71,7 +71,8 @@ export const useDashboardData = () => {
         date: new Date(order.created_at).toLocaleDateString() === new Date().toLocaleDateString() 
           ? "Today" 
           : new Date(order.created_at).toLocaleDateString(),
-        status: order.status || "pending"
+        status: order.status || "pending",
+        phone: "(No phone on record)" // Add the missing phone property
       }));
 
       // For customers, use real customer data if available, otherwise derive from orders

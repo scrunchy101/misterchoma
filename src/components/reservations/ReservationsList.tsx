@@ -56,7 +56,7 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
         people: order.table_number || 2,
         time: new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         date: format(new Date(order.created_at), 'yyyy-MM-dd'),
-        status: order.status as "confirmed" | "pending" | "cancelled",
+        status: (order.status || 'pending') as "confirmed" | "pending" | "cancelled",
         phone: "(No phone on record)",
         tableNumber: order.table_number
       }));
@@ -74,10 +74,10 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
     }
   };
   
-  const filteredReservations = reservations.filter(reservation => {
-    if (statusFilter === 'all') return true;
-    return reservation.status === statusFilter;
-  });
+  // Simple direct filtering to fix excessive type instantiation
+  const filteredReservations = statusFilter === 'all' 
+    ? reservations 
+    : reservations.filter(reservation => reservation.status === statusFilter);
 
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
