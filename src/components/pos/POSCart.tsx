@@ -10,11 +10,14 @@ export const POSCart = () => {
   const { cartItems } = usePOSContext();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   
+  // Add console log to debug cart items
+  console.log("Cart Items:", cartItems);
+  
   return (
     <div className="h-full flex flex-col">
       <h2 className="text-xl font-bold mb-4">Current Order</h2>
       
-      {cartItems.length > 0 ? (
+      {cartItems && cartItems.length > 0 ? (
         <>
           <div className="flex-1 overflow-y-auto mb-4">
             {cartItems.map((item) => (

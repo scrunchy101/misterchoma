@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useCallback } from "react";
 import { supabase, fetchOrderDetails } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -42,37 +42,45 @@ export const POSProvider = ({ children }: { children: ReactNode }) => {
     return `TZS ${amount.toLocaleString()}`;
   };
 
-  const addItemToCart = (newItem: CartItem) => {
+  const addItemToCart = useCallback((newItem: CartItem) => {
+    console.log("Adding item to cart:", newItem);
+    
     setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === newItem.id);
+      const existingItemIndex = prevItems.findIndex(item => item.id === newItem.id);
       
-      if (existingItem) {
-        return prevItems.map(item => 
-          item.id === newItem.id 
-            ? { ...item, quantity: item.quantity + newItem.quantity } 
-            : item
-        );
+      if (existingItemIndex >= 0) {
+        // Create a new array with the updated item
+        const updatedItems = [...prevItems];
+        updatedItems[existingItemIndex] = {
+          ...updatedItems[existingItemIndex],
+          quantity: updatedItems[existingItemIndex].quantity + newItem.quantity
+        };
+        console.log("Updated cart items:", updatedItems);
+        return updatedItems;
       } else {
-        return [...prevItems, newItem];
+        // Add new item to array
+        const newItems = [...prevItems, newItem];
+        console.log("New cart items:", newItems);
+        return newItems;
       }
     });
-  };
+  }, []);
 
-  const updateItemQuantity = (id: string, quantity: number) => {
+  const updateItemQuantity = useCallback((id: string, quantity: number) => {
     setCartItems(prevItems => 
       prevItems.map(item => 
         item.id === id ? { ...item, quantity } : item
       )
     );
-  };
+  }, []);
 
-  const removeItemFromCart = (id: string) => {
+  const removeItemFromCart = useCallback((id: string) => {
     setCartItems(prevItems => prevItems.filter(item => item.id !== id));
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCartItems([]);
-  };
+  }, []);
 
   const cartTotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
 

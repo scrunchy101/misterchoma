@@ -1,20 +1,20 @@
+
 import React, { useState, useEffect } from "react";
-import { Search, Filter } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { usePOSContext } from "@/components/pos/POSContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface MenuItem {
   id: string;
   name: string;
   price: number;
-  category: string;
   description?: string;
+  category: string;
   image_url?: string;
-  available: boolean;
 }
 
 interface POSMenuProps {
@@ -23,19 +23,21 @@ interface POSMenuProps {
 }
 
 export const POSMenu = ({ categories, isLoading }: POSMenuProps) => {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("");
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isMenuLoading, setIsMenuLoading] = useState(true);
-  const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState("");
   const { addItemToCart, formatCurrency } = usePOSContext();
+  const { toast } = useToast();
 
+  // Set active category when categories are loaded
   useEffect(() => {
     if (categories.length > 0 && !activeCategory) {
       setActiveCategory(categories[0]);
     }
   }, [categories, activeCategory]);
 
+  // Fetch menu items when active category changes
   useEffect(() => {
     const fetchMenuItems = async () => {
       if (!activeCategory) return;
@@ -43,16 +45,24 @@ export const POSMenu = ({ categories, isLoading }: POSMenuProps) => {
       try {
         setIsMenuLoading(true);
         
-        const { data, error } = await supabase
+        let query = supabase
           .from('menu_items')
           .select('*')
-          .eq('category', activeCategory)
-          .eq('available', true)
-          .order('name');
+          .eq('available', true);
+        
+        if (activeCategory !== "All") {
+          query = query.eq('category', activeCategory);
+        }
+        
+        if (searchQuery) {
+          query = query.ilike('name', `%${searchQuery}%`);
+        }
+        
+        const { data, error } = await query;
           
         if (error) throw error;
         
-        setMenuItems(data);
+        setMenuItems(data || []);
       } catch (error) {
         console.error('Error fetching menu items:', error);
         toast({
@@ -66,16 +76,10 @@ export const POSMenu = ({ categories, isLoading }: POSMenuProps) => {
     };
 
     fetchMenuItems();
-  }, [activeCategory, toast]);
-
-  const filteredMenuItems = searchTerm 
-    ? menuItems.filter(item => 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    : menuItems;
+  }, [activeCategory, searchQuery, toast]);
 
   const handleAddToCart = (item: MenuItem) => {
+    console.log("Adding to cart:", item);
     addItemToCart({
       id: item.id,
       name: item.name,
@@ -85,102 +89,78 @@ export const POSMenu = ({ categories, isLoading }: POSMenuProps) => {
     
     toast({
       title: "Added to order",
-      description: `${item.name} added to the current order`,
+      description: `${item.name} added to your order`
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-      </div>
-    );
-  }
+  const filteredCategories = ["All", ...categories];
 
   return (
-    <div className="h-full">
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={18} className="text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search menu items..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Button variant="outline" className="text-white border-gray-600 bg-gray-700 hover:bg-gray-600">
-          <Filter size={16} className="mr-2" />
-          Filter
-        </Button>
+    <div className="h-full flex flex-col">
+      <div className="mb-4">
+        <Input
+          type="text"
+          placeholder="Search menu items..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="bg-gray-700 border-gray-600 text-white"
+        />
       </div>
-
-      {categories.length > 0 ? (
-        <Tabs defaultValue={categories[0]} value={activeCategory} onValueChange={setActiveCategory}>
-          <TabsList className="bg-gray-700 mb-4 overflow-x-auto flex w-full justify-start">
-            {categories.map(category => (
-              <TabsTrigger
-                key={category}
-                value={category}
-                className="text-sm"
-              >
-                {category}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          
-          {categories.map(category => (
-            <TabsContent key={category} value={category} className="mt-0">
-              {isMenuLoading ? (
-                <div className="flex justify-center items-center h-64">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
-                </div>
-              ) : filteredMenuItems.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredMenuItems.map(item => (
-                    <Card 
-                      key={item.id} 
-                      className="bg-gray-700 border-gray-600 overflow-hidden hover:border-green-500 transition cursor-pointer"
-                      onClick={() => handleAddToCart(item)}
-                    >
-                      <div className="p-4">
-                        {item.image_url && (
-                          <div className="aspect-video w-full overflow-hidden rounded-md mb-3 bg-gray-800 flex justify-center items-center">
-                            <img 
-                              src={item.image_url || '/placeholder.svg'} 
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/placeholder.svg';
-                              }}
-                            />
-                          </div>
-                        )}
-                        <h3 className="font-semibold text-lg mb-1">{item.name}</h3>
-                        {item.description && (
-                          <p className="text-gray-300 text-sm mb-2 line-clamp-2">{item.description}</p>
-                        )}
-                        <div className="font-bold text-green-400">{formatCurrency(item.price)}</div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex justify-center items-center h-64 text-gray-400">
-                  <p>No menu items found</p>
-                </div>
-              )}
-            </TabsContent>
+      
+      <Tabs 
+        value={activeCategory} 
+        onValueChange={setActiveCategory} 
+        className="flex-1 flex flex-col"
+      >
+        <TabsList className="bg-gray-700 mb-4 h-auto flex flex-wrap">
+          {filteredCategories.map((category) => (
+            <TabsTrigger 
+              key={category} 
+              value={category}
+              className="flex-grow"
+            >
+              {category}
+            </TabsTrigger>
           ))}
-        </Tabs>
-      ) : (
-        <div className="flex justify-center items-center h-64 text-gray-400">
-          <p>No menu categories available</p>
-        </div>
-      )}
+        </TabsList>
+        
+        {filteredCategories.map((category) => (
+          <TabsContent 
+            key={category} 
+            value={category} 
+            className="flex-1 overflow-y-auto mt-0"
+          >
+            {isLoading || isMenuLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                <p className="ml-2 text-gray-400">Loading menu items...</p>
+              </div>
+            ) : menuItems.length === 0 ? (
+              <div className="text-center py-10 text-gray-400">
+                <p>No menu items available in this category.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {menuItems.map((item) => (
+                  <Card 
+                    key={item.id}
+                    className="bg-gray-700 hover:bg-gray-600 transition-colors p-4 cursor-pointer"
+                    onClick={() => handleAddToCart(item)}
+                  >
+                    <div>
+                      <h3 className="font-medium text-white">{item.name}</h3>
+                      {item.description && (
+                        <p className="text-gray-400 text-sm mt-1 line-clamp-2">{item.description}</p>
+                      )}
+                      <p className="mt-2 font-bold text-blue-400">{formatCurrency(item.price)}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 };
