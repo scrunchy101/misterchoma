@@ -3,9 +3,10 @@ import React, { useState } from "react";
 import { ReservationListHeader } from "./ReservationListHeader";
 import { ReservationsTable } from "./ReservationsTable";
 import { AddReservationDialog } from "./AddReservationDialog";
-import { Reservation } from "./types";
+import { Reservation, ReservationStatusType } from "./types";
+import { format } from "date-fns";
 
-// Sample reservation data
+// Sample reservation data with updated types
 const sampleReservations: Reservation[] = [
   {
     id: "1",
@@ -61,22 +62,22 @@ const sampleReservations: Reservation[] = [
 
 export const ReservationsList = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<ReservationStatusType>("all");
   
   // In a real app, this would be fetched from an API
   const reservations = sampleReservations;
   
   // Apply status filter
-  const filteredReservations = statusFilter 
+  const filteredReservations = statusFilter !== "all"
     ? reservations.filter(res => res.status === statusFilter)
     : reservations;
   
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <ReservationListHeader 
-        onAddReservation={() => setIsOpen(true)} 
-        onStatusFilterChange={setStatusFilter}
-        currentStatusFilter={statusFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        onAddReservation={() => setIsOpen(true)}
       />
       
       <ReservationsTable reservations={filteredReservations} />
@@ -84,6 +85,10 @@ export const ReservationsList = () => {
       <AddReservationDialog
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
+        onSuccess={() => {
+          console.log("Reservation added successfully");
+          // Here we would refetch reservations
+        }}
         onAddReservation={(data) => {
           console.log("Add reservation:", data);
           setIsOpen(false);

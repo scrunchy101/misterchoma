@@ -21,7 +21,10 @@ export const ReservationCalendar: React.FC<ReservationCalendarProps> = ({
         className="rounded-md border"
       />
       <div className="mt-6">
-        <ReservationDateDisplay date={selectedDate} />
+        <ReservationDateDisplay 
+          selectedDate={selectedDate} 
+          handleDateChange={onSelectDate} 
+        />
       </div>
     </div>
   );
