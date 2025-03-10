@@ -9,8 +9,11 @@ export interface MenuItem {
   category: string;
   description?: string;
   image_url?: string;
-  available: boolean; // Added this property to fix the TypeScript errors
+  available: boolean;
 }
+
+// Define the category order to match the menu image
+const categoryOrder = ["CHIPS", "UGALI", "WALI", "IJUMAA SPESHO"];
 
 export const useMenuItems = (category?: string) => {
   return useQuery({
@@ -18,8 +21,7 @@ export const useMenuItems = (category?: string) => {
     queryFn: async (): Promise<MenuItem[]> => {
       let query = supabase
         .from("menu_items")
-        .select("*")
-        .order("name");
+        .select("*");
       
       // Apply category filter if provided
       if (category) {
@@ -33,7 +35,28 @@ export const useMenuItems = (category?: string) => {
         throw new Error(error.message);
       }
 
-      return data || [];
+      // Sort data first by category order, then by name within each category
+      return (data || []).sort((a, b) => {
+        const categoryA = categoryOrder.indexOf(a.category);
+        const categoryB = categoryOrder.indexOf(b.category);
+        
+        // If both categories are in our predefined order
+        if (categoryA !== -1 && categoryB !== -1) {
+          return categoryA - categoryB;
+        }
+        
+        // If only one category is in our predefined order
+        if (categoryA !== -1) return -1;
+        if (categoryB !== -1) return 1;
+        
+        // If neither category is in our predefined order, sort alphabetically
+        if (a.category !== b.category) {
+          return a.category.localeCompare(b.category);
+        }
+        
+        // Sort by name within the same category
+        return a.name.localeCompare(b.name);
+      });
     }
   });
 };
