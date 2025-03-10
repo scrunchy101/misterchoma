@@ -13,7 +13,7 @@ interface POSCartProps {
 }
 
 export const POSCart = ({ customerName, setCustomerName }: POSCartProps) => {
-  const { cartItems, cartTotal, formatCurrency, removeItemFromCart, updateItemQuantity } = usePOSContext();
+  const { cartItems, cartTotal, formatCurrency, removeItemFromCart, updateItemQuantity, clearCart } = usePOSContext();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   return (
