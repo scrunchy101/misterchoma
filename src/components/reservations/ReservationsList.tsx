@@ -23,10 +23,13 @@ type OrderRecord = {
   status: string | null;
 };
 
+// Define a proper type for the status filter
+type StatusFilter = 'all' | 'confirmed' | 'pending' | 'cancelled';
+
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<"all" | "confirmed" | "pending" | "cancelled">('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
   
@@ -126,3 +129,4 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
     </div>
   );
 };
+
