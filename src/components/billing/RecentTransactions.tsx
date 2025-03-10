@@ -12,7 +12,7 @@ export const RecentTransactions = () => {
       id: "TX-2023-08-001",
       date: new Date(2023, 7, 25, 19, 30),
       customer: "James Wilson",
-      amount: 142.50,
+      amount: 142500,
       items: 6,
       paymentMethod: "Credit Card",
       status: "completed"
@@ -21,7 +21,7 @@ export const RecentTransactions = () => {
       id: "TX-2023-08-002",
       date: new Date(2023, 7, 25, 20, 15),
       customer: "Sarah Johnson",
-      amount: 86.75,
+      amount: 86750,
       items: 3,
       paymentMethod: "Credit Card",
       status: "completed"
@@ -30,7 +30,7 @@ export const RecentTransactions = () => {
       id: "TX-2023-08-003",
       date: new Date(2023, 7, 25, 21, 0),
       customer: "Michael Chen",
-      amount: 235.00,
+      amount: 235000,
       items: 8,
       paymentMethod: "Credit Card",
       status: "completed"
@@ -39,7 +39,7 @@ export const RecentTransactions = () => {
       id: "TX-2023-08-004",
       date: new Date(2023, 7, 26, 18, 45),
       customer: "Lisa Rodriguez",
-      amount: 92.25,
+      amount: 92250,
       items: 4,
       paymentMethod: "Credit Card",
       status: "completed"
@@ -48,7 +48,7 @@ export const RecentTransactions = () => {
       id: "TX-2023-08-005",
       date: new Date(2023, 7, 26, 19, 30),
       customer: "Robert Kim",
-      amount: 176.80,
+      amount: 176800,
       items: 7,
       paymentMethod: "Credit Card",
       status: "completed"
@@ -99,7 +99,7 @@ export const RecentTransactions = () => {
                     <span>{transaction.items} items</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 font-medium">${transaction.amount.toFixed(2)}</td>
+                <td className="px-4 py-3 font-medium">TZS {transaction.amount.toLocaleString()}</td>
                 <td className="px-4 py-3">
                   <Badge variant="outline" className={
                     transaction.status === "completed" ? "border-green-500 text-green-700 bg-green-50" :

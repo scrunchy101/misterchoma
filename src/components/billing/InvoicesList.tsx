@@ -13,7 +13,7 @@ export const InvoicesList = () => {
       date: new Date(2023, 7, 1),
       dueDate: new Date(2023, 7, 15),
       customer: "Corporate Event Inc.",
-      amount: 1850.00,
+      amount: 1850000,
       status: "paid"
     },
     {
@@ -21,7 +21,7 @@ export const InvoicesList = () => {
       date: new Date(2023, 7, 5),
       dueDate: new Date(2023, 7, 19),
       customer: "Johnson Wedding",
-      amount: 3200.00,
+      amount: 3200000,
       status: "paid"
     },
     {
@@ -29,7 +29,7 @@ export const InvoicesList = () => {
       date: new Date(2023, 7, 10),
       dueDate: new Date(2023, 7, 24),
       customer: "Chen Birthday Party",
-      amount: 950.00,
+      amount: 950000,
       status: "pending"
     },
     {
@@ -37,7 +37,7 @@ export const InvoicesList = () => {
       date: new Date(2023, 7, 15),
       dueDate: new Date(2023, 7, 29),
       customer: "Miller Anniversary",
-      amount: 1200.00,
+      amount: 1200000,
       status: "pending"
     },
     {
@@ -45,7 +45,7 @@ export const InvoicesList = () => {
       date: new Date(2023, 7, 20),
       dueDate: new Date(2023, 8, 3),
       customer: "Tech Startup Meetup",
-      amount: 750.00,
+      amount: 750000,
       status: "pending"
     }
   ];
@@ -85,7 +85,7 @@ export const InvoicesList = () => {
               </div>
               <div className="text-sm font-medium">
                 <div className="text-gray-500">Amount:</div>
-                <div>${invoice.amount.toFixed(2)}</div>
+                <div>TZS {invoice.amount.toLocaleString()}</div>
               </div>
             </div>
             

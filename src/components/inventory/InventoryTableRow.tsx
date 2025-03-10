@@ -43,7 +43,7 @@ export const InventoryTableRow = ({ item }: InventoryTableRowProps) => {
       <td className="py-4">
         <InventoryStatusBadge status={item.status} />
       </td>
-      <td className="py-4">${item.cost.toFixed(2)}</td>
+      <td className="py-4">TZS {item.cost.toLocaleString()}</td>
       <td className="py-4 text-gray-400">{item.last_updated}</td>
       <td className="py-4">
         <div className="flex space-x-2">
