@@ -9,6 +9,7 @@ export interface MenuItem {
   category: string;
   description?: string;
   image_url?: string;
+  available: boolean; // Added this property to fix the TypeScript errors
 }
 
 export const useMenuItems = (category?: string) => {
