@@ -62,6 +62,7 @@ export const CustomerAddDialog = ({ isOpen, onOpenChange, onCustomerAdded }: Cus
         address: data.address || null,
         notes: data.notes || null,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       });
 
       if (error) throw error;
@@ -80,13 +81,23 @@ export const CustomerAddDialog = ({ isOpen, onOpenChange, onCustomerAdded }: Cus
         onCustomerAdded();
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding customer:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add the customer. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Check for duplicate email error
+      if (error.code === '23505') {
+        toast({
+          title: "Email Already Exists",
+          description: "A customer with this email address already exists.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add the customer. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
