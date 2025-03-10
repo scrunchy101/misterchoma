@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { usePOSContext } from "@/components/pos/POSContext";
 
 export const POSCart = () => {
-  const { cartItems, updateItemQuantity, removeItemFromCart, clearCart, cartTotal, processOrder, isProcessingOrder } = usePOSContext();
+  const { cartItems, updateItemQuantity, removeItemFromCart, clearCart, cartTotal, processOrder, isProcessingOrder, formatCurrency } = usePOSContext();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [tableNumber, setTableNumber] = useState<string>("");
@@ -48,7 +48,7 @@ export const POSCart = () => {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="font-medium">{item.name}</h3>
-                    <p className="text-gray-400 text-sm">${item.price.toFixed(2)}</p>
+                    <p className="text-gray-400 text-sm">{formatCurrency(item.price)}</p>
                   </div>
                   <div className="flex items-center space-x-1">
                     <button 
@@ -73,7 +73,7 @@ export const POSCart = () => {
                   </button>
                 </div>
                 <div className="flex justify-end mt-2">
-                  <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(item.price * item.quantity)}</span>
                 </div>
               </Card>
             ))}
@@ -82,11 +82,11 @@ export const POSCart = () => {
           <div className="border-t border-gray-600 pt-4 mt-auto">
             <div className="flex justify-between text-gray-400 mb-2">
               <span>Subtotal:</span>
-              <span>${cartTotal.toFixed(2)}</span>
+              <span>{formatCurrency(cartTotal)}</span>
             </div>
             <div className="flex justify-between font-bold text-xl mb-4">
               <span>Total:</span>
-              <span>${cartTotal.toFixed(2)}</span>
+              <span>{formatCurrency(cartTotal)}</span>
             </div>
             
             <div className="grid grid-cols-2 gap-2 mb-3">
@@ -161,7 +161,7 @@ export const POSCart = () => {
                     <div className="pt-2">
                       <div className="flex justify-between font-bold">
                         <span>Total Amount:</span>
-                        <span>${cartTotal.toFixed(2)}</span>
+                        <span>{formatCurrency(cartTotal)}</span>
                       </div>
                     </div>
                   </div>

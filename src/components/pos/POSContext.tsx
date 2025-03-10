@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +24,7 @@ interface POSContextType {
   cartTotal: number;
   isProcessingOrder: boolean;
   processOrder: (orderDetails: OrderDetails) => Promise<boolean>;
+  formatCurrency: (amount: number) => string;
 }
 
 const POSContext = createContext<POSContextType | undefined>(undefined);
@@ -34,20 +34,21 @@ export const POSProvider = ({ children }: { children: ReactNode }) => {
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
   const { toast } = useToast();
 
+  const formatCurrency = (amount: number) => {
+    return `TZS ${amount.toLocaleString()}`;
+  };
+
   const addItemToCart = (newItem: CartItem) => {
     setCartItems(prevItems => {
-      // Check if the item already exists in the cart
       const existingItem = prevItems.find(item => item.id === newItem.id);
       
       if (existingItem) {
-        // Update quantity of existing item
         return prevItems.map(item => 
           item.id === newItem.id 
             ? { ...item, quantity: item.quantity + newItem.quantity } 
             : item
         );
       } else {
-        // Add new item to cart
         return [...prevItems, newItem];
       }
     });
@@ -69,10 +70,8 @@ export const POSProvider = ({ children }: { children: ReactNode }) => {
     setCartItems([]);
   };
 
-  // Calculate cart total
   const cartTotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
 
-  // Process the order
   const processOrder = async (orderDetails: OrderDetails): Promise<boolean> => {
     if (cartItems.length === 0) {
       toast({
@@ -86,7 +85,6 @@ export const POSProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsProcessingOrder(true);
 
-      // 1. Create a new order
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -102,7 +100,6 @@ export const POSProvider = ({ children }: { children: ReactNode }) => {
 
       if (orderError) throw orderError;
 
-      // 2. Add order items
       const orderItems = cartItems.map(item => ({
         order_id: orderData.id,
         menu_item_id: item.id,
@@ -117,7 +114,6 @@ export const POSProvider = ({ children }: { children: ReactNode }) => {
 
       if (itemsError) throw itemsError;
 
-      // 3. Success - clear cart and notify user
       clearCart();
       toast({
         title: "Order Created",
@@ -146,7 +142,8 @@ export const POSProvider = ({ children }: { children: ReactNode }) => {
     clearCart,
     cartTotal,
     isProcessingOrder,
-    processOrder
+    processOrder,
+    formatCurrency
   };
 
   return (

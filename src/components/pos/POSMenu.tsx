@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,10 +28,9 @@ export const POSMenu = ({ categories, isLoading }: POSMenuProps) => {
   const [activeCategory, setActiveCategory] = useState<string>("");
   const [isMenuLoading, setIsMenuLoading] = useState(true);
   const { toast } = useToast();
-  const { addItemToCart } = usePOSContext();
+  const { addItemToCart, formatCurrency } = usePOSContext();
 
   useEffect(() => {
-    // Set initial active category once categories are loaded
     if (categories.length > 0 && !activeCategory) {
       setActiveCategory(categories[0]);
     }
@@ -165,7 +163,7 @@ export const POSMenu = ({ categories, isLoading }: POSMenuProps) => {
                         {item.description && (
                           <p className="text-gray-300 text-sm mb-2 line-clamp-2">{item.description}</p>
                         )}
-                        <div className="font-bold text-green-400">${item.price.toFixed(2)}</div>
+                        <div className="font-bold text-green-400">{formatCurrency(item.price)}</div>
                       </div>
                     </Card>
                   ))}
