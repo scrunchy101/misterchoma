@@ -38,22 +38,20 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      // Use explicit type casting to prevent deep type instantiation
+      // Using any to avoid TypeScript recursion issue
       const { data, error } = await supabase
         .from('orders')
         .select('id, customer_name, table_number, created_at, status')
-        .eq('created_at::date', formattedDate);
+        .eq('created_at::date', formattedDate) as { data: any, error: any };
 
       if (error) throw error;
-
-      // Cast the data to our simple interface
-      const orders = data as OrderRecord[];
       
       // Transform the data using a simple approach
       const formattedReservations: Reservation[] = [];
       
-      if (orders && orders.length > 0) {
-        for (const order of orders) {
+      if (data && data.length > 0) {
+        for (let i = 0; i < data.length; i++) {
+          const order = data[i];
           const orderDate = order.created_at ? new Date(order.created_at) : new Date();
           
           formattedReservations.push({
