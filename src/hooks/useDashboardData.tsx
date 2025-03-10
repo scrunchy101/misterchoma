@@ -94,8 +94,8 @@ export const useDashboardData = () => {
               ? new Date(Math.max(...customerOrders.map(o => new Date(o.created_at).getTime()))).toLocaleDateString()
               : "No visits",
             spendAvg: customerOrders.length > 0
-              ? `$${(customerOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / customerOrders.length).toFixed(2)}`
-              : "$0.00",
+              ? `TZS ${(customerOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / customerOrders.length).toFixed(2)}`
+              : "TZS 0.00",
             preference: customer.notes || "No data available"
           });
         });
@@ -111,7 +111,7 @@ export const useDashboardData = () => {
               name: name,
               visits: customerOrders.length,
               lastVisit: new Date(Math.max(...customerOrders.map(o => new Date(o.created_at).getTime()))).toLocaleDateString(),
-              spendAvg: `$${(customerOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / customerOrders.length).toFixed(2)}`,
+              spendAvg: `TZS ${(customerOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / customerOrders.length).toFixed(2)}`,
               preference: "No data available"
             });
           }
@@ -123,7 +123,7 @@ export const useDashboardData = () => {
         metrics: {
           totalReservations,
           avgTableTime: `${avgTableTimeMinutes} min`,
-          revenueToday: `$${revenueToday.toFixed(2)}`,
+          revenueToday: `TZS ${revenueToday.toFixed(2)}`,
           customerFeedback: "N/A" // No real data for this yet
         },
         customers: formattedCustomers

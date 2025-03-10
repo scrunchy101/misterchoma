@@ -18,7 +18,7 @@ export const DashboardPage = () => {
       return [
         { name: 'Total Reservations', value: '0', change: '0%', color: 'bg-blue-500' },
         { name: 'Avg. Table Time', value: '0 min', change: '0%', color: 'bg-green-500' },
-        { name: 'Revenue Today', value: '$0', change: '0%', color: 'bg-purple-500' },
+        { name: 'Revenue Today', value: 'TZS 0', change: '0%', color: 'bg-purple-500' },
         { name: 'Customer Feedback', value: 'N/A', change: '0', color: 'bg-yellow-500' },
       ];
     }
