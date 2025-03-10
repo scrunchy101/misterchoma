@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
@@ -10,7 +10,13 @@ interface OrderMenuItemsProps {
 }
 
 export const OrderMenuItems = ({ onSelectItem }: OrderMenuItemsProps) => {
-  const { data: menuItems, isLoading, error } = useMenuItems();
+  const [activeCategory, setActiveCategory] = useState<string | undefined>(undefined);
+  const { data: allMenuItems, isLoading: isAllLoading } = useMenuItems();
+  const { data: filteredItems, isLoading: isFilteredLoading } = useMenuItems(activeCategory);
+  
+  // Use all menu items when no category is selected, otherwise use filtered items
+  const menuItems = activeCategory ? filteredItems : allMenuItems;
+  const isLoading = activeCategory ? isFilteredLoading : isAllLoading;
   
   if (isLoading) {
     return (
@@ -20,14 +26,6 @@ export const OrderMenuItems = ({ onSelectItem }: OrderMenuItemsProps) => {
     );
   }
   
-  if (error) {
-    return (
-      <div className="text-red-500 py-4 text-center">
-        Error loading menu items. Please try again.
-      </div>
-    );
-  }
-
   if (!menuItems || menuItems.length === 0) {
     return (
       <div className="text-gray-400 py-4 text-center">
@@ -37,11 +35,14 @@ export const OrderMenuItems = ({ onSelectItem }: OrderMenuItemsProps) => {
   }
 
   // Group items by category
-  const categories = [...new Set(menuItems.map(item => item.category))];
+  const categories = [...new Set(allMenuItems?.map(item => item.category) || [])];
   
   return (
     <div className="max-h-[400px] overflow-y-auto">
-      <Tabs defaultValue={categories[0]}>
+      <Tabs 
+        defaultValue={categories[0]} 
+        onValueChange={(value) => setActiveCategory(value)}
+      >
         <TabsList className="bg-gray-700 mb-4 overflow-x-auto flex w-full justify-start">
           {categories.map(category => (
             <TabsTrigger key={category} value={category} className="text-sm">
@@ -58,16 +59,21 @@ export const OrderMenuItems = ({ onSelectItem }: OrderMenuItemsProps) => {
                 .map(item => (
                   <Card 
                     key={item.id} 
-                    className="bg-gray-700 border-gray-600 p-3 flex justify-between items-center hover:border-green-500 transition cursor-pointer"
+                    className="bg-gray-700 border-gray-600 p-3 flex flex-col hover:border-green-500 transition cursor-pointer"
                     onClick={() => onSelectItem(item.id, item.name, item.price)}
                   >
-                    <div>
-                      <h3 className="font-medium">{item.name}</h3>
-                      <p className="text-green-400">${item.price.toFixed(2)}</p>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">{item.name}</h3>
+                        {item.description && (
+                          <p className="text-gray-300 text-sm mt-1 line-clamp-2">{item.description}</p>
+                        )}
+                        <p className="text-green-400 mt-2">${item.price.toFixed(2)}</p>
+                      </div>
+                      <button className="p-1 bg-green-600 rounded-full hover:bg-green-700 transition ml-2 mt-1 flex-shrink-0">
+                        <Plus size={18} />
+                      </button>
                     </div>
-                    <button className="p-1 bg-green-600 rounded-full hover:bg-green-700 transition">
-                      <Plus size={18} />
-                    </button>
                   </Card>
                 ))}
             </div>

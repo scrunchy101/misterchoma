@@ -11,14 +11,21 @@ export interface MenuItem {
   image_url?: string;
 }
 
-export const useMenuItems = () => {
+export const useMenuItems = (category?: string) => {
   return useQuery({
-    queryKey: ["menuItems"],
+    queryKey: ["menuItems", category],
     queryFn: async (): Promise<MenuItem[]> => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("menu_items")
         .select("*")
         .order("name");
+      
+      // Apply category filter if provided
+      if (category) {
+        query = query.eq("category", category);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error("Error fetching menu items:", error);
