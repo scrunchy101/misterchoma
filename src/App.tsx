@@ -13,6 +13,7 @@ import Orders from "./pages/Orders";
 import Inventory from "./pages/Inventory";
 import POS from "./pages/POS";
 import MenuManagement from "./pages/MenuManagement";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 // Create a new QueryClient with error handling configuration
@@ -22,21 +23,8 @@ const queryClient = new QueryClient({
       retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes
-      // Use onSettled instead of the direct onError
-      onSettled: (_, error) => {
-        if (error) {
-          console.error("Query error:", error);
-        }
-      }
     },
-    mutations: {
-      // Use onSettled for mutations too
-      onSettled: (_, error) => {
-        if (error) {
-          console.error("Mutation error:", error);
-        }
-      }
-    }
+    mutations: {}
   }
 });
 
@@ -56,6 +44,7 @@ const App = () => (
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/pos" element={<POS />} />
             <Route path="/menu" element={<MenuManagement />} />
+            <Route path="/reports" element={<Reports />} />
             {/* Redirect all reservations to the dashboard */}
             <Route path="/reservations" element={<Navigate to="/" replace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
