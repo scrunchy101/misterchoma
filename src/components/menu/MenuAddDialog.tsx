@@ -5,76 +5,35 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { useMenu } from "./MenuContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { MenuItemForm, MenuItemFormValues } from "./MenuItemForm";
+import { MenuItem } from "@/hooks/useMenuItems";
 
 interface MenuAddDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  category: z.string().min(2, {
-    message: "Category must be at least 2 characters.",
-  }),
-  price: z.coerce.number().positive({
-    message: "Price must be a positive number.",
-  }),
-  description: z.string().optional(),
-  available: z.boolean().default(true),
-  image_url: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+// Empty default menu item for the add form
+const emptyMenuItem: MenuItem = {
+  id: "",
+  name: "",
+  category: "",
+  price: 0,
+  description: "",
+  available: true,
+  image_url: "",
+};
 
 export const MenuAddDialog = ({ isOpen, onOpenChange }: MenuAddDialogProps) => {
   const { toast } = useToast();
-  const { refreshMenu, categories } = useMenu();
+  const { refreshMenu } = useMenu();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-    watch,
-  } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      category: "",
-      price: 0,
-      description: "",
-      available: true,
-      image_url: "",
-    },
-  });
-
-  const available = watch("available");
-
-  React.useEffect(() => {
-    if (!isOpen) {
-      // Reset form when dialog closes
-      reset();
-    }
-  }, [isOpen, reset]);
-
-  const onSubmit = async (data: FormValues) => {
+  const handleSubmit = async (data: MenuItemFormValues) => {
     try {
       setIsSubmitting(true);
       
@@ -99,7 +58,6 @@ export const MenuAddDialog = ({ isOpen, onOpenChange }: MenuAddDialogProps) => {
       });
       
       onOpenChange(false);
-      reset();
     } catch (error) {
       console.error('Error adding menu item:', error);
       toast({
@@ -119,100 +77,14 @@ export const MenuAddDialog = ({ isOpen, onOpenChange }: MenuAddDialogProps) => {
           <DialogTitle>Add New Menu Item</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Item Name</Label>
-            <Input
-              id="name"
-              {...register("name")}
-              className="bg-gray-700 border-gray-600"
-              placeholder="Chicken Burger"
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <div className="relative">
-              <Input
-                id="category"
-                {...register("category")}
-                className="bg-gray-700 border-gray-600"
-                placeholder="Burgers"
-                list="category-options"
-              />
-              <datalist id="category-options">
-                {categories.map((category) => (
-                  <option key={category} value={category} />
-                ))}
-              </datalist>
-            </div>
-            {errors.category && (
-              <p className="text-red-500 text-sm">{errors.category.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="price">Price (TZS)</Label>
-            <Input
-              id="price"
-              type="number"
-              {...register("price")}
-              className="bg-gray-700 border-gray-600"
-              placeholder="8000"
-            />
-            {errors.price && (
-              <p className="text-red-500 text-sm">{errors.price.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea
-              id="description"
-              {...register("description")}
-              className="bg-gray-700 border-gray-600"
-              placeholder="Delicious chicken burger with lettuce and mayo..."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="image_url">Image URL (Optional)</Label>
-            <Input
-              id="image_url"
-              {...register("image_url")}
-              className="bg-gray-700 border-gray-600"
-              placeholder="https://example.com/image.jpg"
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="available"
-              checked={available}
-              onCheckedChange={(checked) => setValue("available", checked)}
-            />
-            <Label htmlFor="available" className="cursor-pointer">
-              Available for Order
-            </Label>
-          </div>
-
-          <DialogFooter className="mt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="border-gray-600"
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add Item"}
-            </Button>
-          </DialogFooter>
-        </form>
+        <MenuItemForm 
+          defaultValues={emptyMenuItem}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          onCancel={() => onOpenChange(false)}
+          submitButtonText="Add Item"
+          cancelButtonText="Cancel"
+        />
       </DialogContent>
     </Dialog>
   );
