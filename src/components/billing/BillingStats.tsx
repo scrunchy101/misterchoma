@@ -24,9 +24,9 @@ export const BillingStats = () => {
         .from('billing_stats')
         .select('total_revenue, transaction_count')
         .eq('date', lastMonth.toISOString().split('T')[0])
-        .single();
+        .maybeSingle();
 
-      if (lastMonthError && lastMonthError.code !== 'PGRST116') throw lastMonthError;
+      if (lastMonthError) throw lastMonthError;
 
       // Fetch open invoices
       const { data: openInvoices, error: invoicesError } = await supabase
@@ -38,11 +38,11 @@ export const BillingStats = () => {
 
       // Calculate percentages
       const revenueChange = lastMonthStats 
-        ? ((billingStats?.total_revenue || 0) - lastMonthStats.total_revenue) / lastMonthStats.total_revenue * 100
+        ? ((billingStats?.total_revenue || 0) - (lastMonthStats.total_revenue || 0)) / (lastMonthStats.total_revenue || 1) * 100
         : 0;
 
-      const avgTransactionChange = lastMonthStats && lastMonthStats.transaction_count > 0
-        ? ((billingStats?.avg_transaction_amount || 0) - (lastMonthStats.total_revenue / lastMonthStats.transaction_count)) / (lastMonthStats.total_revenue / lastMonthStats.transaction_count) * 100
+      const avgTransactionChange = lastMonthStats && lastMonthStats.transaction_count
+        ? ((billingStats?.avg_transaction_amount || 0) - ((lastMonthStats.total_revenue || 0) / lastMonthStats.transaction_count)) / ((lastMonthStats.total_revenue || 1) / lastMonthStats.transaction_count) * 100
         : 0;
 
       return {
