@@ -38,14 +38,14 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      // Fetch data without type generics
-      const response = await supabase
+      // Using explicit cast to avoid deep type instantiation
+      const { data, error } = await supabase
         .from('orders')
         .select('id, customer_name, table_number, created_at, status')
-        .eq('created_at::date', formattedDate);
-      
-      // Destructure after the query to avoid deep type instantiation
-      const { data, error } = response;
+        .eq('created_at::date', formattedDate) as { 
+          data: OrderRecord[] | null; 
+          error: Error | null 
+        };
 
       if (error) throw error;
       
@@ -53,7 +53,7 @@ export const ReservationsList = ({ selectedDate, setSelectedDate }: Reservations
       
       if (data && Array.isArray(data) && data.length > 0) {
         // Process each item manually without relying on complex types
-        data.forEach((item: any) => {
+        data.forEach((item) => {
           const orderDate = item.created_at ? new Date(item.created_at) : new Date();
           
           formattedReservations.push({
