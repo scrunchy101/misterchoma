@@ -6,6 +6,15 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface MenuItem {
+  id: string;
+  name: string;
+  price: number;
+  description?: string;
+  category: string;
+  image_url?: string;
+}
+
 export interface OrderDetails {
   customerName: string;
   tableNumber: number | null;
