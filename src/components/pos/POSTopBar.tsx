@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, List, Clock, TableRestaurant, Bell } from "lucide-react";
+import { PlusCircle, List, Clock, Table, Bell } from "lucide-react";
 
 export const POSTopBar = () => {
   return (
@@ -20,7 +20,7 @@ export const POSTopBar = () => {
           Pending
         </Button>
         <Button variant="outline" className="border-gray-200">
-          <TableRestaurant size={16} className="mr-2" />
+          <Table size={16} className="mr-2" />
           Tables
         </Button>
       </div>
