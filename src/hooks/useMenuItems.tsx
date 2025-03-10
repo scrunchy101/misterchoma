@@ -13,7 +13,7 @@ export interface MenuItem {
 }
 
 // Define the category order to match the menu image
-const categoryOrder = ["CHIPS", "UGALI", "WALI", "IJUMAA SPESHO"];
+const categoryOrder = ["NYAMA CHOMA", "KUKU", "CHIPS", "UGALI", "RICE", "BEVERAGES"];
 
 export const useMenuItems = (category?: string) => {
   return useQuery({

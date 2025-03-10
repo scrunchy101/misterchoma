@@ -19,7 +19,7 @@ export const MenuManagementPage = () => {
               <div className="bg-gray-700 rounded-lg shadow-lg p-6 text-center">
                 <h1 className="text-4xl font-bold text-yellow-400 mb-2">MISTER CHOMA</h1>
                 <h2 className="text-xl text-white mb-6">NAMANGA DSM</h2>
-                <p className="text-green-400">Menu updated from Mister Choma restaurant</p>
+                <p className="text-green-400">Menu items imported from Mister Choma restaurant</p>
               </div>
               <MenuStats />
               <MenuList />
