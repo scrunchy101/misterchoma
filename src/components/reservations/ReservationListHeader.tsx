@@ -3,7 +3,8 @@ import React from "react";
 import { Plus } from "lucide-react";
 import { ReservationStatusFilter } from "./ReservationStatusFilter";
 
-type StatusFilter = 'all' | 'confirmed' | 'pending' | 'cancelled';
+// Using string literals directly for clarity
+type StatusFilter = "all" | "confirmed" | "pending" | "cancelled";
 
 interface ReservationListHeaderProps {
   statusFilter: StatusFilter;

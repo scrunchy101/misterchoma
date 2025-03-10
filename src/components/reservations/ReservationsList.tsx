@@ -23,13 +23,13 @@ type OrderRecord = {
   status: string | null;
 };
 
-// Define status filter options as literal string union type
-type StatusFilter = 'all' | 'confirmed' | 'pending' | 'cancelled';
+// Define status filter as a string union directly without computed types
+type StatusFilter = "all" | "confirmed" | "pending" | "cancelled";
 
 export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
   

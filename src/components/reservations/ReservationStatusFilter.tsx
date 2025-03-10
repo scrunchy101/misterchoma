@@ -1,7 +1,8 @@
 
 import React from "react";
 
-type ReservationStatus = 'all' | 'confirmed' | 'pending' | 'cancelled';
+// Using string literals directly for clarity
+type ReservationStatus = "all" | "confirmed" | "pending" | "cancelled";
 
 interface ReservationStatusFilterProps {
   statusFilter: ReservationStatus;
