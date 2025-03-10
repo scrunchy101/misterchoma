@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { CheckCircle, User, Hash, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePOSContext } from "@/components/pos/POSContext";
 import { ReceiptViewer } from "@/components/billing/ReceiptViewer";
+import { TransactionData } from "@/components/billing/receiptUtils";
 
 interface CheckoutDialogProps {
   isOpen: boolean;
@@ -19,7 +19,7 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
   const [tableNumber, setTableNumber] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [showReceiptViewer, setShowReceiptViewer] = useState(false);
-  const [receiptData, setReceiptData] = useState(null);
+  const [receiptData, setReceiptData] = useState<TransactionData | null>(null);
 
   const handleCheckout = async () => {
     const success = await processOrder({
@@ -29,7 +29,6 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
     });
     
     if (success) {
-      // Prepare receipt data
       setReceiptData({
         id: `ORDER-${Math.floor(Math.random() * 10000)}`,
         date: new Date(),
@@ -45,7 +44,6 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
       
       setShowReceiptViewer(true);
       
-      // Reset form
       setCustomerName("");
       setTableNumber("");
       setPaymentMethod("cash");

@@ -1,10 +1,10 @@
-
 import React, { useState } from "react";
 import { Eye, CreditCard, FileText, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ReceiptViewer } from "@/components/billing/ReceiptViewer";
 import { fetchOrderDetails } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { TransactionData } from "@/components/billing/receiptUtils";
 
 interface Order {
   id: string;
@@ -25,7 +25,7 @@ interface OrderTableProps {
 }
 
 export const OrderTable = ({ orders, loading, onRefresh }: OrderTableProps) => {
-  const [receiptData, setReceiptData] = useState(null);
+  const [receiptData, setReceiptData] = useState<TransactionData | null>(null);
   const [showReceiptViewer, setShowReceiptViewer] = useState(false);
   const { toast } = useToast();
 
@@ -61,10 +61,7 @@ export const OrderTable = ({ orders, loading, onRefresh }: OrderTableProps) => {
 
   const handleViewReceipt = async (orderId: string) => {
     try {
-      // Get the full ID from the order
-      const fullOrderId = orderId; // Using the ID directly
-      
-      // Fetch order details from Supabase
+      const fullOrderId = orderId;
       const orderDetails = await fetchOrderDetails(fullOrderId);
       
       if (orderDetails) {

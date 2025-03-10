@@ -1,26 +1,17 @@
 
 import React from "react";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Printer, Download, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ReceiptContent } from "./ReceiptContent";
+import { ReceiptActions } from "./ReceiptActions";
+import { TransactionData, generatePrintableReceiptHtml, generateReceiptTextContent } from "./receiptUtils";
 
 interface ReceiptViewerProps {
   isOpen: boolean;
   onClose: () => void;
-  transactionData: {
-    id: string;
-    date: Date;
-    customer: string;
-    items: Array<{
-      name: string;
-      quantity: number;
-      price: number;
-    }>;
-    paymentMethod: string;
-    total: number;
-  } | null;
+  transactionData: TransactionData | null;
 }
 
 export const ReceiptViewer = ({ isOpen, onClose, transactionData }: ReceiptViewerProps) => {
@@ -40,50 +31,7 @@ export const ReceiptViewer = ({ isOpen, onClose, transactionData }: ReceiptViewe
     }
     
     // Generate printable receipt HTML
-    const receiptHtml = `
-      <html>
-        <head>
-          <title>Receipt #${transactionData.id}</title>
-          <style>
-            body { font-family: monospace; font-size: 12px; max-width: 300px; margin: 0 auto; }
-            .header { text-align: center; margin-bottom: 20px; }
-            .items { border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 10px 0; }
-            .item { display: flex; justify-content: space-between; margin: 5px 0; }
-            .total { font-weight: bold; margin-top: 10px; text-align: right; }
-            .footer { text-align: center; margin-top: 20px; font-size: 10px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Mama's Restaurant</h1>
-            <p>123 Main Street, Dar es Salaam</p>
-            <p>Tel: +255 123 456 789</p>
-            <p>Receipt #${transactionData.id}</p>
-            <p>${format(transactionData.date, "MMM d, yyyy h:mm a")}</p>
-            <p>Customer: ${transactionData.customer}</p>
-          </div>
-          
-          <div class="items">
-            ${transactionData.items.map(item => `
-              <div class="item">
-                <span>${item.quantity} x ${item.name}</span>
-                <span>TZS ${item.price.toLocaleString()}</span>
-              </div>
-            `).join('')}
-          </div>
-          
-          <div class="total">
-            <p>Total: TZS ${transactionData.total.toLocaleString()}</p>
-            <p>Payment Method: ${transactionData.paymentMethod}</p>
-          </div>
-          
-          <div class="footer">
-            <p>Thank you for dining with us!</p>
-            <p>Please come again</p>
-          </div>
-        </body>
-      </html>
-    `;
+    const receiptHtml = generatePrintableReceiptHtml(transactionData);
     
     printWindow.document.open();
     printWindow.document.write(receiptHtml);
@@ -99,26 +47,7 @@ export const ReceiptViewer = ({ isOpen, onClose, transactionData }: ReceiptViewe
   
   const handleDownload = () => {
     // Create a blob with the receipt content
-    const receiptText = `
-MAMA'S RESTAURANT
-123 Main Street, Dar es Salaam
-Tel: +255 123 456 789
-
-Receipt #${transactionData.id}
-Date: ${format(transactionData.date, "MMM d, yyyy h:mm a")}
-Customer: ${transactionData.customer}
-
-${transactionData.items.map(item => 
-  `${item.quantity} x ${item.name}`.padEnd(30) + `TZS ${item.price.toLocaleString()}`
-).join('\n')}
-
-${''.padEnd(40, '-')}
-TOTAL:${' '.repeat(15)}TZS ${transactionData.total.toLocaleString()}
-Payment Method: ${transactionData.paymentMethod}
-
-Thank you for dining with us!
-Please come again
-    `;
+    const receiptText = generateReceiptTextContent(transactionData);
     
     const blob = new Blob([receiptText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -152,45 +81,8 @@ Please come again
           </DialogTitle>
         </DialogHeader>
         
-        <div className="border border-gray-600 rounded-md p-4 font-mono text-sm bg-gray-900">
-          <div className="text-center mb-4">
-            <div className="font-bold text-lg text-white">Mama's Restaurant</div>
-            <div className="text-xs text-gray-300">123 Main Street, Dar es Salaam</div>
-            <div className="text-xs text-gray-300">Tel: +255 123 456 789</div>
-            <div className="text-xs mt-2 text-gray-200">{format(transactionData.date, "MMM d, yyyy h:mm a")}</div>
-            <div className="text-xs text-gray-200">Customer: {transactionData.customer}</div>
-          </div>
-          
-          <div className="border-t border-b border-dashed border-gray-600 py-2 space-y-1">
-            {transactionData.items.map((item, i) => (
-              <div key={i} className="flex justify-between text-gray-200">
-                <span>{item.quantity} x {item.name}</span>
-                <span>TZS {item.price.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-          
-          <div className="mt-2 text-right font-bold text-white">
-            <div>Total: TZS {transactionData.total.toLocaleString()}</div>
-            <div className="text-xs font-normal text-gray-200">Payment Method: {transactionData.paymentMethod}</div>
-          </div>
-          
-          <div className="text-center text-xs mt-4 text-gray-300">
-            <div>Thank you for dining with us!</div>
-            <div>Please come again</div>
-          </div>
-        </div>
-        
-        <div className="flex justify-end space-x-2 mt-2">
-          <Button variant="outline" size="sm" onClick={handlePrint} className="border-gray-600 text-gray-200 hover:bg-gray-700 hover:text-white">
-            <Printer size={16} className="mr-2" />
-            Print
-          </Button>
-          <Button size="sm" onClick={handleDownload} className="bg-blue-600 hover:bg-blue-700 text-white">
-            <Download size={16} className="mr-2" />
-            Download
-          </Button>
-        </div>
+        <ReceiptContent transactionData={transactionData} />
+        <ReceiptActions onPrint={handlePrint} onDownload={handleDownload} />
       </DialogContent>
     </Dialog>
   );

@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Clock, CreditCard, Download, Search, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ReceiptViewer } from "@/components/billing/ReceiptViewer";
+import { TransactionData } from "@/components/billing/receiptUtils";
 
 export const RecentTransactions = () => {
   const { toast } = useToast();
-  const [receiptData, setReceiptData] = useState(null);
+  const [receiptData, setReceiptData] = useState<TransactionData | null>(null);
   const [isReceiptViewerOpen, setIsReceiptViewerOpen] = useState(false);
   
   // Sample transaction data
