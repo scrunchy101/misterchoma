@@ -2,7 +2,6 @@
 import React, { ReactNode } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
-import { POSTopBar } from "@/components/pos/POSTopBar";
 
 interface POSLayoutProps {
   activeTab: string;
@@ -22,7 +21,7 @@ export const POSLayout = ({ activeTab, setActiveTab, children }: POSLayoutProps)
         <Header title="Point of Sale" />
         
         {/* POS Content */}
-        <div className="flex-1 overflow-hidden p-4">
+        <div className="flex-1 overflow-hidden">
           {children}
         </div>
       </div>

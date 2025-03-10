@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { POSLayout } from "@/components/pos/layout/POSLayout";
 import { POSWrapper } from "@/components/pos/POSWrapper";
+import { POSTopBar } from "@/components/pos/POSTopBar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { MenuItemCard } from "@/components/pos/menu/MenuItemCard";
 import { MenuItem } from "@/components/pos/types";
 import { ShoppingCart, Search, Plus, Minus, Trash, CheckCircle, User } from "lucide-react";
@@ -15,13 +15,14 @@ import { usePOSContext } from "@/components/pos/POSContext";
 
 export const POSPage = () => {
   const [activeTab, setActiveTab] = useState('pos');
-  const [categories, setCategories] = useState<string[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>("");
+  const [categories, setCategories] = useState<string[]>([
+    "Nyama Choma", "Kuku", "Chips", "Ugali", "Rice", "Beverages"
+  ]);
+  const [activeCategory, setActiveCategory] = useState<string>("Nyama Choma");
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [customerName, setCustomerName] = useState("");
-  const [showCheckout, setShowCheckout] = useState(false);
   const { toast } = useToast();
   const { cartItems, cartTotal, formatCurrency, removeItemFromCart, updateItemQuantity, clearCart } = usePOSContext();
 
@@ -29,93 +30,69 @@ export const POSPage = () => {
   const sampleProducts = [
     {
       id: "prod1",
-      name: "Hot Fudge Sundae",
-      price: 40.00,
-      description: "Delicious ice cream with hot fudge topping",
+      name: "Beef Ribs",
+      price: 15000,
+      description: "Slow-cooked tender beef ribs",
       image: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png",
-      category: "Desserts & Drinks"
+      category: "Nyama Choma"
     },
     {
       id: "prod2",
-      name: "Hot Caramel Sundae",
-      price: 32.00,
-      description: "Ice cream with warm caramel sauce",
+      name: "Goat Meat",
+      price: 12000,
+      description: "Grilled goat meat with spices",
       image: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png",
-      category: "Desserts & Drinks"
+      category: "Nyama Choma"
     },
     {
       id: "prod3",
-      name: "McFlurry w/ Oreo",
-      price: 53.00,
-      description: "Creamy ice cream with Oreo pieces",
+      name: "Grilled Chicken",
+      price: 10000,
+      description: "Whole grilled chicken with spices",
       image: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png",
-      category: "Desserts & Drinks"
+      category: "Kuku"
     },
     {
       id: "prod4",
-      name: "Classic Burger",
-      price: 72.00,
-      description: "Juicy beef patty with lettuce and tomato",
+      name: "Chicken Wings",
+      price: 8000,
+      description: "Spicy grilled chicken wings",
       image: "",
-      category: "Group Meals"
+      category: "Kuku"
     },
     {
       id: "prod5",
-      name: "Baklava",
-      price: 7000.00,
-      description: "Traditional sweet pastry",
+      name: "Chips Masala",
+      price: 5000,
+      description: "Fries with special masala seasoning",
       image: "",
-      category: "Breakfast"
+      category: "Chips"
     },
     {
       id: "prod6",
-      name: "French Fries",
-      price: 35.49,
-      description: "Crispy golden fries",
+      name: "Ugali",
+      price: 2000,
+      description: "Traditional corn meal dish",
       image: "",
-      category: "Featured"
+      category: "Ugali"
+    },
+    {
+      id: "prod7",
+      name: "Pilau Rice",
+      price: 4000,
+      description: "Spiced rice with aromatic spices",
+      image: "",
+      category: "Rice"
+    },
+    {
+      id: "prod8",
+      name: "Soda",
+      price: 1500,
+      description: "Assorted soft drinks",
+      image: "",
+      category: "Beverages"
     }
   ];
-
-  // Fetch categories on component mount
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('menu_items')
-          .select('category')
-          .order('category');
-          
-        if (error) throw error;
-        
-        // Extract unique categories
-        const uniqueCategories = [...new Set(data.map(item => item.category))];
-        setCategories(uniqueCategories);
-        
-        // Set default active category
-        if (uniqueCategories.length > 0 && !activeCategory) {
-          setActiveCategory(uniqueCategories[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load menu categories",
-          variant: "destructive"
-        });
-        
-        // Fallback to sample categories
-        const sampleCategories = ["Desserts & Drinks", "Group Meals", "Breakfast", "Featured"];
-        setCategories(sampleCategories);
-        setActiveCategory("Desserts & Drinks");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, [toast, activeCategory]);
 
   // Fetch menu items when active category changes or search query updates
   useEffect(() => {
@@ -157,9 +134,10 @@ export const POSPage = () => {
   return (
     <POSWrapper>
       <POSLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-        <div className="grid grid-cols-3 gap-6 h-full">
+        <POSTopBar />
+        <div className="grid grid-cols-3 gap-6 h-full p-4">
           {/* Menu Section */}
-          <div className="col-span-2 flex flex-col">
+          <div className="col-span-2 flex flex-col bg-white rounded-lg shadow p-4">
             {/* Search Bar */}
             <div className="mb-4 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -178,7 +156,7 @@ export const POSPage = () => {
               onValueChange={setActiveCategory} 
               className="flex-1 flex flex-col"
             >
-              <TabsList className="bg-white mb-4 h-auto flex flex-wrap justify-start overflow-x-auto">
+              <TabsList className="bg-gray-100 mb-4 h-auto flex flex-wrap justify-start overflow-x-auto">
                 {categories.map((category) => (
                   <TabsTrigger 
                     key={category} 
@@ -190,36 +168,30 @@ export const POSPage = () => {
                 ))}
               </TabsList>
               
-              {categories.map((category) => (
-                <TabsContent 
-                  key={category} 
-                  value={category} 
-                  className="flex-1 overflow-y-auto mt-0"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-green-500 border-t-transparent"></div>
-                      <p className="ml-2 text-gray-600">Loading menu items...</p>
-                    </div>
-                  ) : menuItems.length === 0 ? (
-                    <div className="text-center py-10 text-gray-600">
-                      <p>No menu items available in this category.</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
-                      {menuItems.map((item) => (
-                        <MenuItemCard key={item.id} item={item} />
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-              ))}
+              <TabsContent value={activeCategory} className="flex-1 overflow-y-auto mt-0">
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-green-500 border-t-transparent"></div>
+                    <p className="ml-2 text-gray-600">Loading menu items...</p>
+                  </div>
+                ) : menuItems.length === 0 ? (
+                  <div className="text-center py-10 text-gray-600">
+                    <p>No menu items available in this category.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    {menuItems.map((item) => (
+                      <MenuItemCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
             </Tabs>
           </div>
           
           {/* Cart Section */}
           <div className="col-span-1">
-            <Card className="h-full flex flex-col bg-white p-4 border-gray-200">
+            <Card className="h-full flex flex-col bg-white p-4 border-gray-200 shadow">
               {/* Customer Information */}
               <div className="mb-4 flex items-center">
                 <div className="p-2 rounded-full bg-green-100 text-green-600 mr-2">
@@ -303,7 +275,6 @@ export const POSPage = () => {
                   </Button>
                   <Button 
                     className="bg-green-500 hover:bg-green-600"
-                    onClick={() => setShowCheckout(true)}
                     disabled={cartItems.length === 0}
                   >
                     <CheckCircle size={16} className="mr-2" />
