@@ -1,11 +1,12 @@
 
 import React from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ReceiptViewer } from "@/components/billing/ReceiptViewer";
-import { CustomerInfoSection } from "@/components/pos/checkout/CustomerInfoSection";
-import { PaymentMethodSelector } from "@/components/pos/checkout/PaymentMethodSelector";
-import { CheckoutActions } from "@/components/pos/checkout/CheckoutActions";
-import { useCheckout } from "@/components/pos/hooks/useCheckout";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { CreditCard, CheckCircle, PenBox } from "lucide-react";
+import { usePOSContext } from "../POSContext";
 
 interface CheckoutDialogProps {
   isOpen: boolean;
@@ -13,69 +14,77 @@ interface CheckoutDialogProps {
 }
 
 export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) => {
-  const {
-    customerName,
-    setCustomerName,
-    tableNumber,
-    setTableNumber,
-    paymentMethod,
-    setPaymentMethod,
-    showReceiptViewer,
-    receiptData,
-    cartTotal,
-    formatCurrency,
-    isProcessingOrder,
-    handleCheckout,
-    handleCloseReceipt
-  } = useCheckout(() => onOpenChange(false));
+  const { cartTotal, formatCurrency, processOrder } = usePOSContext();
+  const [paymentMethod, setPaymentMethod] = React.useState("cash");
+  const [notes, setNotes] = React.useState("");
+
+  const handleCheckout = async () => {
+    const success = await processOrder({
+      customerName: "Walk-in Customer",
+      tableNumber: null,
+      paymentMethod: paymentMethod
+    });
+
+    if (success) {
+      onOpenChange(false);
+    }
+  };
 
   return (
-    <>
-      <Dialog open={isOpen && !showReceiptViewer} onOpenChange={onOpenChange}>
-        <DialogContent className="bg-gray-800 text-white border-gray-700">
-          <DialogHeader>
-            <DialogTitle>Complete Order</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Fill in the order details to complete checkout.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <CustomerInfoSection 
-              customerName={customerName}
-              setCustomerName={setCustomerName}
-              tableNumber={tableNumber}
-              setTableNumber={setTableNumber}
-            />
-            
-            <PaymentMethodSelector 
-              paymentMethod={paymentMethod}
-              setPaymentMethod={setPaymentMethod}
-            />
-            
-            <div className="pt-2">
-              <div className="flex justify-between font-bold">
-                <span>Total Amount:</span>
-                <span>{formatCurrency(cartTotal)}</span>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Checkout</DialogTitle>
+        </DialogHeader>
+        
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="payment">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Payment Method
               </div>
-            </div>
+            </Label>
+            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <SelectTrigger id="payment">
+                <SelectValue placeholder="Select payment method" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cash">Cash</SelectItem>
+                <SelectItem value="card">Card</SelectItem>
+                <SelectItem value="mobile">Mobile Money</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          
-          <CheckoutActions 
-            onCancel={() => onOpenChange(false)}
-            onCheckout={handleCheckout}
-            isProcessingOrder={isProcessingOrder}
-          />
-        </DialogContent>
-      </Dialog>
 
-      {receiptData && (
-        <ReceiptViewer 
-          isOpen={showReceiptViewer}
-          onClose={handleCloseReceipt}
-          transactionData={receiptData}
-        />
-      )}
-    </>
+          <div className="grid gap-2">
+            <Label htmlFor="notes">
+              <div className="flex items-center gap-2">
+                <PenBox className="h-4 w-4" />
+                Order Notes
+              </div>
+            </Label>
+            <Textarea
+              id="notes"
+              placeholder="Add any special instructions..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+
+          <div className="flex justify-between items-center font-medium">
+            <span>Total Amount:</span>
+            <span className="text-lg">{formatCurrency(cartTotal)}</span>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <Button onClick={handleCheckout} className="w-full">
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Complete Order
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

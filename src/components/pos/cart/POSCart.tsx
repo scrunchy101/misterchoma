@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Plus, Minus, Trash, CheckCircle, User } from "lucide-react";
 import { usePOSContext } from "@/components/pos/POSContext";
+import { CheckoutDialog } from "@/components/pos/checkout/CheckoutDialog";
 
 interface POSCartProps {
   customerName: string;
@@ -12,7 +13,8 @@ interface POSCartProps {
 }
 
 export const POSCart = ({ customerName, setCustomerName }: POSCartProps) => {
-  const { cartItems, cartTotal, formatCurrency, removeItemFromCart, updateItemQuantity, clearCart } = usePOSContext();
+  const { cartItems, cartTotal, formatCurrency, removeItemFromCart, updateItemQuantity } = usePOSContext();
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   return (
     <Card className="h-full flex flex-col bg-white p-4 border-gray-200 shadow">
@@ -93,19 +95,25 @@ export const POSCart = ({ customerName, setCustomerName }: POSCartProps) => {
           <Button 
             variant="outline" 
             className="border-gray-200 hover:bg-gray-100 text-gray-800"
-            onClick={clearCart}
+            onClick={() => clearCart()}
           >
             Clear
           </Button>
           <Button 
             className="bg-green-500 hover:bg-green-600"
             disabled={cartItems.length === 0}
+            onClick={() => setIsCheckoutOpen(true)}
           >
             <CheckCircle size={16} className="mr-2" />
             Checkout
           </Button>
         </div>
       </div>
+
+      <CheckoutDialog 
+        isOpen={isCheckoutOpen}
+        onOpenChange={setIsCheckoutOpen}
+      />
     </Card>
   );
 };
