@@ -1,31 +1,17 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Customer } from "@/components/dashboard/CustomersCard";
+import { Reservation } from "@/components/dashboard/ReservationsTable";
 
 export interface DashboardData {
-  reservations: {
-    id: string;
-    name: string;
-    people: number;
-    time: string;
-    date: string;
-    status: string;
-    phone: string;
-  }[];
+  reservations: Reservation[];
   metrics: {
     totalReservations: number;
     avgTableTime: string;
     revenueToday: string;
     customerFeedback: string;
   };
-  customers: {
-    id: string;
-    name: string;
-    visits: number;
-    lastVisit: string;
-    spendAvg: string;
-    preference: string;
-  }[];
+  customers: Customer[];
 }
 
 export const useDashboardData = () => {

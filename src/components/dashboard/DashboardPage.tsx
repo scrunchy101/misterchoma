@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { MetricsCard } from "@/components/dashboard/MetricsCard";
-import { ReservationsTable } from "@/components/dashboard/ReservationsTable";
-import { CustomersCard } from "@/components/dashboard/CustomersCard";
+import { ReservationsTable, Reservation } from "@/components/dashboard/ReservationsTable";
+import { CustomersCard, Customer } from "@/components/dashboard/CustomersCard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { AlertCircle } from "lucide-react";
 
