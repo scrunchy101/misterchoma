@@ -4,52 +4,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { CustomerInfoSection } from "@/components/pos/checkout/CustomerInfoSection";
 import { PaymentMethodSelector } from "@/components/pos/checkout/PaymentMethodSelector";
 import { CheckoutActions } from "@/components/pos/checkout/CheckoutActions";
-import { useCheckoutValidation } from "./hooks/useCheckoutValidation";
+import { useCheckout } from "./CheckoutContext";
+import { usePOSContext } from "../POSContext";
 
 interface CheckoutFormProps {
-  customerName: string;
-  setCustomerName: (name: string) => void;
-  tableNumber: string | null;
-  setTableNumber: (table: string | null) => void;
-  paymentMethod: string;
-  setPaymentMethod: (method: string) => void;
-  orderNotes: string;
-  setOrderNotes: (notes: string) => void;
-  onCheckout: () => Promise<void>;
   onCancel: () => void;
-  isProcessingOrder: boolean;
-  cartTotal: number;
-  processingError: string | null;
 }
 
 export const CheckoutForm: React.FC<CheckoutFormProps> = ({
-  customerName,
-  setCustomerName,
-  tableNumber,
-  setTableNumber,
-  paymentMethod,
-  setPaymentMethod,
-  orderNotes,
-  setOrderNotes,
-  onCheckout,
-  onCancel,
-  isProcessingOrder,
-  cartTotal,
-  processingError,
+  onCancel
 }) => {
-  const { errors, validateCheckoutForm } = useCheckoutValidation();
-
-  const handleCheckout = async () => {
-    const isValid = validateCheckoutForm({
-      customerName,
-      tableNumber,
-      paymentMethod,
-    });
-
-    if (isValid) {
-      await onCheckout();
-    }
-  };
+  const { cartTotal, isProcessingOrder } = usePOSContext();
+  const {
+    customerName,
+    setCustomerName,
+    tableNumber,
+    setTableNumber,
+    paymentMethod,
+    setPaymentMethod,
+    orderNotes,
+    setOrderNotes,
+    errors,
+    handleCheckout,
+    processingError
+  } = useCheckout();
 
   return (
     <div className="space-y-4">
