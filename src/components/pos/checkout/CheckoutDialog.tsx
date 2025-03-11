@@ -28,7 +28,7 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
   const handleCheckout = async () => {
     const success = await processOrder({
       customerName: customerName || "Guest",
-      tableNumber: tableNumber,
+      tableNumber: tableNumber ? parseInt(tableNumber) : null,
       paymentMethod: paymentMethod
     });
 
