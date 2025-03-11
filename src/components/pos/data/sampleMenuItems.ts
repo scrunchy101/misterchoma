@@ -1,3 +1,4 @@
+
 import { MenuItem } from "@/components/pos/types";
 
 export const sampleProducts: MenuItem[] = [
@@ -6,7 +7,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Beef Ribs",
     price: 15000,
     description: "Slow-cooked tender beef ribs",
-    image_url: "https://images.unsplash.com/photo-1493962853295-0fd70327578a?w=800&h=500&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=500&fit=crop",
     category: "Nyama Choma"
   },
   {
