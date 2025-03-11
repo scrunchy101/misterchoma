@@ -18,7 +18,7 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
   const { cartItems, cartTotal, processOrder, isProcessingOrder, getLastOrderId, getOrderReceipt } = usePOSContext();
   
   const [customerName, setCustomerName] = useState<string>("");
-  const [tableNumber, setTableNumber] = useState<number | null>(null);
+  const [tableNumber, setTableNumber] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [orderNotes, setOrderNotes] = useState<string>("");
   const [showReceipt, setShowReceipt] = useState(false);
@@ -63,9 +63,9 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-gray-800 border-gray-700 text-white">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-white">
             {showReceipt ? "Order Receipt" : "Complete Order"}
           </DialogTitle>
         </DialogHeader>
@@ -81,7 +81,7 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
               date={receiptData?.date || new Date()}
             />
             <div className="flex justify-end mt-4">
-              <Button onClick={handleClose}>
+              <Button onClick={handleClose} className="bg-green-600 hover:bg-green-700 text-white">
                 Close
               </Button>
             </div>
@@ -102,7 +102,7 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
               />
               
               <div>
-                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="notes" className="block text-sm font-medium text-white mb-1">
                   Order Notes
                 </label>
                 <Textarea 
@@ -110,7 +110,7 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
                   placeholder="Any special instructions or notes for this order"
                   value={orderNotes}
                   onChange={(e) => setOrderNotes(e.target.value)}
-                  className="w-full"
+                  className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                 />
               </div>
             </div>

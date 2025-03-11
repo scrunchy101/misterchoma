@@ -22,7 +22,7 @@ export const CheckoutActions = ({
       <Button 
         variant="outline" 
         onClick={onCancel}
-        className="flex-1 border-gray-300 hover:bg-gray-100 text-gray-700"
+        className="flex-1 border-gray-600 hover:bg-gray-700 text-gray-300"
       >
         Cancel
       </Button>
