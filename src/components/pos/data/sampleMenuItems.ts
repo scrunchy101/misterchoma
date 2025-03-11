@@ -15,7 +15,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Goat Meat",
     price: 12000,
     description: "Grilled goat meat with spices",
-    image_url: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png",
+    image_url: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
     category: "Nyama Choma"
   },
   {
@@ -23,7 +23,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Grilled Chicken",
     price: 10000,
     description: "Whole grilled chicken with spices",
-    image_url: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png",
+    image_url: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976",
     category: "Kuku"
   },
   {
@@ -31,7 +31,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Chicken Wings",
     price: 8000,
     description: "Spicy grilled chicken wings",
-    image_url: "",
+    image_url: "https://images.unsplash.com/photo-1608039755401-742074f0548d",
     category: "Kuku"
   },
   {
@@ -39,7 +39,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Chips Masala",
     price: 5000,
     description: "Fries with special masala seasoning",
-    image_url: "",
+    image_url: "https://images.unsplash.com/photo-1576107232684-1279f390859f",
     category: "Chips"
   },
   {
@@ -47,7 +47,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Ugali",
     price: 2000,
     description: "Traditional corn meal dish",
-    image_url: "",
+    image_url: "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26",
     category: "Ugali"
   },
   {
@@ -55,7 +55,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Pilau Rice",
     price: 4000,
     description: "Spiced rice with aromatic spices",
-    image_url: "",
+    image_url: "https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6",
     category: "Rice"
   },
   {
@@ -63,7 +63,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Soda",
     price: 1500,
     description: "Assorted soft drinks",
-    image_url: "",
+    image_url: "https://images.unsplash.com/photo-1581636625402-29b2a704ef13",
     category: "Beverages"
   }
 ];

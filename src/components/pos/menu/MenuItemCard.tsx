@@ -13,6 +13,7 @@ interface MenuItemCardProps {
 export const MenuItemCard = ({ item }: MenuItemCardProps) => {
   const { addItemToCart, formatCurrency } = usePOSContext();
   const { toast } = useToast();
+  const [imageError, setImageError] = React.useState(false);
 
   const handleAddToCart = () => {
     console.log("Adding to cart:", item);
@@ -29,20 +30,28 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
     });
   };
 
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
     <Card 
       className="overflow-hidden hover:shadow-md transition-shadow border border-gray-200 h-full"
     >
       {/* Product Image */}
       <div className="aspect-video bg-gray-100 flex items-center justify-center overflow-hidden">
-        {item.image_url ? (
+        {item.image_url && !imageError ? (
           <img 
             src={item.image_url} 
             alt={item.name}
             className="w-full h-full object-cover"
+            onError={handleImageError}
           />
         ) : (
-          <div className="text-gray-400 text-sm">No Image</div>
+          <div className="text-gray-400 text-sm flex flex-col items-center">
+            <span className="text-gray-300 text-2xl mb-1">🍽️</span>
+            <span>No Image</span>
+          </div>
         )}
       </div>
       
