@@ -51,14 +51,13 @@ export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
     { icon: Home, label: "Dashboard", value: "dashboard", to: "/" },
     { icon: Store, label: "POS", value: "pos", to: "/pos" },
     { icon: Utensils, label: "Menu", value: "menu", to: "/menu" },
-    { icon: Calendar, label: "Reservations", value: "reservations", to: "/reservations" },
     { icon: Users, label: "Customers", value: "customers", to: "/customers" },
     { icon: UserCog, label: "Employees", value: "employees", to: "/employees" },
     { icon: ShoppingCart, label: "Orders", value: "orders", to: "/orders" },
     { icon: Package, label: "Inventory", value: "inventory", to: "/inventory" },
     { icon: MessageSquare, label: "Feedback", value: "feedback", to: "#" },
     { icon: CreditCard, label: "Billing", value: "billing", to: "/billing" },
-    { icon: FileText, label: "Reports", value: "reports", to: "#" },
+    { icon: FileText, label: "Reports", value: "reports", to: "/reports" },
   ];
 
   return (

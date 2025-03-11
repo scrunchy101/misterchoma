@@ -1,7 +1,6 @@
 
 import React from "react";
 import { Trash, Minus, Plus } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { usePOSContext } from "@/components/pos/POSContext";
 
 interface CartItemProps {
@@ -21,37 +20,37 @@ export const CartItem = ({ id, name, price, quantity }: CartItemProps) => {
   };
 
   return (
-    <Card className="bg-gray-800 p-3 mb-3 border-gray-700">
+    <div className="border-b border-gray-200 py-3">
       <div className="flex justify-between items-start">
         <div className="flex-1">
-          <h3 className="font-medium">{name}</h3>
-          <p className="text-gray-400 text-sm">{formatCurrency(price)}</p>
+          <h3 className="font-medium text-gray-800">{name}</h3>
+          <p className="text-gray-500 text-sm">{formatCurrency(price)}</p>
         </div>
         <div className="flex items-center space-x-1">
           <button 
-            className="p-1 rounded-full hover:bg-gray-700"
+            className="p-1 rounded-full hover:bg-gray-100"
             onClick={() => handleQuantityChange(quantity - 1)}
           >
-            <Minus size={16} />
+            <Minus size={16} className="text-gray-500" />
           </button>
-          <span className="mx-2">{quantity}</span>
+          <span className="mx-2 text-gray-800">{quantity}</span>
           <button 
-            className="p-1 rounded-full hover:bg-gray-700"
+            className="p-1 rounded-full hover:bg-gray-100"
             onClick={() => handleQuantityChange(quantity + 1)}
           >
-            <Plus size={16} />
+            <Plus size={16} className="text-gray-500" />
           </button>
         </div>
         <button 
-          className="ml-2 p-1 rounded-full hover:bg-gray-700 text-red-400"
+          className="ml-2 p-1 rounded-full hover:bg-gray-100 text-red-400"
           onClick={() => removeItemFromCart(id)}
         >
           <Trash size={16} />
         </button>
       </div>
-      <div className="flex justify-end mt-2">
-        <span className="font-medium">{formatCurrency(price * quantity)}</span>
+      <div className="flex justify-end mt-1">
+        <span className="font-medium text-gray-800">{formatCurrency(price * quantity)}</span>
       </div>
-    </Card>
+    </div>
   );
 };

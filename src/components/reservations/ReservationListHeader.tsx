@@ -2,26 +2,36 @@
 import React from "react";
 import { Plus } from "lucide-react";
 import { ReservationStatusFilter } from "./ReservationStatusFilter";
-
-// Using string literals directly for clarity
-type StatusFilter = "all" | "confirmed" | "pending" | "cancelled";
+import { ReservationStatusType } from "./types";
 
 interface ReservationListHeaderProps {
-  statusFilter: StatusFilter;
-  setStatusFilter: (status: StatusFilter) => void;
+  statusFilter: ReservationStatusType;
+  setStatusFilter: (status: ReservationStatusType) => void;
   onAddReservation: () => void;
+  onStatusFilterChange?: (status: string) => void;
+  currentStatusFilter?: string | null;
 }
 
 export const ReservationListHeader = ({ 
   statusFilter, 
   setStatusFilter,
-  onAddReservation
+  onAddReservation,
+  onStatusFilterChange,
+  currentStatusFilter
 }: ReservationListHeaderProps) => {
+  // Use the function from props if available, otherwise fall back to the original
+  const handleStatusChange = (status: ReservationStatusType) => {
+    setStatusFilter(status);
+    if (onStatusFilterChange) {
+      onStatusFilterChange(status);
+    }
+  };
+
   return (
     <div className="p-4 border-b border-gray-100 flex justify-between items-center">
       <ReservationStatusFilter 
         statusFilter={statusFilter} 
-        setStatusFilter={setStatusFilter} 
+        setStatusFilter={handleStatusChange} 
       />
       <button 
         className="text-blue-600 text-sm flex items-center hover:text-blue-800"

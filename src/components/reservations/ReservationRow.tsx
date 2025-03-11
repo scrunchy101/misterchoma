@@ -2,6 +2,7 @@
 import React from "react";
 import { Check, Clock, Edit, Trash, Users, X } from "lucide-react";
 import { Reservation } from "./types";
+import { format } from "date-fns";
 
 interface ReservationRowProps {
   reservation: Reservation;
@@ -13,24 +14,24 @@ export const ReservationRow = ({ reservation }: ReservationRowProps) => {
       <td className="py-3">
         <div className="flex items-center">
           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold mr-2">
-            {reservation.name.charAt(0)}
+            {reservation.customerName.charAt(0)}
           </div>
           <div>
-            <p className="font-medium">{reservation.name}</p>
-            <p className="text-gray-500 text-xs">{reservation.phone}</p>
+            <p className="font-medium">{reservation.customerName}</p>
+            <p className="text-gray-500 text-xs">{reservation.phoneNumber}</p>
           </div>
         </div>
       </td>
       <td className="py-3">
         <div className="flex items-center">
           <Clock size={14} className="mr-1 text-gray-400" />
-          <span>{reservation.time}</span>
+          <span>{format(new Date(reservation.date), 'h:mm a')}</span>
         </div>
       </td>
       <td className="py-3">
         <div className="flex items-center">
           <Users size={14} className="mr-1 text-gray-400" />
-          <span>{reservation.people} people</span>
+          <span>{reservation.partySize} people</span>
         </div>
       </td>
       <td className="py-3">
