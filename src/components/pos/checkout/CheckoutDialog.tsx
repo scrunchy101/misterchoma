@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { PaymentMethodSelector } from "@/components/pos/checkout/PaymentMethodSe
 import { CheckoutActions } from "@/components/pos/checkout/CheckoutActions";
 import { usePOSContext } from "@/components/pos/POSContext";
 import { ReceiptPreview } from "@/components/pos/receipt/ReceiptPreview";
+import { useToast } from "@/hooks/use-toast";
 
 interface CheckoutDialogProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ interface CheckoutDialogProps {
 
 export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) => {
   const { cartItems, cartTotal, processOrder, isProcessingOrder, getLastOrderId, getOrderReceipt } = usePOSContext();
+  const { toast } = useToast();
   
   const [customerName, setCustomerName] = useState<string>("");
   const [tableNumber, setTableNumber] = useState<string | null>(null);
@@ -26,25 +27,68 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
   const [receiptData, setReceiptData] = useState<any>(null);
 
   const handleCheckout = async () => {
-    const success = await processOrder({
-      customerName: customerName || "Guest",
-      tableNumber: tableNumber ? parseInt(tableNumber) : null,
-      paymentMethod: paymentMethod
-    });
+    if (!cartItems.length) {
+      toast({
+        title: "Error",
+        description: "Cannot process an empty order",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    if (success) {
-      const newOrderId = getLastOrderId();
-      setOrderId(newOrderId);
-      
-      if (newOrderId) {
-        try {
-          const receipt = await getOrderReceipt(newOrderId);
-          setReceiptData(receipt);
-          setShowReceipt(true);
-        } catch (error) {
-          console.error("Error getting receipt:", error);
+    try {
+      console.log("Processing order with details:", {
+        customerName,
+        tableNumber,
+        paymentMethod,
+        cartItems,
+        cartTotal
+      });
+
+      const success = await processOrder({
+        customerName: customerName || "Guest",
+        tableNumber: tableNumber ? parseInt(tableNumber) : null,
+        paymentMethod: paymentMethod
+      });
+
+      console.log("Order processing result:", success);
+
+      if (success) {
+        const newOrderId = getLastOrderId();
+        console.log("New order ID:", newOrderId);
+        
+        setOrderId(newOrderId);
+        
+        if (newOrderId) {
+          try {
+            const receipt = await getOrderReceipt(newOrderId);
+            console.log("Receipt data:", receipt);
+            setReceiptData(receipt);
+            setShowReceipt(true);
+            
+            toast({
+              title: "Success",
+              description: "Order processed successfully!",
+            });
+          } catch (error) {
+            console.error("Error getting receipt:", error);
+            toast({
+              title: "Warning",
+              description: "Order processed but couldn't get receipt",
+              variant: "destructive"
+            });
+          }
         }
+      } else {
+        throw new Error("Order processing failed");
       }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process order. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
