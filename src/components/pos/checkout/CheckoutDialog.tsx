@@ -1,15 +1,11 @@
 
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { CustomerInfoSection } from "@/components/pos/checkout/CustomerInfoSection";
-import { PaymentMethodSelector } from "@/components/pos/checkout/PaymentMethodSelector";
-import { CheckoutActions } from "@/components/pos/checkout/CheckoutActions";
 import { usePOSContext } from "@/components/pos/POSContext";
-import { ReceiptPreview } from "@/components/pos/receipt/ReceiptPreview";
 import { useToast } from "@/hooks/use-toast";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { CheckoutForm } from "./CheckoutForm";
+import { CheckoutReceipt } from "./CheckoutReceipt";
 
 interface CheckoutDialogProps {
   isOpen: boolean;
@@ -39,8 +35,6 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
       });
       return false;
     }
-    
-    // Add additional validation if needed
     return true;
   };
 
@@ -60,7 +54,6 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
         cartTotal
       });
 
-      // Parse tableNumber to number or null
       const tableNum = tableNumber && tableNumber.trim() !== "" ? parseInt(tableNumber) : null;
 
       const success = await processOrder({
@@ -69,18 +62,13 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
         paymentMethod: paymentMethod
       });
 
-      console.log("Order processing result:", success);
-
       if (success) {
         const newOrderId = getLastOrderId();
-        console.log("New order ID:", newOrderId);
-        
         setOrderId(newOrderId);
         
         if (newOrderId) {
           try {
             const receipt = await getOrderReceipt(newOrderId);
-            console.log("Receipt data:", receipt);
             setReceiptData(receipt);
             setShowReceipt(true);
             
@@ -89,16 +77,10 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
               description: "Order processed successfully!",
             });
           } catch (error) {
-            console.error("Error getting receipt:", error);
             handleError(error, {
               context: "Receipt Generation",
               showToast: true,
               severity: "warning"
-            });
-            toast({
-              title: "Warning",
-              description: "Order processed but couldn't get receipt",
-              variant: "destructive"
             });
           }
         }
@@ -141,65 +123,31 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
         </DialogHeader>
 
         {showReceipt ? (
-          <>
-            <ReceiptPreview
-              orderId={orderId || ""}
-              customerName={receiptData?.customer || customerName || "Guest"}
-              items={cartItems}
-              total={cartTotal}
-              paymentMethod={paymentMethod}
-              date={receiptData?.date || new Date()}
-            />
-            <div className="flex justify-end mt-4">
-              <Button onClick={handleClose} className="bg-green-600 hover:bg-green-700 text-white">
-                Close
-              </Button>
-            </div>
-          </>
+          <CheckoutReceipt
+            orderId={orderId}
+            customerName={customerName}
+            cartItems={cartItems}
+            cartTotal={cartTotal}
+            paymentMethod={paymentMethod}
+            receiptData={receiptData}
+            onClose={handleClose}
+          />
         ) : (
-          <>
-            <CustomerInfoSection 
-              customerName={customerName}
-              setCustomerName={setCustomerName}
-              tableNumber={tableNumber} 
-              setTableNumber={setTableNumber} 
-            />
-            
-            <div className="space-y-4 mt-4">
-              <PaymentMethodSelector 
-                value={paymentMethod} 
-                onChange={setPaymentMethod} 
-              />
-              
-              <div>
-                <label htmlFor="notes" className="block text-sm font-medium text-white mb-1">
-                  Order Notes
-                </label>
-                <Textarea 
-                  id="notes"
-                  placeholder="Any special instructions or notes for this order"
-                  value={orderNotes}
-                  onChange={(e) => setOrderNotes(e.target.value)}
-                  className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                />
-              </div>
-            </div>
-            
-            {processingError && (
-              <div className="mt-4 p-2 bg-red-900/50 border border-red-700 rounded-md text-white text-sm">
-                <p className="font-medium">Error processing order:</p>
-                <p>{processingError}</p>
-                <p className="text-xs mt-1">Please check the console for more details.</p>
-              </div>
-            )}
-            
-            <CheckoutActions 
-              onCheckout={handleCheckout} 
-              onCancel={handleClose}
-              total={cartTotal}
-              isProcessing={isProcessingOrder}
-            />
-          </>
+          <CheckoutForm
+            customerName={customerName}
+            setCustomerName={setCustomerName}
+            tableNumber={tableNumber}
+            setTableNumber={setTableNumber}
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+            orderNotes={orderNotes}
+            setOrderNotes={setOrderNotes}
+            onCheckout={handleCheckout}
+            onCancel={handleClose}
+            isProcessingOrder={isProcessingOrder}
+            cartTotal={cartTotal}
+            processingError={processingError}
+          />
         )}
       </DialogContent>
     </Dialog>
