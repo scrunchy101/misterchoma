@@ -6,7 +6,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Beef Ribs",
     price: 15000,
     description: "Slow-cooked tender beef ribs",
-    image_url: "https://images.unsplash.com/photo-1466721591366-2d5fba72006d?w=800&h=500&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1493962853295-0fd70327578a?w=800&h=500&fit=crop",
     category: "Nyama Choma"
   },
   {
