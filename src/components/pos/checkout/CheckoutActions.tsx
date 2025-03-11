@@ -7,13 +7,15 @@ import { DialogFooter } from "@/components/ui/dialog";
 interface CheckoutActionsProps {
   onCancel: () => void;
   onCheckout: () => void;
-  isProcessingOrder: boolean;
+  isProcessing: boolean;
+  total: number;
 }
 
 export const CheckoutActions = ({
   onCancel,
   onCheckout,
-  isProcessingOrder
+  isProcessing,
+  total
 }: CheckoutActionsProps) => {
   return (
     <DialogFooter>
@@ -27,9 +29,9 @@ export const CheckoutActions = ({
       <Button 
         onClick={onCheckout}
         className="bg-green-600 hover:bg-green-700"
-        disabled={isProcessingOrder}
+        disabled={isProcessing}
       >
-        {isProcessingOrder ? (
+        {isProcessing ? (
           <>
             <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
             Processing...
@@ -37,7 +39,7 @@ export const CheckoutActions = ({
         ) : (
           <>
             <CheckCircle size={16} className="mr-2" />
-            Complete Order
+            Complete Order (${total.toFixed(2)})
           </>
         )}
       </Button>

@@ -4,18 +4,23 @@ import { User, Hash } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface CustomerInfoSectionProps {
-  customerName: string;
-  setCustomerName: (name: string) => void;
-  tableNumber: string;
-  setTableNumber: (table: string) => void;
+  customerName?: string;
+  setCustomerName?: (name: string) => void;
+  tableNumber: number | null;
+  setTableNumber: (table: number | null) => void;
 }
 
 export const CustomerInfoSection = ({
-  customerName,
-  setCustomerName,
+  customerName = "",
+  setCustomerName = () => {},
   tableNumber,
   setTableNumber
 }: CustomerInfoSectionProps) => {
+  const handleTableNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setTableNumber(value ? Number(value) : null);
+  };
+
   return (
     <>
       <div className="space-y-2">
@@ -40,8 +45,8 @@ export const CustomerInfoSection = ({
         <Input 
           id="table"
           type="number"
-          value={tableNumber}
-          onChange={(e) => setTableNumber(e.target.value)}
+          value={tableNumber === null ? "" : tableNumber}
+          onChange={handleTableNumberChange}
           placeholder="Table Number"
           className="bg-gray-700 border-gray-600 text-white"
         />

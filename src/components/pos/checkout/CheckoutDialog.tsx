@@ -17,6 +17,7 @@ interface CheckoutDialogProps {
 export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) => {
   const { cartItems, cartTotal, processOrder, isProcessingOrder, getLastOrderId, getOrderReceipt } = usePOSContext();
   
+  const [customerName, setCustomerName] = useState<string>("");
   const [tableNumber, setTableNumber] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [orderNotes, setOrderNotes] = useState<string>("");
@@ -26,7 +27,7 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
 
   const handleCheckout = async () => {
     const success = await processOrder({
-      customerName: receiptData?.customer || "Guest",
+      customerName: customerName || "Guest",
       tableNumber: tableNumber,
       paymentMethod: paymentMethod
     });
@@ -55,6 +56,7 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
       setTableNumber(null);
       setPaymentMethod("cash");
       setOrderNotes("");
+      setCustomerName("");
       onOpenChange(false);
     }
   };
@@ -72,7 +74,7 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
           <>
             <ReceiptPreview
               orderId={orderId || ""}
-              customerName={receiptData?.customer || "Guest"}
+              customerName={receiptData?.customer || customerName || "Guest"}
               items={cartItems}
               total={cartTotal}
               paymentMethod={paymentMethod}
@@ -87,6 +89,8 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
         ) : (
           <>
             <CustomerInfoSection 
+              customerName={customerName}
+              setCustomerName={setCustomerName}
               tableNumber={tableNumber} 
               setTableNumber={setTableNumber} 
             />

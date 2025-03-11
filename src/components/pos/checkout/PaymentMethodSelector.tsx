@@ -4,13 +4,13 @@ import { CreditCard } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface PaymentMethodSelectorProps {
-  paymentMethod: string;
-  setPaymentMethod: (method: string) => void;
+  value: string;
+  onChange: (method: string) => void;
 }
 
 export const PaymentMethodSelector = ({
-  paymentMethod,
-  setPaymentMethod
+  value,
+  onChange
 }: PaymentMethodSelectorProps) => {
   return (
     <div className="space-y-2">
@@ -18,7 +18,7 @@ export const PaymentMethodSelector = ({
         <CreditCard size={16} className="mr-2 text-gray-400" />
         <label htmlFor="payment">Payment Method</label>
       </div>
-      <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+      <Select value={value} onValueChange={onChange}>
         <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
           <SelectValue placeholder="Select payment method" />
         </SelectTrigger>
