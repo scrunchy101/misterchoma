@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { CheckoutActions } from "@/components/pos/checkout/CheckoutActions";
 import { usePOSContext } from "@/components/pos/POSContext";
 import { ReceiptPreview } from "@/components/pos/receipt/ReceiptPreview";
 import { useToast } from "@/hooks/use-toast";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 interface CheckoutDialogProps {
   isOpen: boolean;
@@ -17,6 +19,7 @@ interface CheckoutDialogProps {
 export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) => {
   const { cartItems, cartTotal, processOrder, isProcessingOrder, getLastOrderId, getOrderReceipt } = usePOSContext();
   const { toast } = useToast();
+  const { handleError } = useErrorHandler();
   
   const [customerName, setCustomerName] = useState<string>("");
   const [tableNumber, setTableNumber] = useState<string | null>(null);
@@ -25,19 +28,31 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
   const [showReceipt, setShowReceipt] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [receiptData, setReceiptData] = useState<any>(null);
+  const [processingError, setProcessingError] = useState<string | null>(null);
 
-  const handleCheckout = async () => {
+  const validateOrder = () => {
     if (!cartItems.length) {
       toast({
         title: "Error",
         description: "Cannot process an empty order",
         variant: "destructive"
       });
+      return false;
+    }
+    
+    // Add additional validation if needed
+    return true;
+  };
+
+  const handleCheckout = async () => {
+    setProcessingError(null);
+    
+    if (!validateOrder()) {
       return;
     }
 
     try {
-      console.log("Processing order with details:", {
+      console.log("Checkout initiated with details:", {
         customerName,
         tableNumber,
         paymentMethod,
@@ -72,6 +87,11 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
             });
           } catch (error) {
             console.error("Error getting receipt:", error);
+            handleError(error, {
+              context: "Receipt Generation",
+              showToast: true,
+              severity: "warning"
+            });
             toast({
               title: "Warning",
               description: "Order processed but couldn't get receipt",
@@ -80,10 +100,12 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
           }
         }
       } else {
+        setProcessingError("Order processing failed. Please check the console for more details.");
         throw new Error("Order processing failed");
       }
     } catch (error) {
       console.error("Checkout error:", error);
+      setProcessingError(error instanceof Error ? error.message : "Unknown error occurred");
       toast({
         title: "Error",
         description: "Failed to process order. Please try again.",
@@ -101,6 +123,7 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
       setPaymentMethod("cash");
       setOrderNotes("");
       setCustomerName("");
+      setProcessingError(null);
       onOpenChange(false);
     }
   };
@@ -158,6 +181,14 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
                 />
               </div>
             </div>
+            
+            {processingError && (
+              <div className="mt-4 p-2 bg-red-900/50 border border-red-700 rounded-md text-white text-sm">
+                <p className="font-medium">Error processing order:</p>
+                <p>{processingError}</p>
+                <p className="text-xs mt-1">Please check the console for more details.</p>
+              </div>
+            )}
             
             <CheckoutActions 
               onCheckout={handleCheckout} 
