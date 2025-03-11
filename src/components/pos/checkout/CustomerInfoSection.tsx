@@ -2,6 +2,7 @@
 import React from "react";
 import { User, Hash } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface CustomerInfoSectionProps {
   customerName?: string;
