@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CustomerInfoSection } from "@/components/pos/checkout/CustomerInfoSection";
 import { PaymentMethodSelector } from "@/components/pos/checkout/PaymentMethodSelector";
 import { CheckoutActions } from "@/components/pos/checkout/CheckoutActions";
+import { useCheckoutValidation } from "./hooks/useCheckoutValidation";
 
 interface CheckoutFormProps {
   customerName: string;
@@ -36,19 +37,38 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   cartTotal,
   processingError,
 }) => {
+  const { errors, validateCheckoutForm } = useCheckoutValidation();
+
+  const handleCheckout = async () => {
+    const isValid = validateCheckoutForm({
+      customerName,
+      tableNumber,
+      paymentMethod,
+    });
+
+    if (isValid) {
+      await onCheckout();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <CustomerInfoSection 
         customerName={customerName}
         setCustomerName={setCustomerName}
         tableNumber={tableNumber} 
-        setTableNumber={setTableNumber} 
+        setTableNumber={setTableNumber}
+        errors={{
+          customerName: errors.customerName,
+          tableNumber: errors.tableNumber
+        }}
       />
       
       <div className="space-y-4 mt-4">
         <PaymentMethodSelector 
           value={paymentMethod} 
-          onChange={setPaymentMethod} 
+          onChange={setPaymentMethod}
+          error={errors.paymentMethod} 
         />
         
         <div>
@@ -74,7 +94,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       )}
       
       <CheckoutActions 
-        onCheckout={onCheckout} 
+        onCheckout={handleCheckout}
         onCancel={onCancel}
         total={cartTotal}
         isProcessing={isProcessingOrder}

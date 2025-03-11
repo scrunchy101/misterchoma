@@ -6,11 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface PaymentMethodSelectorProps {
   value: string;
   onChange: (method: string) => void;
+  error?: string;
 }
 
 export const PaymentMethodSelector = ({
   value,
-  onChange
+  onChange,
+  error
 }: PaymentMethodSelectorProps) => {
   return (
     <div className="space-y-2">
@@ -18,17 +20,25 @@ export const PaymentMethodSelector = ({
         <CreditCard size={16} className="mr-2 text-gray-400" />
         <label htmlFor="payment" className="text-white">Payment Method</label>
       </div>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-          <SelectValue placeholder="Select payment method" />
-        </SelectTrigger>
-        <SelectContent className="bg-gray-800 border-gray-700 text-white">
-          <SelectItem value="cash">Cash</SelectItem>
-          <SelectItem value="credit">Credit Card</SelectItem>
-          <SelectItem value="debit">Debit Card</SelectItem>
-          <SelectItem value="mobile">Mobile Payment</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="space-y-1">
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger className={cn(
+            "bg-gray-800 border-gray-700 text-white",
+            error && "border-red-500"
+          )}>
+            <SelectValue placeholder="Select payment method" />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-800 border-gray-700 text-white">
+            <SelectItem value="cash">Cash</SelectItem>
+            <SelectItem value="credit">Credit Card</SelectItem>
+            <SelectItem value="debit">Debit Card</SelectItem>
+            <SelectItem value="mobile">Mobile Payment</SelectItem>
+          </SelectContent>
+        </Select>
+        {error && (
+          <p className="text-sm text-red-500">{error}</p>
+        )}
+      </div>
     </div>
   );
 };
