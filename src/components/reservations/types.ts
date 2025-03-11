@@ -1,14 +1,13 @@
 
 export interface Reservation {
   id: string;
-  customerName: string;
-  phoneNumber: string;
-  date: Date;
-  partySize: number;
-  tableNumber: number | null;
+  name: string;
+  people: number;
+  time: string;
+  date: string;
   status: "confirmed" | "pending" | "cancelled";
-  notes: string;
+  phone: string;
+  email?: string;
+  notes?: string;
+  tableNumber?: number;
 }
-
-// Define reservation status type to avoid circular imports
-export type ReservationStatusType = "all" | "confirmed" | "pending" | "cancelled";

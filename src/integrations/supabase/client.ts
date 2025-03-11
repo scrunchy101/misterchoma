@@ -38,25 +38,14 @@ export const checkSupabaseConnection = async () => {
 // Helper to fetch order details including items
 export const fetchOrderDetails = async (orderId: string) => {
   try {
-    console.log("Fetching order details for ID:", orderId);
-    
     // Get order information
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('*')
       .eq('id', orderId)
-      .maybeSingle();
+      .single();
     
-    if (orderError) {
-      console.error("Error fetching order:", orderError);
-      throw orderError;
-    }
-    
-    if (!order) {
-      throw new Error(`Order with ID ${orderId} not found`);
-    }
-    
-    console.log("Order data fetched:", order);
+    if (orderError) throw orderError;
     
     // Get order items
     const { data: orderItems, error: itemsError } = await supabase
@@ -74,12 +63,7 @@ export const fetchOrderDetails = async (orderId: string) => {
       `)
       .eq('order_id', orderId);
     
-    if (itemsError) {
-      console.error("Error fetching order items:", itemsError);
-      throw itemsError;
-    }
-    
-    console.log("Order items fetched:", orderItems);
+    if (itemsError) throw itemsError;
     
     return {
       order,

@@ -1,17 +1,178 @@
 
-import React, { createContext, useContext, ReactNode } from "react";
-import { POSContextType } from "./types";
-import { useCart } from "./hooks/useCart";
-import { useOrders } from "./hooks/useOrders";
-import { calculateCartTotal, formatCurrency } from "./utils/cartUtils";
+import React, { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import { supabase, fetchOrderDetails } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface OrderDetails {
+  customerName: string;
+  tableNumber: number | null;
+  paymentMethod: string;
+}
+
+interface POSContextType {
+  cartItems: CartItem[];
+  addItemToCart: (item: CartItem) => void;
+  updateItemQuantity: (id: string, quantity: number) => void;
+  removeItemFromCart: (id: string) => void;
+  clearCart: () => void;
+  cartTotal: number;
+  isProcessingOrder: boolean;
+  processOrder: (orderDetails: OrderDetails) => Promise<boolean>;
+  formatCurrency: (amount: number) => string;
+  getLastOrderId: () => string | null;
+  getOrderReceipt: (orderId: string) => Promise<any>;
+}
 
 const POSContext = createContext<POSContextType | undefined>(undefined);
 
 export const POSProvider = ({ children }: { children: ReactNode }) => {
-  const { cartItems, addItemToCart, updateItemQuantity, removeItemFromCart, clearCart } = useCart();
-  const { isProcessingOrder, processOrder, getLastOrderId, getOrderReceipt } = useOrders(cartItems, clearCart);
-  
-  const cartTotal = calculateCartTotal(cartItems);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const formatCurrency = (amount: number) => {
+    return `TZS ${amount.toLocaleString()}`;
+  };
+
+  const addItemToCart = useCallback((newItem: CartItem) => {
+    console.log("Adding item to cart:", newItem);
+    
+    setCartItems(prevItems => {
+      const existingItemIndex = prevItems.findIndex(item => item.id === newItem.id);
+      
+      if (existingItemIndex >= 0) {
+        // Create a new array with the updated item
+        const updatedItems = [...prevItems];
+        updatedItems[existingItemIndex] = {
+          ...updatedItems[existingItemIndex],
+          quantity: updatedItems[existingItemIndex].quantity + newItem.quantity
+        };
+        console.log("Updated cart items:", updatedItems);
+        return updatedItems;
+      } else {
+        // Add new item to array
+        const newItems = [...prevItems, newItem];
+        console.log("New cart items:", newItems);
+        return newItems;
+      }
+    });
+  }, []);
+
+  const updateItemQuantity = useCallback((id: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeItemFromCart(id);
+      return;
+    }
+    
+    setCartItems(prevItems => 
+      prevItems.map(item => 
+        item.id === id ? { ...item, quantity } : item
+      )
+    );
+  }, []);
+
+  const removeItemFromCart = useCallback((id: string) => {
+    setCartItems(prevItems => prevItems.filter(item => item.id !== id));
+  }, []);
+
+  const clearCart = useCallback(() => {
+    setCartItems([]);
+  }, []);
+
+  const cartTotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+
+  const getLastOrderId = () => {
+    return lastOrderId;
+  };
+
+  const getOrderReceipt = async (orderId: string) => {
+    try {
+      const orderDetails = await fetchOrderDetails(orderId);
+      return {
+        id: orderId.substring(0, 8).toUpperCase(),
+        date: new Date(orderDetails.order.created_at),
+        customer: orderDetails.order.customer_name || "Walk-in Customer",
+        items: orderDetails.items,
+        paymentMethod: orderDetails.order.payment_method,
+        total: orderDetails.order.total_amount
+      };
+    } catch (error) {
+      console.error("Error getting order receipt:", error);
+      throw error;
+    }
+  };
+
+  const processOrder = async (orderDetails: OrderDetails): Promise<boolean> => {
+    if (cartItems.length === 0) {
+      toast({
+        title: "Empty Cart",
+        description: "Cannot process an order with an empty cart",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    try {
+      setIsProcessingOrder(true);
+
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          customer_name: orderDetails.customerName,
+          table_number: orderDetails.tableNumber,
+          payment_method: orderDetails.paymentMethod,
+          payment_status: 'pending',
+          status: 'in-progress',
+          total_amount: cartTotal
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      setLastOrderId(orderData.id);
+
+      const orderItems = cartItems.map(item => ({
+        order_id: orderData.id,
+        menu_item_id: item.id,
+        quantity: item.quantity,
+        unit_price: item.price,
+        subtotal: item.price * item.quantity
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      clearCart();
+      toast({
+        title: "Order Created",
+        description: `Order #${orderData.id.substring(0, 8).toUpperCase()} has been created successfully`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error processing order:', error);
+      toast({
+        title: "Order Failed",
+        description: "There was an error processing your order. Please try again.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsProcessingOrder(false);
+    }
+  };
 
   const contextValue: POSContextType = {
     cartItems,

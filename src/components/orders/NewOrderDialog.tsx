@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -19,15 +20,13 @@ interface OrderItem {
 interface NewOrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddOrder: () => void;
-  isSubmitting?: boolean;
+  onAddOrder: () => Promise<void>;
 }
 
 export const NewOrderDialog = ({ 
   open, 
   onOpenChange, 
-  onAddOrder, 
-  isSubmitting 
+  onAddOrder 
 }: NewOrderDialogProps) => {
   const [newOrder, setNewOrder] = useState({
     customerName: "",
@@ -55,13 +54,16 @@ export const NewOrderDialog = ({
   };
 
   const handleAddMenuItem = (itemId: string, itemName: string, itemPrice: number) => {
+    // Check if the item already exists in the selected items
     const existingItemIndex = selectedItems.findIndex(item => item.id === itemId);
     
     if (existingItemIndex >= 0) {
+      // Increase quantity if item already exists
       const updatedItems = [...selectedItems];
       updatedItems[existingItemIndex].quantity += 1;
       setSelectedItems(updatedItems);
     } else {
+      // Add new item if it doesn't exist
       setSelectedItems([...selectedItems, { id: itemId, name: itemName, price: itemPrice, quantity: 1 }]);
     }
 
@@ -100,6 +102,7 @@ export const NewOrderDialog = ({
     
     await onAddOrder();
     
+    // Reset form after submission
     setNewOrder({
       customerName: "",
       tableNumber: "",
@@ -207,7 +210,7 @@ export const NewOrderDialog = ({
           <Button
             onClick={handleSubmit}
             className="bg-green-600 hover:bg-green-700"
-            disabled={isSubmitting || selectedItems.length === 0}
+            disabled={selectedItems.length === 0}
           >
             Create Order
           </Button>

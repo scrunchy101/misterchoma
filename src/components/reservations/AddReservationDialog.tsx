@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,16 +11,14 @@ interface AddReservationDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  selectedDate?: Date;
-  onAddReservation?: (data: any) => void;
+  selectedDate: Date;
 }
 
 export const AddReservationDialog = ({ 
   isOpen, 
   onClose, 
   onSuccess, 
-  selectedDate = new Date(),
-  onAddReservation
+  selectedDate 
 }: AddReservationDialogProps) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -34,20 +33,8 @@ export const AddReservationDialog = ({
 
     try {
       const formattedDate = selectedDate.toISOString().split('T')[0];
-      const formData = {
-        name,
-        phone,
-        people,
-        time,
-        date: formattedDate
-      };
       
-      if (onAddReservation) {
-        onAddReservation(formData);
-        onClose();
-        return;
-      }
-      
+      // Create a new reservation (order) in Supabase
       const { data, error } = await supabase
         .from('orders')
         .insert([{
@@ -64,11 +51,13 @@ export const AddReservationDialog = ({
         description: `Reservation for ${name} on ${formattedDate} at ${time} has been created.`,
       });
       
+      // Reset form
       setName("");
       setPhone("");
       setPeople(2);
       setTime("18:00");
       
+      // Close dialog and refresh list
       onSuccess();
       onClose();
     } catch (error) {

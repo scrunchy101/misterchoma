@@ -1,17 +1,12 @@
 
 import React, { useState } from "react";
 import { CartItem } from "@/components/pos/CartItem";
-import { CheckoutDialog } from "@/components/pos/checkout/CheckoutDialog";
+import { CheckoutDialog } from "@/components/pos/CheckoutDialog";
 import { EmptyCart } from "@/components/pos/EmptyCart";
 import { CartSummary } from "@/components/pos/CartSummary";
 import { usePOSContext } from "@/components/pos/POSContext";
 
-interface POSCartProps {
-  orderType: 'delivery' | 'dine-in' | 'pickup';
-  customerName: string;
-}
-
-export const POSCart = ({ orderType, customerName }: POSCartProps) => {
+export const POSCart = () => {
   const { cartItems } = usePOSContext();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   
@@ -19,7 +14,9 @@ export const POSCart = ({ orderType, customerName }: POSCartProps) => {
   console.log("Cart Items:", cartItems);
   
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="h-full flex flex-col">
+      <h2 className="text-xl font-bold mb-4">Current Order</h2>
+      
       {cartItems && cartItems.length > 0 ? (
         <>
           <div className="flex-1 overflow-y-auto mb-4">
@@ -35,6 +32,7 @@ export const POSCart = ({ orderType, customerName }: POSCartProps) => {
           </div>
           
           <CartSummary onCheckout={() => setIsCheckoutOpen(true)} />
+          
           <CheckoutDialog 
             isOpen={isCheckoutOpen} 
             onOpenChange={setIsCheckoutOpen} 

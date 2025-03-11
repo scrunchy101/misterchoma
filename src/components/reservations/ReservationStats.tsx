@@ -1,75 +1,119 @@
 
-import React from "react";
-import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Users, Utensils } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { Calendar, Clock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-export const ReservationStats = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["reservationStats"],
-    queryFn: async () => {
-      // Note: This is a placeholder. The 'reservations' table does not exist yet
-      // and should be created before this component can be used properly.
-      // For now, returning mock data to avoid TypeScript errors
-      
-      // Instead of:
-      // const { data, error } = await supabase.from("reservations").select("*");
-      
-      return {
-        totalReservations: 42,
-        upcomingReservations: 12,
-        averagePartySize: 4,
-      };
-    }
-  });
+interface ReservationStatsProps {
+  selectedDate: Date;
+}
 
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-white p-6 rounded-lg shadow-sm animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-            <div className="h-6 bg-gray-300 rounded w-1/4"></div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+export const ReservationStats = ({ selectedDate }: ReservationStatsProps) => {
+  const [totalReservations, setTotalReservations] = useState(0);
+  const [pendingReservations, setPendingReservations] = useState(0);
+  const [confirmedReservations, setConfirmedReservations] = useState(0);
+  const [peakHour, setPeakHour] = useState("N/A");
+  const [peakCount, setPeakCount] = useState(0);
+
+  useEffect(() => {
+    fetchReservationStats();
+  }, [selectedDate]);
+
+  const fetchReservationStats = async () => {
+    try {
+      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      
+      // Get all reservations for the selected date
+      const { data: reservations, error } = await supabase
+        .from('orders')
+        .select('created_at, status')
+        .eq('created_at::date', formattedDate);
+
+      if (error) throw error;
+
+      if (reservations && reservations.length > 0) {
+        // Count total, pending, and confirmed reservations
+        setTotalReservations(reservations.length);
+        setPendingReservations(reservations.filter(r => r.status === 'pending').length);
+        setConfirmedReservations(reservations.filter(r => r.status === 'confirmed').length);
+
+        // Calculate peak hour
+        const hourCounts: Record<string, number> = {};
+        
+        reservations.forEach(reservation => {
+          if (reservation.created_at) {
+            const hour = new Date(reservation.created_at).getHours();
+            const hourStr = `${hour}:00`;
+            hourCounts[hourStr] = (hourCounts[hourStr] || 0) + 1;
+          }
+        });
+
+        // Find the peak hour
+        let maxHour = "N/A";
+        let maxCount = 0;
+        
+        for (const [hour, count] of Object.entries(hourCounts)) {
+          if (count > maxCount) {
+            maxHour = hour;
+            maxCount = count;
+          }
+        }
+
+        setPeakHour(maxHour);
+        setPeakCount(maxCount);
+      } else {
+        // Reset stats if no reservations found
+        setTotalReservations(0);
+        setPendingReservations(0);
+        setConfirmedReservations(0);
+        setPeakHour("N/A");
+        setPeakCount(0);
+      }
+    } catch (error) {
+      console.error("Error fetching reservation stats:", error);
+      // Reset stats on error
+      setTotalReservations(0);
+      setPendingReservations(0);
+      setConfirmedReservations(0);
+      setPeakHour("N/A");
+      setPeakCount(0);
+    }
+  };
 
   const stats = [
-    {
-      title: "Total Reservations",
-      value: data?.totalReservations || 0,
-      icon: <CalendarDays className="h-4 w-4" />,
-      color: "bg-blue-500"
+    { 
+      icon: <Calendar size={20} className="text-blue-500" />, 
+      label: "Date", 
+      value: format(selectedDate, "MMMM d, yyyy"),
+      subtitle: "Selected booking date" 
     },
-    {
-      title: "Upcoming Reservations",
-      value: data?.upcomingReservations || 0,
-      icon: <Users className="h-4 w-4" />,
-      color: "bg-green-500"
+    { 
+      icon: <Users size={20} className="text-green-500" />, 
+      label: "Reservations", 
+      value: totalReservations.toString(),
+      subtitle: `${pendingReservations} pending, ${confirmedReservations} confirmed` 
     },
-    {
-      title: "Average Party Size",
-      value: data?.averagePartySize || 0,
-      icon: <Utensils className="h-4 w-4" />,
-      color: "bg-purple-500"
-    }
+    { 
+      icon: <Clock size={20} className="text-purple-500" />, 
+      label: "Peak Hours", 
+      value: peakHour,
+      subtitle: `${peakCount} bookings during peak` 
+    },
   ];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      {stats.map((stat, i) => (
-        <div key={i} className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium text-gray-500">{stat.title}</p>
-              <p className="text-3xl font-bold">{stat.value}</p>
-            </div>
-            <Badge className={`${stat.color} text-white`}>
+      {stats.map((stat, index) => (
+        <div key={index} className="bg-white p-4 rounded-lg shadow-sm">
+          <div className="flex items-center">
+            <div className="p-2 rounded-lg bg-gray-50 mr-4">
               {stat.icon}
-            </Badge>
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm">{stat.label}</p>
+              <p className="font-bold text-xl">{stat.value}</p>
+              <p className="text-gray-500 text-xs">{stat.subtitle}</p>
+            </div>
           </div>
         </div>
       ))}
