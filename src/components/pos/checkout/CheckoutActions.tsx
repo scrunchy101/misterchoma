@@ -18,17 +18,17 @@ export const CheckoutActions = ({
   total
 }: CheckoutActionsProps) => {
   return (
-    <DialogFooter>
+    <DialogFooter className="flex justify-between gap-3 mt-4">
       <Button 
         variant="outline" 
         onClick={onCancel}
-        className="border-gray-600 hover:bg-gray-600"
+        className="flex-1 border-gray-300 hover:bg-gray-100 text-gray-700"
       >
         Cancel
       </Button>
       <Button 
         onClick={onCheckout}
-        className="bg-green-600 hover:bg-green-700"
+        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
         disabled={isProcessing}
       >
         {isProcessing ? (
@@ -39,7 +39,7 @@ export const CheckoutActions = ({
         ) : (
           <>
             <CheckCircle size={16} className="mr-2" />
-            Complete Order (${total.toFixed(2)})
+            Complete (${total.toFixed(2)})
           </>
         )}
       </Button>

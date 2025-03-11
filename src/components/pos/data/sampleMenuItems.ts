@@ -15,7 +15,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Goat Meat",
     price: 12000,
     description: "Grilled goat meat with spices",
-    image_url: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+    image_url: "https://images.unsplash.com/photo-1628294896516-344152572ee8?w=800&h=500&fit=crop",
     category: "Nyama Choma"
   },
   {
@@ -23,7 +23,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Grilled Chicken",
     price: 10000,
     description: "Whole grilled chicken with spices",
-    image_url: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976",
+    image_url: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=800&h=500&fit=crop",
     category: "Kuku"
   },
   {
@@ -31,7 +31,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Chicken Wings",
     price: 8000,
     description: "Spicy grilled chicken wings",
-    image_url: "https://images.unsplash.com/photo-1608039755401-742074f0548d",
+    image_url: "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=800&h=500&fit=crop",
     category: "Kuku"
   },
   {
@@ -39,7 +39,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Chips Masala",
     price: 5000,
     description: "Fries with special masala seasoning",
-    image_url: "https://images.unsplash.com/photo-1576107232684-1279f390859f",
+    image_url: "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=800&h=500&fit=crop",
     category: "Chips"
   },
   {
@@ -47,7 +47,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Ugali",
     price: 2000,
     description: "Traditional corn meal dish",
-    image_url: "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26",
+    image_url: "https://images.unsplash.com/photo-1617691763342-d89845944002?w=800&h=500&fit=crop",
     category: "Ugali"
   },
   {
@@ -55,7 +55,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Pilau Rice",
     price: 4000,
     description: "Spiced rice with aromatic spices",
-    image_url: "https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6",
+    image_url: "https://images.unsplash.com/photo-1596560548464-f010549b84d7?w=800&h=500&fit=crop",
     category: "Rice"
   },
   {
@@ -63,7 +63,7 @@ export const sampleProducts: MenuItem[] = [
     name: "Soda",
     price: 1500,
     description: "Assorted soft drinks",
-    image_url: "https://images.unsplash.com/photo-1581636625402-29b2a704ef13",
+    image_url: "https://images.unsplash.com/photo-1596803244618-8dea939ff49c?w=800&h=500&fit=crop",
     category: "Beverages"
   }
 ];
