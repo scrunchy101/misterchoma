@@ -3,6 +3,7 @@ import React from "react";
 import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
+import { formatCurrency } from "@/components/pos/utils/cartUtils";
 
 interface CheckoutActionsProps {
   onCancel: () => void;
@@ -39,7 +40,7 @@ export const CheckoutActions = ({
         ) : (
           <>
             <CheckCircle size={16} className="mr-2" />
-            Complete (${total.toFixed(2)})
+            Complete ({formatCurrency(total)})
           </>
         )}
       </Button>
