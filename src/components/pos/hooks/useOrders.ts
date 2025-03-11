@@ -28,38 +28,38 @@ export const useOrders = (cartItems: CartItem[], clearCart: () => void) => {
       
       const cartTotal = calculateCartTotal(cartItems);
       console.log("Cart total calculated:", cartTotal);
-
+      
       // First, create the order record
       console.log("Inserting order into database...");
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
-          customer_name: orderDetails.customerName,
-          table_number: orderDetails.tableNumber,
+          customer_name: orderDetails.customerName || null,
+          table_number: orderDetails.tableNumber || null,
           payment_method: orderDetails.paymentMethod,
           payment_status: 'pending',
           status: 'in-progress',
           total_amount: cartTotal
         })
-        .select()
-        .single();
+        .select();
 
       if (orderError) {
         console.error("Error creating order:", orderError);
         throw new Error(`Order creation failed: ${orderError.message}`);
       }
 
-      if (!orderData || !orderData.id) {
-        console.error("Order created but no ID returned");
-        throw new Error("Order created but no ID returned");
+      if (!orderData || orderData.length === 0) {
+        console.error("Order created but no data returned");
+        throw new Error("Order created but no data returned");
       }
 
-      console.log("Order created successfully with ID:", orderData.id);
-      setLastOrderId(orderData.id);
+      const order = orderData[0];
+      console.log("Order created successfully with ID:", order.id);
+      setLastOrderId(order.id);
 
       // Next, create order item records
       const orderItems = cartItems.map(item => ({
-        order_id: orderData.id,
+        order_id: order.id,
         menu_item_id: item.id,
         quantity: item.quantity,
         unit_price: item.price,
@@ -80,7 +80,7 @@ export const useOrders = (cartItems: CartItem[], clearCart: () => void) => {
       clearCart();
       toast({
         title: "Order Created",
-        description: `Order #${orderData.id.substring(0, 8).toUpperCase()} has been created successfully`,
+        description: `Order #${order.id.substring(0, 8).toUpperCase()} has been created successfully`,
       });
       
       return true;

@@ -45,7 +45,7 @@ export const fetchOrderDetails = async (orderId: string) => {
       .from('orders')
       .select('*')
       .eq('id', orderId)
-      .single();
+      .maybeSingle();
     
     if (orderError) {
       console.error("Error fetching order:", orderError);

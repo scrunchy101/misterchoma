@@ -60,9 +60,12 @@ export const CheckoutDialog = ({ isOpen, onOpenChange }: CheckoutDialogProps) =>
         cartTotal
       });
 
+      // Parse tableNumber to number or null
+      const tableNum = tableNumber && tableNumber.trim() !== "" ? parseInt(tableNumber) : null;
+
       const success = await processOrder({
         customerName: customerName || "Guest",
-        tableNumber: tableNumber ? parseInt(tableNumber) : null,
+        tableNumber: tableNum,
         paymentMethod: paymentMethod
       });
 
