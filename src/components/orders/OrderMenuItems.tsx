@@ -37,6 +37,11 @@ export const OrderMenuItems = ({ onSelectItem }: OrderMenuItemsProps) => {
   // Group items by category
   const categories = [...new Set(allMenuItems?.map(item => item.category) || [])];
   
+  // Function to format currency in TSH
+  const formatCurrency = (amount: number): string => {
+    return `TZS ${amount.toLocaleString()}`;
+  };
+  
   return (
     <div className="max-h-[400px] overflow-y-auto">
       <Tabs 
@@ -68,7 +73,7 @@ export const OrderMenuItems = ({ onSelectItem }: OrderMenuItemsProps) => {
                         {item.description && (
                           <p className="text-gray-300 text-sm mt-1 line-clamp-2">{item.description}</p>
                         )}
-                        <p className="text-green-400 mt-2">${item.price.toFixed(2)}</p>
+                        <p className="text-green-400 mt-2">{formatCurrency(item.price)}</p>
                       </div>
                       <button className="p-1 bg-green-600 rounded-full hover:bg-green-700 transition ml-2 mt-1 flex-shrink-0">
                         <Plus size={18} />

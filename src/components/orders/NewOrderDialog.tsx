@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,22 @@ export const NewOrderDialog = ({
   });
   const [selectedTab, setSelectedTab] = useState<"details" | "menu">("details");
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
+  const [showMenuFirst, setShowMenuFirst] = useState(false);
   const { toast } = useToast();
+
+  // Effect to switch to menu tab initially when opened
+  useEffect(() => {
+    if (open && showMenuFirst) {
+      setSelectedTab("menu");
+    }
+  }, [open, showMenuFirst]);
+
+  // When dialog opens, check if cart is empty and show menu first
+  useEffect(() => {
+    if (open) {
+      setShowMenuFirst(selectedItems.length === 0);
+    }
+  }, [open, selectedItems.length]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -95,6 +111,7 @@ export const NewOrderDialog = ({
         description: "Please add at least one item to the order",
         variant: "destructive"
       });
+      setSelectedTab("menu");
       return;
     }
     
@@ -182,6 +199,23 @@ export const NewOrderDialog = ({
                   <SelectItem value="paid">Paid</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            
+            {selectedItems.length === 0 && (
+              <div className="my-4 p-3 border border-yellow-500 bg-yellow-500/10 text-yellow-300 rounded-md">
+                You need to add at least one menu item to create an order. Please go to the Menu Items tab.
+              </div>
+            )}
+            
+            <div className="mt-4">
+              <Button 
+                type="button" 
+                onClick={() => setSelectedTab("menu")}
+                variant="outline" 
+                className="w-full border-green-500 text-green-400 hover:bg-green-950"
+              >
+                Add Menu Items →
+              </Button>
             </div>
           </TabsContent>
           
