@@ -1,6 +1,6 @@
 
-import React, { createContext, useContext, ReactNode } from "react";
-import { POSContextType } from "./types";
+import React, { createContext, useContext, useState, ReactNode } from "react";
+import { POSContextType, CartItem, OrderDetails } from "./types";
 import { useCart } from "./hooks/useCart";
 import { useOrders } from "./hooks/useOrders";
 import { calculateCartTotal, formatCurrency } from "./utils/cartUtils";
@@ -9,9 +9,8 @@ const POSContext = createContext<POSContextType | undefined>(undefined);
 
 export const POSProvider = ({ children }: { children: ReactNode }) => {
   const { cartItems, addItemToCart, updateItemQuantity, removeItemFromCart, clearCart } = useCart();
-  const { isProcessingOrder, processOrder, getLastOrderId, getOrderReceipt } = useOrders(cartItems, clearCart);
-  
   const cartTotal = calculateCartTotal(cartItems);
+  const { isProcessingOrder, processOrder, getLastOrderId, getOrderReceipt } = useOrders(cartItems, clearCart);
 
   const contextValue: POSContextType = {
     cartItems,

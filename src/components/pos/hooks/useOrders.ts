@@ -104,10 +104,18 @@ export const useOrders = (cartItems: CartItem[], clearCart: () => void) => {
   };
 
   const getOrderReceipt = async (orderId: string) => {
+    if (!orderId) {
+      throw new Error("Order ID is required to get receipt");
+    }
+    
     try {
       console.log("Fetching receipt for order:", orderId);
       const orderDetails = await fetchOrderDetails(orderId);
       console.log("Receipt data fetched:", orderDetails);
+      
+      if (!orderDetails || !orderDetails.order) {
+        throw new Error("Could not retrieve order details");
+      }
       
       return {
         id: orderId.substring(0, 8).toUpperCase(),
