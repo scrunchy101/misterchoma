@@ -29,7 +29,7 @@ export const useOrders = (cartItems: CartItem[], clearCart: () => void) => {
       const cartTotal = calculateCartTotal(cartItems);
       console.log("Cart total calculated:", cartTotal);
       
-      // First, create the order record
+      // First, create the order record - FIXED: Removed ON CONFLICT clause
       console.log("Inserting order into database...");
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
