@@ -9,9 +9,7 @@ import Index from "./pages/Index";
 import Customers from "./pages/Customers";
 import Billing from "./pages/Billing";
 import Employees from "./pages/Employees";
-import Orders from "./pages/Orders";
 import Inventory from "./pages/Inventory";
-import POS from "./pages/POS";
 import MenuManagement from "./pages/MenuManagement";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
@@ -40,13 +38,14 @@ const App = () => (
             <Route path="/customers" element={<Customers />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/employees" element={<Employees />} />
-            <Route path="/orders" element={<Orders />} />
             <Route path="/inventory" element={<Inventory />} />
-            <Route path="/pos" element={<POS />} />
             <Route path="/menu" element={<MenuManagement />} />
             <Route path="/reports" element={<Reports />} />
             {/* Redirect all reservations to the dashboard */}
             <Route path="/reservations" element={<Navigate to="/" replace />} />
+            {/* Redirect removed routes to home */}
+            <Route path="/pos" element={<Navigate to="/" replace />} />
+            <Route path="/orders" element={<Navigate to="/" replace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

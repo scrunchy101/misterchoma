@@ -320,6 +320,74 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          date: string
+          id: string
+          notes: string | null
+          party_size: number
+          status: string
+          time: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: string | null
+          date: string
+          id?: string
+          notes?: string | null
+          party_size: number
+          status: string
+          time: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          party_size?: number
+          status?: string
+          time?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          role: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          role?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

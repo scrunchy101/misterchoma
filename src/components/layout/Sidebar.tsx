@@ -7,10 +7,8 @@ import {
   Home, 
   MessageSquare, 
   Users, 
-  Package, 
-  ShoppingCart, 
+  Package,
   UserCog,
-  Store,
   Utensils
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -49,11 +47,9 @@ const NavItem = ({ icon: Icon, label, value, activeTab, onClick, to }: NavItemPr
 export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
   const navItems = [
     { icon: Home, label: "Dashboard", value: "dashboard", to: "/" },
-    { icon: Store, label: "POS", value: "pos", to: "/pos" },
     { icon: Utensils, label: "Menu", value: "menu", to: "/menu" },
     { icon: Users, label: "Customers", value: "customers", to: "/customers" },
     { icon: UserCog, label: "Employees", value: "employees", to: "/employees" },
-    { icon: ShoppingCart, label: "Orders", value: "orders", to: "/orders" },
     { icon: Package, label: "Inventory", value: "inventory", to: "/inventory" },
     { icon: MessageSquare, label: "Feedback", value: "feedback", to: "#" },
     { icon: CreditCard, label: "Billing", value: "billing", to: "/billing" },
