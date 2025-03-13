@@ -6,9 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Download } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ReportType, TimeRange, ReportData } from "@/hooks/useReports";
+import { OrderExportButton } from "./OrderExportButton";
 
 interface ReportFiltersProps {
   reportType: ReportType;
@@ -58,6 +59,7 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
                 <SelectItem value="inventory">Inventory Report</SelectItem>
                 <SelectItem value="menu">Menu Performance</SelectItem>
                 <SelectItem value="employee">Employee Performance</SelectItem>
+                <SelectItem value="orders">Order History</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -67,7 +69,7 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
             <Select
               value={timeRange}
               onValueChange={(value) => setTimeRange(value as TimeRange)}
-              disabled={loading || reportType !== "sales"}
+              disabled={loading || (reportType !== "sales" && reportType !== "orders")}
             >
               <SelectTrigger id="time-range">
                 <SelectValue placeholder="Select time range" />
@@ -142,15 +144,11 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
             >
               {loading ? "Loading..." : "Generate Report"}
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => onExportReport('csv')}
-              disabled={loading || !reportData}
-              className="flex items-center gap-1"
-            >
-              <Download className="h-4 w-4" />
-              <span>Export</span>
-            </Button>
+            <OrderExportButton 
+              reportData={reportData} 
+              onExportReport={onExportReport} 
+              loading={loading} 
+            />
           </div>
         </div>
       </CardContent>
