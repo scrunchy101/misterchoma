@@ -6,6 +6,7 @@ import { ReportFilters } from "./ReportFilters";
 import { ReportChart } from "./ReportChart";
 import { ReportStats } from "./ReportStats";
 import { useReports, ReportType, TimeRange, ReportData } from "@/hooks/useReports";
+import { useToast } from "@/hooks/use-toast";
 
 export const ReportsPage = () => {
   const [reportType, setReportType] = useState<ReportType>("sales");
@@ -14,13 +15,31 @@ export const ReportsPage = () => {
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const { loading, reportData, generateReport } = useReports();
   const [activeTab, setActiveTab] = useState('reports');
+  const { toast } = useToast();
 
   const formatCurrency = (value: number) => {
     return `TZS ${value.toLocaleString()}`;
   };
 
   const handleGenerateReport = async () => {
-    await generateReport(reportType, timeRange, startDate, endDate);
+    if (timeRange === "custom" && (!startDate || !endDate)) {
+      toast({
+        title: "Invalid date range",
+        description: "Please select both start and end dates for a custom range",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      await generateReport(reportType, timeRange, startDate, endDate);
+      toast({
+        title: "Report generated",
+        description: `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report has been generated successfully.`,
+      });
+    } catch (error) {
+      console.error("Error generating report:", error);
+    }
   };
 
   // Generate initial report on component mount
@@ -70,4 +89,3 @@ export const ReportsPage = () => {
     </div>
   );
 };
-

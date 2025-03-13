@@ -9,7 +9,8 @@ import {
   Users, 
   Package,
   UserCog,
-  Utensils
+  Utensils,
+  BarChart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
@@ -53,7 +54,7 @@ export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
     { icon: Package, label: "Inventory", value: "inventory", to: "/inventory" },
     { icon: MessageSquare, label: "Feedback", value: "feedback", to: "#" },
     { icon: CreditCard, label: "Billing", value: "billing", to: "/billing" },
-    { icon: FileText, label: "Reports", value: "reports", to: "/reports" },
+    { icon: BarChart, label: "Reports", value: "reports", to: "/reports" },
   ];
 
   return (

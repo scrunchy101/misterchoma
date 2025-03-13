@@ -121,7 +121,8 @@ export const useReports = () => {
       setLoading(false);
     }
   };
-  
+
+  // All other existing functions
   const fetchInventoryReport = async (): Promise<ReportData | null> => {
     try {
       setLoading(true);
