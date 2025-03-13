@@ -42,6 +42,66 @@ export const ReportsPage = () => {
     }
   };
 
+  const handleExportReport = (format: string) => {
+    if (!reportData) {
+      toast({
+        title: "No data to export",
+        description: "Please generate a report first before exporting",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Create CSV content
+      let csvContent = "data:text/csv;charset=utf-8,";
+      
+      // Add headers
+      csvContent += "Category," + reportData.datasets.map(ds => ds.name).join(",") + "\n";
+      
+      // Add data rows
+      reportData.labels.forEach((label, index) => {
+        let row = label;
+        reportData.datasets.forEach(dataset => {
+          row += "," + dataset.data[index];
+        });
+        csvContent += row + "\n";
+      });
+      
+      // Add summary data if available
+      if (reportData.summary) {
+        csvContent += "\nSummary\n";
+        csvContent += "Total," + reportData.summary.total + "\n";
+        csvContent += "Average," + reportData.summary.average + "\n";
+        csvContent += "Highest," + reportData.summary.highest + "\n";
+        csvContent += "Lowest," + reportData.summary.lowest + "\n";
+      }
+      
+      // Create download link
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `${reportType}-report-${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      
+      // Trigger download and cleanup
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Report exported",
+        description: `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report has been exported as CSV.`,
+      });
+    } catch (error) {
+      console.error("Error exporting report:", error);
+      toast({
+        title: "Export failed",
+        description: "There was an error exporting the report.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Generate initial report on component mount
   useEffect(() => {
     handleGenerateReport();
@@ -63,6 +123,7 @@ export const ReportsPage = () => {
             endDate={endDate}
             setEndDate={setEndDate}
             onGenerateReport={handleGenerateReport}
+            onExportReport={handleExportReport}
             loading={loading}
           />
 

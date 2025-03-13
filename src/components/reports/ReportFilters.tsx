@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ReportType, TimeRange } from "@/hooks/useReports";
 
@@ -20,6 +20,7 @@ interface ReportFiltersProps {
   endDate: Date | undefined;
   setEndDate: (date: Date | undefined) => void;
   onGenerateReport: () => void;
+  onExportReport: (format: string) => void;
   loading?: boolean;
 }
 
@@ -33,6 +34,7 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
   endDate,
   setEndDate,
   onGenerateReport,
+  onExportReport,
   loading = false
 }) => {
   return (
@@ -130,13 +132,22 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
             </>
           )}
 
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <Button 
               onClick={onGenerateReport} 
-              className="w-full"
+              className="flex-1"
               disabled={loading || (timeRange === "custom" && (!startDate || !endDate))}
             >
               {loading ? "Loading..." : "Generate Report"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => onExportReport('csv')}
+              disabled={loading || !reportData}
+              className="flex items-center gap-1"
+            >
+              <Download className="h-4 w-4" />
+              <span>Export</span>
             </Button>
           </div>
         </div>

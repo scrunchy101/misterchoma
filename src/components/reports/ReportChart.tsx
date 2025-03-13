@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   ResponsiveContainer, 
@@ -12,6 +12,8 @@ import {
   LineChart,
   Line
 } from "recharts";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { ReportData } from "@/hooks/useReports";
 
 interface ReportChartProps {
@@ -27,6 +29,25 @@ export const ReportChart: React.FC<ReportChartProps> = ({
   type = "bar",
   loading = false
 }) => {
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  const downloadChartAsImage = () => {
+    if (!chartRef.current) return;
+    
+    // This is a simplified approach - in a real application, you would need
+    // to use a library like html2canvas to properly capture the chart
+    alert("This feature requires html2canvas or similar library to properly capture the chart as an image.");
+    
+    // Future implementation would look like:
+    // html2canvas(chartRef.current).then((canvas) => {
+    //   const image = canvas.toDataURL("image/png");
+    //   const link = document.createElement("a");
+    //   link.href = image;
+    //   link.download = `${title.toLowerCase().replace(/\s+/g, '-')}.png`;
+    //   link.click();
+    // });
+  };
+
   if (loading) {
     return (
       <Card className="col-span-1 md:col-span-2">
@@ -65,10 +86,19 @@ export const ReportChart: React.FC<ReportChartProps> = ({
 
   return (
     <Card className="col-span-1 md:col-span-2">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>{title}</CardTitle>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center gap-1"
+          onClick={downloadChartAsImage}
+        >
+          <Download className="h-4 w-4" />
+          <span>Export Chart</span>
+        </Button>
       </CardHeader>
-      <CardContent className="h-80">
+      <CardContent className="h-80" ref={chartRef}>
         <ResponsiveContainer width="100%" height="100%">
           {type === "bar" ? (
             <BarChart data={chartData}>
