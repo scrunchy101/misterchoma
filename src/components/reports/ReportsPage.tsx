@@ -125,6 +125,7 @@ export const ReportsPage = () => {
             onGenerateReport={handleGenerateReport}
             onExportReport={handleExportReport}
             loading={loading}
+            reportData={reportData}
           />
 
           <div className="space-y-6">

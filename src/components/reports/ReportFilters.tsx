@@ -8,7 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Download } from "lucide-react";
 import { format } from "date-fns";
-import { ReportType, TimeRange } from "@/hooks/useReports";
+import { ReportType, TimeRange, ReportData } from "@/hooks/useReports";
 
 interface ReportFiltersProps {
   reportType: ReportType;
@@ -22,6 +22,7 @@ interface ReportFiltersProps {
   onGenerateReport: () => void;
   onExportReport: (format: string) => void;
   loading?: boolean;
+  reportData: ReportData | null;
 }
 
 export const ReportFilters: React.FC<ReportFiltersProps> = ({
@@ -35,7 +36,8 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
   setEndDate,
   onGenerateReport,
   onExportReport,
-  loading = false
+  loading = false,
+  reportData
 }) => {
   return (
     <Card className="mb-6">
