@@ -284,6 +284,96 @@ export const useReports = () => {
     }
   };
   
+  const fetchEmployeeReport = async (): Promise<ReportData | null> => {
+    try {
+      setLoading(true);
+      
+      const { data: employees, error: employeesError } = await supabase
+        .from('employees')
+        .select('id, name, position')
+        .eq('status', 'active');
+      
+      if (employeesError) throw employeesError;
+      
+      const positionCounts: Record<string, number> = {};
+      
+      employees.forEach(employee => {
+        const position = employee.position || 'Unknown';
+        positionCounts[position] = (positionCounts[position] || 0) + 1;
+      });
+      
+      const { data: targets, error: targetsError } = await supabase
+        .from('employee_targets')
+        .select('*')
+        .gte('end_date', new Date().toISOString().split('T')[0]);
+      
+      if (targetsError) throw targetsError;
+      
+      const completionRates: Record<string, { completed: number, total: number }> = {};
+      
+      if (targets && targets.length > 0) {
+        for (const target of targets) {
+          const employeeId = target.employee_id;
+          const employee = employees.find(e => e.id === employeeId);
+          
+          if (employee) {
+            const position = employee.position || 'Unknown';
+            
+            if (!completionRates[position]) {
+              completionRates[position] = { completed: 0, total: 0 };
+            }
+            
+            completionRates[position].total++;
+            
+            if (target.current_value >= target.target_value) {
+              completionRates[position].completed++;
+            }
+          }
+        }
+      }
+      
+      const labels = Object.keys(positionCounts);
+      const staffCounts = labels.map(position => positionCounts[position]);
+      
+      const completionRatesData = labels.map(position => {
+        const positionData = completionRates[position];
+        if (positionData && positionData.total > 0) {
+          return (positionData.completed / positionData.total) * 100;
+        }
+        return 0;
+      });
+      
+      const reportData: ReportData = {
+        labels,
+        datasets: [
+          {
+            name: 'Staff Count',
+            data: staffCounts
+          }
+        ]
+      };
+      
+      if (Object.keys(completionRates).length > 0) {
+        reportData.datasets.push({
+          name: 'Target Completion Rate (%)',
+          data: completionRatesData
+        });
+      }
+      
+      setReportData(reportData);
+      return reportData;
+    } catch (error) {
+      handleError(error, {
+        showToast: true,
+        severity: "error",
+        context: "Fetching employee report"
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const generateReport = async (
     reportType: ReportType,
     timeRange: TimeRange = 'week',
@@ -300,6 +390,8 @@ export const useReports = () => {
           return fetchMenuPerformanceReport();
         case 'orders':
           return fetchOrdersReport(timeRange, startDate, endDate);
+        case 'employee':
+          return fetchEmployeeReport();
         default:
           toast({
             title: "Report not available",

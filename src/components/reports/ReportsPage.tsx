@@ -9,6 +9,7 @@ import { useReports, ReportType, TimeRange, ReportData } from "@/hooks/useReport
 import { useToast } from "@/hooks/use-toast";
 import { OrderExportButton } from "./OrderExportButton";
 import { PdfExportButton } from "./PdfExportButton";
+import { generateCSVReport, generatePDFReport } from "@/utils/reportGenerators";
 
 export const ReportsPage = () => {
   const [reportType, setReportType] = useState<ReportType>("sales");
@@ -56,29 +57,8 @@ export const ReportsPage = () => {
 
     try {
       if (format === 'csv') {
-        // Create CSV content
-        let csvContent = "data:text/csv;charset=utf-8,";
-        
-        // Add headers
-        csvContent += "Category," + reportData.datasets.map(ds => ds.name).join(",") + "\n";
-        
-        // Add data rows
-        reportData.labels.forEach((label, index) => {
-          let row = label;
-          reportData.datasets.forEach(dataset => {
-            row += "," + dataset.data[index];
-          });
-          csvContent += row + "\n";
-        });
-        
-        // Add summary data if available
-        if (reportData.summary) {
-          csvContent += "\nSummary\n";
-          csvContent += "Total," + reportData.summary.total + "\n";
-          csvContent += "Average," + reportData.summary.average + "\n";
-          csvContent += "Highest," + reportData.summary.highest + "\n";
-          csvContent += "Lowest," + reportData.summary.lowest + "\n";
-        }
+        // Create CSV using the utility function
+        const csvContent = generateCSVReport(reportData, reportType);
         
         // Create download link
         const encodedUri = encodeURI(csvContent);
@@ -96,19 +76,16 @@ export const ReportsPage = () => {
           description: `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report has been exported as CSV.`,
         });
       } else if (format === 'pdf') {
-        // For PDF export, we'll create a simple template for now
-        // In a real implementation, you would use a PDF library like jsPDF
-        toast({
-          title: "PDF Export",
-          description: "Preparing PDF export. This may take a moment.",
-        });
+        // Generate PDF using the utility function
+        const doc = generatePDFReport(reportData, reportType);
         
-        setTimeout(() => {
-          toast({
-            title: "PDF Export Ready",
-            description: `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report has been prepared as PDF.`,
-          });
-        }, 1500);
+        // Save the PDF
+        doc.save(`${reportType}-report-${new Date().toISOString().split('T')[0]}.pdf`);
+        
+        toast({
+          title: "Report exported",
+          description: `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report has been exported as PDF with insights.`,
+        });
       }
     } catch (error) {
       console.error("Error exporting report:", error);
