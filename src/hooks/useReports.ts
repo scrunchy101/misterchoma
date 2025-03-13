@@ -245,7 +245,7 @@ export const useReports = () => {
       
       const { data: orders, error } = await supabase
         .from('orders')
-        .select('id, created_at, order_status, total_amount')
+        .select('id, created_at, status, total_amount')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString())
         .order('created_at');
@@ -255,7 +255,7 @@ export const useReports = () => {
       const ordersByStatus: Record<string, number> = {};
       
       orders.forEach(order => {
-        const status = order.order_status || 'unknown';
+        const status = order.status || 'unknown';
         ordersByStatus[status] = (ordersByStatus[status] || 0) + 1;
       });
       
