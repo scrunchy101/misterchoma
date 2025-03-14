@@ -10,6 +10,7 @@ import { useCart } from "./CartManager";
 import { usePayment } from "./PaymentProcessor";
 import { useToast } from "@/hooks/use-toast";
 import { MenuItemWithQuantity } from "./types";
+import { GlobalErrorListener } from "../layout/GlobalErrorListener";
 
 export const POSContent: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -50,9 +51,11 @@ export const POSContent: React.FC = () => {
 
   const handleProcessPayment = async (customerName: string, paymentMethod: string) => {
     try {
+      console.log("Starting payment process with:", { customerName, paymentMethod, cartItems: cart.length });
       const transaction = await processPayment(cart, customerName, paymentMethod);
       
       if (transaction) {
+        console.log("Transaction successful:", transaction.id);
         // Show receipt
         setShowReceipt(true);
         
@@ -62,15 +65,22 @@ export const POSContent: React.FC = () => {
         return true;
       }
       
+      console.log("Transaction failed - processPayment returned null");
       return false;
     } catch (error) {
-      console.error("Error in payment processing:", error);
+      console.error("Error in handleProcessPayment:", error);
+      toast({
+        title: "Payment Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
       return false;
     }
   };
 
   return (
     <main className="flex-1 overflow-hidden bg-gray-800 flex">
+      <GlobalErrorListener />
       {/* Left side - Menu Items */}
       <div className="w-2/3 flex flex-col overflow-hidden">
         <CategorySelector 

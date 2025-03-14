@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MenuItemWithQuantity } from "./types";
 import { useToast } from "@/hooks/use-toast";
 import { TransactionData } from "../billing/receiptUtils";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 interface PaymentProcessorProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ export const PaymentContext = React.createContext<PaymentContextType | undefined
 export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) => {
   const [currentTransaction, setCurrentTransaction] = useState<TransactionData | null>(null);
   const { toast } = useToast();
+  const { handleError } = useErrorHandler();
 
   const processPayment = async (
     cart: MenuItemWithQuantity[], 
@@ -27,14 +29,28 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
     paymentMethod: string
   ): Promise<TransactionData | null> => {
     try {
+      // Validate cart
+      if (cart.length === 0) {
+        toast({
+          title: "Empty cart",
+          description: "Cannot process payment for an empty cart.",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      console.log("Processing payment for:", cart.length, "items");
+      
       // Calculate cart total
       const total = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+      
+      console.log("Payment details:", { customerName, paymentMethod, total });
       
       // Create new order in database
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert([{
-          customer_name: customerName,
+          customer_name: customerName || "Guest",
           payment_method: paymentMethod,
           payment_status: 'completed',
           total_amount: total,
@@ -42,12 +58,16 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
         }])
         .select();
       
-      if (orderError) throw orderError;
-      
-      if (!orderData || orderData.length === 0) {
-        throw new Error("Failed to create order");
+      if (orderError) {
+        console.error("Order creation error:", orderError);
+        throw orderError;
       }
       
+      if (!orderData || orderData.length === 0) {
+        throw new Error("Failed to create order - no data returned");
+      }
+      
+      console.log("Order created:", orderData[0]);
       const orderId = orderData[0].id;
       
       // Create order items
@@ -59,11 +79,18 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
         subtotal: item.price * item.quantity
       }));
       
+      console.log("Creating order items:", orderItems.length);
+      
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems);
       
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error("Order items creation error:", itemsError);
+        throw itemsError;
+      }
+      
+      console.log("Order items created successfully");
       
       // Prepare transaction data for receipt
       const transactionData: TransactionData = {
@@ -91,9 +118,14 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       return transactionData;
     } catch (error) {
       console.error("Error processing payment:", error);
+      handleError(error, {
+        context: "Payment processing",
+        showToast: true
+      });
+      
       toast({
         title: "Payment failed",
-        description: "There was an error processing your payment.",
+        description: "There was an error processing your payment. Please try again.",
         variant: "destructive"
       });
       return null;

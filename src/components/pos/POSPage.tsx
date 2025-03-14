@@ -1,13 +1,14 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { CartManager } from "./CartManager";
 import { PaymentProcessor } from "./PaymentProcessor";
 import { POSContent } from "./POSContent";
+import { Toaster } from "@/components/ui/toaster";
 
 export const POSPage = () => {
-  const [activeTab, setActiveTab] = useState("pos");
+  const [activeTab, setActiveTab] = React.useState("pos");
 
   return (
     <div className="flex h-screen bg-gray-800 text-white">
@@ -19,6 +20,7 @@ export const POSPage = () => {
             <POSContent />
           </PaymentProcessor>
         </CartManager>
+        <Toaster />
       </div>
     </div>
   );
