@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { X, CreditCard, Banknote } from "lucide-react";
@@ -51,6 +51,9 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
               <X size={16} />
             </Button>
           </DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Complete your purchase by providing payment details.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">

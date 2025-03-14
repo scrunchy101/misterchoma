@@ -46,16 +46,18 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       
       console.log("Payment details:", { customerName, paymentMethod, total });
       
-      // Create new order in database
-      const { data: orderData, error: orderError } = await supabase
+      // Create new order in database - explicitly define all required fields
+      const orderData = {
+        customer_name: customerName || "Guest",
+        payment_method: paymentMethod,
+        payment_status: 'completed',
+        total_amount: total,
+        status: 'completed'
+      };
+      
+      const { data: newOrder, error: orderError } = await supabase
         .from('orders')
-        .insert([{
-          customer_name: customerName || "Guest",
-          payment_method: paymentMethod,
-          payment_status: 'completed',
-          total_amount: total,
-          status: 'completed'
-        }])
+        .insert([orderData])
         .select();
       
       if (orderError) {
@@ -63,12 +65,12 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
         throw new Error(`Database error: ${orderError.message}`);
       }
       
-      if (!orderData || orderData.length === 0) {
+      if (!newOrder || newOrder.length === 0) {
         throw new Error("Failed to create order - no data returned");
       }
       
-      console.log("Order created:", orderData[0]);
-      const orderId = orderData[0].id;
+      console.log("Order created:", newOrder[0]);
+      const orderId = newOrder[0].id;
       
       // Create order items
       const orderItems = cart.map(item => ({
@@ -81,7 +83,7 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       
       console.log("Creating order items:", orderItems.length);
       
-      // Use a transaction to ensure all items are inserted
+      // Insert order items
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems);
@@ -130,7 +132,7 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       
       toast({
         title: "Payment failed",
-        description: "There was an error processing your payment. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error processing your payment. Please try again.",
         variant: "destructive"
       });
       return null;
