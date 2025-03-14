@@ -30,6 +30,12 @@ export const POSPage = () => {
   // Get unique categories from menu items
   const categories = Array.from(new Set(menuItems?.map(item => item.category) || []));
 
+  // Convert MenuItem to MenuItemWithQuantity by adding quantity property
+  const menuItemsWithQuantity: MenuItemWithQuantity[] = (filteredItems || []).map(item => ({
+    ...item,
+    quantity: 0
+  }));
+
   const addToCart = (item: MenuItemWithQuantity) => {
     setCart(prevCart => {
       const existingItemIndex = prevCart.findIndex(cartItem => cartItem.id === item.id);
@@ -206,7 +212,7 @@ export const POSPage = () => {
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               <POSItemGrid 
-                items={filteredItems || []} 
+                items={menuItemsWithQuantity} 
                 onAddItem={addToCart} 
                 isLoading={isLoading}
               />
