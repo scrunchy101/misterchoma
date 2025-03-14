@@ -60,7 +60,7 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       
       if (orderError) {
         console.error("Order creation error:", orderError);
-        throw orderError;
+        throw new Error(`Database error: ${orderError.message}`);
       }
       
       if (!orderData || orderData.length === 0) {
@@ -81,13 +81,18 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       
       console.log("Creating order items:", orderItems.length);
       
+      // Use a transaction to ensure all items are inserted
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems);
       
       if (itemsError) {
         console.error("Order items creation error:", itemsError);
-        throw itemsError;
+        
+        // If order items fail, attempt to delete the parent order to maintain data integrity
+        await supabase.from('orders').delete().eq('id', orderId);
+        
+        throw new Error(`Failed to create order items: ${itemsError.message}`);
       }
       
       console.log("Order items created successfully");
