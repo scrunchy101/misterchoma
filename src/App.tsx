@@ -1,58 +1,50 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ErrorProvider } from "@/components/layout/ErrorProvider";
-import Index from "./pages/Index";
-import Customers from "./pages/Customers";
-import Billing from "./pages/Billing";
-import Employees from "./pages/Employees";
-import Inventory from "./pages/Inventory";
-import MenuManagement from "./pages/MenuManagement";
-import Reports from "./pages/Reports";
-import NotFound from "./pages/NotFound";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import Index from './pages/Index';
+import MenuManagement from './pages/MenuManagement';
+import Inventory from './pages/Inventory';
+import Reservations from './pages/Reservations';
+import Billing from './pages/Billing';
+import Reports from './pages/Reports';
+import Customers from './pages/Customers';
+import Employees from './pages/Employees';
+import POS from './pages/POS';
+import NotFound from './pages/NotFound';
+import { ErrorProvider } from './components/layout/ErrorProvider';
+import { GlobalErrorListener } from './components/layout/GlobalErrorListener';
+import { ThemeProvider } from './components/layout/ThemeProvider';
+import './App.css';
 
-// Create a new QueryClient with error handling configuration
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-    mutations: {}
-  }
-});
+// Create a client
+const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ErrorProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/billing" element={<Billing />} />
-            <Route path="/employees" element={<Employees />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/menu" element={<MenuManagement />} />
-            <Route path="/reports" element={<Reports />} />
-            {/* Redirect all reservations to the dashboard */}
-            <Route path="/reservations" element={<Navigate to="/" replace />} />
-            {/* Redirect removed routes to home */}
-            <Route path="/pos" element={<Navigate to="/" replace />} />
-            <Route path="/orders" element={<Navigate to="/" replace />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </ErrorProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+        <Router>
+          <ErrorProvider>
+            <GlobalErrorListener />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/menu" element={<MenuManagement />} />
+              <Route path="/inventory" element={<Inventory />} />
+              <Route path="/reservations" element={<Reservations />} />
+              <Route path="/billing" element={<Billing />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/employees" element={<Employees />} />
+              <Route path="/pos" element={<POS />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster />
+          </ErrorProvider>
+        </Router>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

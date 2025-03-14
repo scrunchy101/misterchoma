@@ -80,12 +80,14 @@ export const generatePDFReport = (reportData: ReportData, reportType: ReportType
   
   // Add summary if available
   if (reportData.summary) {
-    const summaryY = doc.lastAutoTable?.finalY || yPos + 50;
+    // Get the final Y position from the autoTable instance
+    const finalY = (doc as any).lastAutoTable?.finalY || yPos + 50;
+    
     doc.setFontSize(14);
-    doc.text('Summary:', 20, summaryY + 10);
+    doc.text('Summary:', 20, finalY + 10);
     
     autoTable(doc, {
-      startY: summaryY + 15,
+      startY: finalY + 15,
       head: [['Metric', 'Value']],
       body: [
         ['Total', reportData.summary.total.toFixed(2)],
