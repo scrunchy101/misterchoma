@@ -17,14 +17,17 @@ interface ReceiptViewerProps {
 
 export const ReceiptViewer = ({ isOpen, onClose, transactionData }: ReceiptViewerProps) => {
   const { toast } = useToast();
-  const { data: items = [] } = useTransactionItems(transactionData?.id || null);
+  
+  // Only fetch from database if this is not an offline transaction
+  const isOfflineTransaction = transactionData?.isOfflineMode || (transactionData?.id || "").startsWith("OFFLINE-");
+  const { data: items = [] } = useTransactionItems(isOfflineTransaction ? null : transactionData?.id || null);
   
   useEffect(() => {
-    if (transactionData && isOpen && items.length > 0) {
-      // Update items if we have new data from the query
+    if (transactionData && isOpen && items.length > 0 && !isOfflineTransaction) {
+      // Update items if we have new data from the query and not in offline mode
       transactionData.items = items;
     }
-  }, [transactionData, items, isOpen]);
+  }, [transactionData, items, isOpen, isOfflineTransaction]);
   
   if (!transactionData) return null;
   
@@ -74,7 +77,7 @@ export const ReceiptViewer = ({ isOpen, onClose, transactionData }: ReceiptViewe
     
     toast({
       title: "Receipt Downloaded",
-      description: `Receipt for transaction ${transactionData.id} has been downloaded.`
+      description: `Receipt for transaction has been downloaded.`
     });
   };
   
@@ -83,7 +86,11 @@ export const ReceiptViewer = ({ isOpen, onClose, transactionData }: ReceiptViewe
       <DialogContent className="sm:max-w-md bg-gray-800 text-white">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center text-white">
-            <span>Receipt #{transactionData.id}</span>
+            <span>
+              Receipt {transactionData.isOfflineMode || transactionData.id.startsWith("OFFLINE-") 
+                ? "(Offline Mode)" 
+                : `#${transactionData.id.substring(0, 8)}`}
+            </span>
             <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 text-gray-300 hover:text-white hover:bg-gray-700">
               <X size={16} />
             </Button>

@@ -42,20 +42,12 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       // Calculate cart total
       const total = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
       
-      // Create new order in database
-      const orderData = {
-        customer_name: customerName || "Guest",
-        payment_method: "Cash", // Always use Cash
-        payment_status: 'completed',
-        total_amount: total,
-        status: 'completed'
-      };
-      
-      // Create a unique transactionId in case we don't get one from the database
-      const tempTransactionId = `order-${Date.now()}`;
+      // Try to insert order into database
+      let transactionData: TransactionData;
+      let isOfflineMode = false;
       
       try {
-        // Insert order with returning to get the ID immediately
+        // Insert order without using ON CONFLICT clause
         const { data: orderData, error: orderError } = await supabase
           .from('orders')
           .insert([{
@@ -88,7 +80,7 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
         if (itemsError) throw itemsError;
         
         // Prepare transaction data for receipt
-        const transactionData: TransactionData = {
+        transactionData = {
           id: orderId,
           date: new Date(),
           customer: customerName || "Guest",
@@ -98,7 +90,8 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
             price: item.price
           })),
           paymentMethod: "Cash",
-          total: total
+          total: total,
+          isOfflineMode: false
         };
         
         // Show success notification
@@ -106,16 +99,14 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
           title: "Payment successful",
           description: `Total amount: TZS ${total.toLocaleString()}`,
         });
-        
-        // Set current transaction
-        setCurrentTransaction(transactionData);
-        
-        return transactionData;
       } catch (dbError) {
         console.error("Database error:", dbError);
         
+        // Create a fallback transaction ID that won't be confused with a UUID
+        const tempTransactionId = `OFFLINE-${Date.now()}`;
+        
         // Create a fallback transaction for receipt if database fails
-        const fallbackTransaction: TransactionData = {
+        transactionData = {
           id: tempTransactionId,
           date: new Date(),
           customer: customerName || "Guest",
@@ -125,7 +116,8 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
             price: item.price
           })),
           paymentMethod: "Cash",
-          total: total
+          total: total,
+          isOfflineMode: true
         };
         
         // Show alert about offline mode
@@ -134,9 +126,15 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
           description: "Payment processed in offline mode. Database sync will happen later.",
         });
         
-        setCurrentTransaction(fallbackTransaction);
-        return fallbackTransaction;
+        isOfflineMode = true;
       }
+      
+      // Set current transaction
+      setCurrentTransaction(transactionData);
+      
+      console.log("Transaction successful:", transactionData.id, isOfflineMode ? "(offline mode)" : "");
+      
+      return transactionData;
     } catch (error) {
       console.error("Error processing payment:", error);
       
