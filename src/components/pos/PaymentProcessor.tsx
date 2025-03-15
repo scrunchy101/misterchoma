@@ -46,7 +46,7 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       
       console.log("Payment details:", { customerName, paymentMethod, total });
       
-      // Create new order in database - explicitly define all required fields
+      // Create new order in database with a simplified approach
       const orderData = {
         customer_name: customerName || "Guest",
         payment_method: paymentMethod,
@@ -55,8 +55,8 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
         status: 'completed'
       };
       
-      // Fixed: removed the select() call that was causing ON CONFLICT issues
-      const { data: newOrder, error: orderError } = await supabase
+      // Insert order without any select or conflict handling
+      const { error: orderError } = await supabase
         .from('orders')
         .insert(orderData);
       
@@ -65,52 +65,71 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
         throw new Error(`Database error: ${orderError.message}`);
       }
       
-      // Get the ID of the inserted order using a separate query
-      const { data: orderData2, error: orderFetchError } = await supabase
+      // Get the latest order with the matching details
+      // We use multiple conditions to ensure we get the correct order
+      const { data: createdOrder, error: fetchError } = await supabase
         .from('orders')
-        .select('id')
+        .select('id, created_at')
         .eq('customer_name', orderData.customer_name)
         .eq('payment_method', orderData.payment_method)
         .eq('total_amount', orderData.total_amount)
+        .eq('status', 'completed')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
-        
-      if (orderFetchError) {
-        console.error("Error fetching created order:", orderFetchError);
-        throw new Error(`Failed to retrieve order details: ${orderFetchError.message}`);
+        .maybeSingle();
+      
+      if (fetchError) {
+        console.error("Error fetching created order:", fetchError);
+        throw new Error(`Failed to retrieve order ID: ${fetchError.message}`);
       }
       
-      if (!orderData2) {
-        throw new Error("Failed to create order - no data returned");
+      if (!createdOrder) {
+        throw new Error("Failed to create order - could not retrieve order ID");
       }
       
-      console.log("Order created:", orderData2);
-      const orderId = orderData2.id;
+      console.log("Order created:", createdOrder);
+      const orderId = createdOrder.id;
       
-      // Create order items
-      const orderItems = cart.map(item => ({
-        order_id: orderId,
-        menu_item_id: item.id,
-        quantity: item.quantity,
-        unit_price: item.price,
-        subtotal: item.price * item.quantity
-      }));
-      
-      console.log("Creating order items:", orderItems.length);
-      
-      // Insert order items
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-      
-      if (itemsError) {
-        console.error("Order items creation error:", itemsError);
+      // Create order items with explicit error handling
+      try {
+        const orderItems = cart.map(item => ({
+          order_id: orderId,
+          menu_item_id: item.id,
+          quantity: item.quantity,
+          unit_price: item.price,
+          subtotal: item.price * item.quantity
+        }));
         
-        // If order items fail, attempt to delete the parent order to maintain data integrity
+        console.log("Creating order items:", orderItems.length);
+        
+        // Insert order items
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems);
+        
+        if (itemsError) {
+          console.error("Order items creation error:", itemsError);
+          
+          // If order items fail, delete the parent order to maintain data integrity
+          const { error: deleteError } = await supabase
+            .from('orders')
+            .delete()
+            .eq('id', orderId);
+          
+          if (deleteError) {
+            console.error("Failed to clean up order after items error:", deleteError);
+          }
+          
+          throw new Error(`Failed to create order items: ${itemsError.message}`);
+        }
+      } catch (itemsError) {
+        // Additional error handling for order items
+        console.error("Exception while creating order items:", itemsError);
+        
+        // Try to clean up the orphaned order
         await supabase.from('orders').delete().eq('id', orderId);
         
-        throw new Error(`Failed to create order items: ${itemsError.message}`);
+        throw itemsError;
       }
       
       console.log("Order items created successfully");
