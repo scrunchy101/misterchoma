@@ -5,7 +5,7 @@ import { useOrders } from "@/hooks/useOrders";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -63,6 +63,19 @@ export const OrdersList: React.FC<OrdersListProps> = ({
     setSelectedOrderId(null);
   };
 
+  // Handlers for pagination navigation
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(p => p - 1);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(p => p + 1);
+    }
+  };
+
   return (
     <Card className="bg-gray-900 border-gray-800">
       <CardHeader className="flex flex-row items-center justify-between px-6">
@@ -94,10 +107,14 @@ export const OrdersList: React.FC<OrdersListProps> = ({
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
-                      <PaginationPrevious 
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
-                        disabled={currentPage === 1}
-                      />
+                      {currentPage === 1 ? (
+                        <span className="opacity-50 inline-flex items-center gap-1 pl-2.5 h-10 px-4 py-2">
+                          <ChevronLeft className="h-4 w-4" />
+                          <span>Previous</span>
+                        </span>
+                      ) : (
+                        <PaginationPrevious onClick={goToPreviousPage} />
+                      )}
                     </PaginationItem>
                     
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -112,10 +129,14 @@ export const OrdersList: React.FC<OrdersListProps> = ({
                     ))}
                     
                     <PaginationItem>
-                      <PaginationNext 
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
-                        disabled={currentPage === totalPages}
-                      />
+                      {currentPage === totalPages ? (
+                        <span className="opacity-50 inline-flex items-center gap-1 pr-2.5 h-10 px-4 py-2">
+                          <span>Next</span>
+                          <ChevronRight className="h-4 w-4" />
+                        </span>
+                      ) : (
+                        <PaginationNext onClick={goToNextPage} />
+                      )}
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
