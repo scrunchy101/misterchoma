@@ -55,22 +55,38 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
         status: 'completed'
       };
       
+      // Fixed: removed the select() call that was causing ON CONFLICT issues
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
-        .insert([orderData])
-        .select();
+        .insert(orderData);
       
       if (orderError) {
         console.error("Order creation error:", orderError);
         throw new Error(`Database error: ${orderError.message}`);
       }
       
-      if (!newOrder || newOrder.length === 0) {
+      // Get the ID of the inserted order using a separate query
+      const { data: orderData2, error: orderFetchError } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('customer_name', orderData.customer_name)
+        .eq('payment_method', orderData.payment_method)
+        .eq('total_amount', orderData.total_amount)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+        
+      if (orderFetchError) {
+        console.error("Error fetching created order:", orderFetchError);
+        throw new Error(`Failed to retrieve order details: ${orderFetchError.message}`);
+      }
+      
+      if (!orderData2) {
         throw new Error("Failed to create order - no data returned");
       }
       
-      console.log("Order created:", newOrder[0]);
-      const orderId = newOrder[0].id;
+      console.log("Order created:", orderData2);
+      const orderId = orderData2.id;
       
       // Create order items
       const orderItems = cart.map(item => ({
