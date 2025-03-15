@@ -11,6 +11,7 @@ import Reports from './pages/Reports';
 import Customers from './pages/Customers';
 import Employees from './pages/Employees';
 import POS from './pages/POS';
+import Orders from './pages/Orders';
 import NotFound from './pages/NotFound';
 import { ErrorProvider } from './components/layout/ErrorProvider';
 import { GlobalErrorListener } from './components/layout/GlobalErrorListener';
@@ -37,6 +38,7 @@ function App() {
               <Route path="/customers" element={<Customers />} />
               <Route path="/employees" element={<Employees />} />
               <Route path="/pos" element={<POS />} />
+              <Route path="/orders" element={<Orders />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />
