@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { X, CreditCard, Banknote } from "lucide-react";
+import { X, Banknote } from "lucide-react";
 
 interface POSCheckoutProps {
   total: number;
@@ -17,7 +17,6 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
   onProcessPayment
 }) => {
   const [customerName, setCustomerName] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<string>("Cash");
   const [processing, setProcessing] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,7 +24,8 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
     setProcessing(true);
     
     try {
-      const success = await onProcessPayment(customerName, paymentMethod);
+      // Always use Cash as payment method
+      const success = await onProcessPayment(customerName, "Cash");
       if (!success) {
         setProcessing(false);
       }
@@ -83,49 +83,9 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
                 <label className="block text-sm font-medium mb-2">
                   Payment Method
                 </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    type="button"
-                    variant={paymentMethod === "Cash" ? "default" : "outline"}
-                    className={`flex items-center justify-center gap-2 ${
-                      paymentMethod === "Cash" 
-                        ? "bg-blue-600 hover:bg-blue-700" 
-                        : "border-gray-600 hover:bg-gray-700"
-                    }`}
-                    onClick={() => setPaymentMethod("Cash")}
-                    disabled={processing}
-                  >
-                    <Banknote size={16} />
-                    <span>Cash</span>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={paymentMethod === "Card" ? "default" : "outline"}
-                    className={`flex items-center justify-center gap-2 ${
-                      paymentMethod === "Card" 
-                        ? "bg-blue-600 hover:bg-blue-700" 
-                        : "border-gray-600 hover:bg-gray-700"
-                    }`}
-                    onClick={() => setPaymentMethod("Card")}
-                    disabled={processing}
-                  >
-                    <CreditCard size={16} />
-                    <span>Card</span>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={paymentMethod === "Mobile Money" ? "default" : "outline"}
-                    className={`flex items-center justify-center gap-2 ${
-                      paymentMethod === "Mobile Money" 
-                        ? "bg-blue-600 hover:bg-blue-700" 
-                        : "border-gray-600 hover:bg-gray-700"
-                    }`}
-                    onClick={() => setPaymentMethod("Mobile Money")}
-                    disabled={processing}
-                    style={{ gridColumn: "span 2" }}
-                  >
-                    <span>Mobile Money</span>
-                  </Button>
+                <div className="bg-gray-700 border border-gray-600 rounded-md p-3 flex items-center gap-2">
+                  <Banknote size={18} className="text-green-400" />
+                  <span>Cash</span>
                 </div>
               </div>
             </div>
