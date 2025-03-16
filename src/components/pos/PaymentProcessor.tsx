@@ -48,6 +48,7 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       });
       
       // Store order in database - No payment processing, just data storage
+      // Removed the ON CONFLICT clause that was causing issues
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
