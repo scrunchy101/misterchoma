@@ -51,7 +51,7 @@ export const POSContent: React.FC = () => {
 
   const handleProcessPayment = async (customerName: string, paymentMethod: string) => {
     try {
-      console.log("Starting payment process with:", { customerName, paymentMethod, cartItems: cart.length });
+      console.log("Starting order process with:", { customerName, paymentMethod, cartItems: cart.length });
       const transaction = await processPayment(cart, customerName, paymentMethod);
       
       if (transaction) {
@@ -70,7 +70,7 @@ export const POSContent: React.FC = () => {
     } catch (error) {
       console.error("Error in handleProcessPayment:", error);
       toast({
-        title: "Payment Error",
+        title: "Order Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });

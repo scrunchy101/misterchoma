@@ -30,7 +30,7 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
         setProcessing(false);
       }
     } catch (error) {
-      console.error("Error in payment processing:", error);
+      console.error("Error in transaction processing:", error);
       setProcessing(false);
     }
   };
@@ -52,7 +52,7 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
             </Button>
           </DialogTitle>
           <DialogDescription className="text-gray-400">
-            Complete your purchase by providing payment details.
+            Complete your order by providing customer information.
           </DialogDescription>
         </DialogHeader>
         
@@ -97,7 +97,7 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
               className="w-full bg-green-600 hover:bg-green-700"
               disabled={processing}
             >
-              {processing ? "Processing..." : "Complete Payment"}
+              {processing ? "Processing..." : "Complete Order"}
             </Button>
           </div>
         </form>

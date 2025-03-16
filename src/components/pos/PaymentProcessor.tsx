@@ -31,7 +31,7 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       if (cart.length === 0) {
         toast({
           title: "Empty cart",
-          description: "Cannot process payment for an empty cart.",
+          description: "Cannot store an empty cart.",
           variant: "destructive"
         });
         return null;
@@ -40,10 +40,11 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       // Calculate cart total
       const total = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
       
-      console.log("Storing transaction data with:", {
+      console.log("Storing transaction data:", {
         customerName,
-        paymentMethod,
-        cartItems: cart.length
+        paymentMethod: "Cash", // Always use Cash
+        cartItems: cart.length,
+        total
       });
       
       // Store order in database - No payment processing, just data storage
@@ -51,7 +52,7 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
         .from('orders')
         .insert({
           customer_name: customerName || "Guest",
-          payment_method: paymentMethod,
+          payment_method: "Cash", // Always use Cash
           payment_status: 'completed',
           total_amount: total,
           status: 'completed'
@@ -110,14 +111,14 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
           quantity: item.quantity,
           price: item.price
         })),
-        paymentMethod: paymentMethod,
+        paymentMethod: "Cash",
         total: total
       };
       
       // Set current transaction
       setCurrentTransaction(transactionData);
       
-      console.log("Transaction data stored:", transactionData.id);
+      console.log("Transaction data stored with ID:", orderId);
       
       return transactionData;
     } catch (error) {
