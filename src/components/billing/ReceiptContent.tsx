@@ -14,13 +14,10 @@ interface ReceiptContentProps {
     }>;
     paymentMethod: string;
     total: number;
-    isOfflineMode?: boolean;
   };
 }
 
 export const ReceiptContent: React.FC<ReceiptContentProps> = ({ transactionData }) => {
-  const isOffline = transactionData.isOfflineMode || transactionData.id.startsWith("OFFLINE-");
-  
   return (
     <div className="border border-gray-600 rounded-md p-4 font-mono text-sm bg-gray-900">
       <div className="text-center mb-4">
@@ -29,12 +26,6 @@ export const ReceiptContent: React.FC<ReceiptContentProps> = ({ transactionData 
         <div className="text-xs text-gray-300">Tel: +255 123 456 789</div>
         <div className="text-xs mt-2 text-gray-200">{format(transactionData.date, "MMM d, yyyy h:mm a")}</div>
         <div className="text-xs text-gray-200">Customer: {transactionData.customer}</div>
-        
-        {isOffline && (
-          <div className="mt-2 text-xs font-semibold text-red-400 bg-red-900/20 py-1 px-2 rounded">
-            OFFLINE MODE - NOT STORED IN DATABASE
-          </div>
-        )}
       </div>
       
       <div className="border-t border-b border-dashed border-gray-600 py-2 space-y-1">

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { X } from "lucide-react";
@@ -18,16 +18,15 @@ interface ReceiptViewerProps {
 export const ReceiptViewer = ({ isOpen, onClose, transactionData }: ReceiptViewerProps) => {
   const { toast } = useToast();
   
-  // Only fetch from database if this is not an offline transaction
-  const isOfflineTransaction = transactionData?.isOfflineMode || (transactionData?.id || "").startsWith("OFFLINE-");
-  const { data: items = [] } = useTransactionItems(isOfflineTransaction ? null : transactionData?.id || null);
+  // Fetch items from database
+  const { data: items = [] } = useTransactionItems(transactionData?.id || null);
   
-  useEffect(() => {
-    if (transactionData && isOpen && items.length > 0 && !isOfflineTransaction) {
-      // Update items if we have new data from the query and not in offline mode
+  // Update items if we have new data from the query
+  React.useEffect(() => {
+    if (transactionData && isOpen && items.length > 0) {
       transactionData.items = items;
     }
-  }, [transactionData, items, isOpen, isOfflineTransaction]);
+  }, [transactionData, items, isOpen]);
   
   if (!transactionData) return null;
   
@@ -86,11 +85,7 @@ export const ReceiptViewer = ({ isOpen, onClose, transactionData }: ReceiptViewe
       <DialogContent className="sm:max-w-md bg-gray-800 text-white">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center text-white">
-            <span>
-              Receipt {transactionData.isOfflineMode || transactionData.id.startsWith("OFFLINE-") 
-                ? "(Offline Mode)" 
-                : `#${transactionData.id.substring(0, 8)}`}
-            </span>
+            <span>Receipt #{transactionData.id.substring(0, 8)}</span>
             <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 text-gray-300 hover:text-white hover:bg-gray-700">
               <X size={16} />
             </Button>
