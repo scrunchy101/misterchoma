@@ -42,16 +42,22 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       // Calculate cart total
       const total = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
       
-      // Insert order into database
+      console.log("Starting payment process with:", {
+        customerName,
+        paymentMethod,
+        cartItems: cart.length
+      });
+      
+      // Insert order into database - FIXED: Removed the ON CONFLICT clause
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .insert([{
+        .insert({
           customer_name: customerName || "Guest",
-          payment_method: "Cash",
+          payment_method: paymentMethod,
           payment_status: 'completed',
           total_amount: total,
           status: 'completed'
-        }])
+        })
         .select('id')
         .single();
       
@@ -106,7 +112,7 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
           quantity: item.quantity,
           price: item.price
         })),
-        paymentMethod: "Cash",
+        paymentMethod: paymentMethod,
         total: total
       };
       
