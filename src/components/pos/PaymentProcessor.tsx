@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { MenuItemWithQuantity } from "./types";
 import { useToast } from "@/hooks/use-toast";
 import { TransactionData } from "../billing/receiptUtils";
-import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 interface PaymentProcessorProps {
   children: React.ReactNode;
@@ -21,7 +20,6 @@ export const PaymentContext = React.createContext<PaymentContextType | undefined
 export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) => {
   const [currentTransaction, setCurrentTransaction] = useState<TransactionData | null>(null);
   const { toast } = useToast();
-  const { handleError } = useErrorHandler();
 
   const processPayment = async (
     cart: MenuItemWithQuantity[], 
@@ -42,13 +40,13 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       // Calculate cart total
       const total = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
       
-      console.log("Starting payment process with:", {
+      console.log("Storing transaction data with:", {
         customerName,
         paymentMethod,
         cartItems: cart.length
       });
       
-      // Insert order into database - FIXED: Removed the ON CONFLICT clause
+      // Store order in database - No payment processing, just data storage
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -64,8 +62,8 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       if (orderError) {
         console.error("Database error creating order:", orderError);
         toast({
-          title: "Payment failed",
-          description: "There was an error processing your payment. Please try again.",
+          title: "Storage failed",
+          description: "There was an error storing your transaction data. Please try again.",
           variant: "destructive"
         });
         return null;
@@ -89,7 +87,7 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       if (itemsError) {
         console.error("Database error creating order items:", itemsError);
         toast({
-          title: "Payment partially processed",
+          title: "Transaction partially stored",
           description: "Order was created but items could not be saved. Please contact support.",
           variant: "destructive"
         });
@@ -97,7 +95,7 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       } else {
         // Show success notification
         toast({
-          title: "Payment successful",
+          title: "Transaction stored successfully",
           description: `Total amount: TZS ${total.toLocaleString()}`,
         });
       }
@@ -119,15 +117,15 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
       // Set current transaction
       setCurrentTransaction(transactionData);
       
-      console.log("Transaction successful:", transactionData.id);
+      console.log("Transaction data stored:", transactionData.id);
       
       return transactionData;
     } catch (error) {
-      console.error("Error processing payment:", error);
+      console.error("Error storing transaction data:", error);
       
       toast({
-        title: "Payment failed",
-        description: error instanceof Error ? error.message : "There was an error processing your payment. Please try again.",
+        title: "Storage failed",
+        description: error instanceof Error ? error.message : "There was an error storing your transaction data. Please try again.",
         variant: "destructive"
       });
       return null;
