@@ -1,12 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CategorySelector } from "./CategorySelector";
 import { POSItemGrid } from "./POSItemGrid";
 import { POSCart } from "./POSCart";
 import { POSCheckout } from "./POSCheckout";
 import { ReceiptViewer } from "../billing/ReceiptViewer";
 import { useMenuItems } from "@/hooks/useMenuItems";
-import { useCart } from "./CartManager";
+import { useCart } from "./cart/CartContext";
 import { usePayment } from "./payment/PaymentContext";
 import { useToast } from "@/hooks/use-toast";
 import { MenuItemWithQuantity } from "./types";
@@ -23,6 +23,11 @@ export const POSContent: React.FC = () => {
   const { cart, addToCart, updateCartItemQuantity, removeFromCart, clearCart, calculateTotal } = useCart();
   const { processPayment, currentTransaction, setCurrentTransaction, connectionStatus, checkConnection } = usePayment();
   const { toast } = useToast();
+
+  // Check connection on component mount
+  useEffect(() => {
+    checkConnection();
+  }, [checkConnection]);
 
   // Filter items by category if a category is selected
   const filteredItems = selectedCategory 
@@ -105,7 +110,7 @@ export const POSContent: React.FC = () => {
         <Button 
           variant="outline" 
           size="sm"
-          onClick={checkConnection}
+          onClick={() => checkConnection()}
           className="h-7 text-xs"
         >
           Check Connection

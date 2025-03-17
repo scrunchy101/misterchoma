@@ -3,47 +3,79 @@ import React, { createContext, useContext, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CartItem } from "../cart/CartContext";
-import { format } from "date-fns";
+import { MenuItemWithQuantity } from "../types";
+import { TransactionData } from "../../billing/receiptUtils";
 
-export interface Transaction {
-  id: string;
-  date: Date;
-  customer: string;
-  items: CartItem[];
-  paymentMethod: string;
-  total: number;
+export interface ConnectionStatus {
+  connected: boolean;
+  error?: any;
 }
 
 export interface PaymentContextType {
-  currentTransaction: Transaction | null;
+  currentTransaction: TransactionData | null;
   isProcessing: boolean;
-  processPayment: (items: CartItem[], customerName: string, paymentMethod: string) => Promise<Transaction | null>;
+  connectionStatus: ConnectionStatus;
+  checkConnection: () => Promise<ConnectionStatus>;
+  processPayment: (items: MenuItemWithQuantity[], customerName: string, paymentMethod: string) => Promise<TransactionData | null>;
+  setCurrentTransaction: React.Dispatch<React.SetStateAction<TransactionData | null>>;
   clearTransaction: () => void;
 }
 
 const PaymentContext = createContext<PaymentContextType | undefined>(undefined);
 
 export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentTransaction, setCurrentTransaction] = useState<Transaction | null>(null);
+  const [currentTransaction, setCurrentTransaction] = useState<TransactionData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({ connected: false });
   const { toast } = useToast();
 
+  const checkConnection = async (): Promise<ConnectionStatus> => {
+    try {
+      // Simple check to verify Supabase connection
+      const { data, error: supabaseError } = await supabase.from('menu_items').select('id').limit(1);
+      
+      if (supabaseError) throw supabaseError;
+      
+      const status = { connected: true };
+      setConnectionStatus(status);
+      return status;
+    } catch (error) {
+      console.error("Database connection check failed:", error);
+      const status = { connected: false, error };
+      setConnectionStatus(status);
+      
+      toast({
+        title: "Connection Error",
+        description: "Could not connect to the database. Orders cannot be processed.",
+        variant: "destructive"
+      });
+      
+      return status;
+    }
+  };
+
   const processPayment = async (
-    items: CartItem[], 
+    items: MenuItemWithQuantity[], 
     customerName: string, 
-    paymentMethod: string
-  ): Promise<Transaction | null> => {
+    paymentMethod: string = "Cash" // Default to Cash
+  ): Promise<TransactionData | null> => {
     try {
       if (items.length === 0) {
         toast({
           title: "Empty Cart",
-          description: "Cannot process payment for an empty cart.",
+          description: "Cannot process order for an empty cart.",
           variant: "destructive"
         });
         return null;
       }
       
       setIsProcessing(true);
+      
+      // Check connection first
+      const connection = await checkConnection();
+      if (!connection.connected) {
+        throw new Error("Cannot process order: No database connection");
+      }
       
       // Calculate total
       const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -53,7 +85,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         .from('orders')
         .insert({
           customer_name: customerName || "Guest",
-          payment_method: paymentMethod,
+          payment_method: "Cash", // Always use Cash
           payment_status: 'completed',
           total_amount: total,
           status: 'completed'
@@ -61,7 +93,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         .select('id')
         .single();
       
-      if (orderError) throw new Error(orderError.message);
+      if (orderError) throw orderError;
       
       if (!orderData) throw new Error("Failed to create order");
       
@@ -80,23 +112,28 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         .from('order_items')
         .insert(orderItems);
       
-      if (itemsError) throw new Error(itemsError.message);
+      if (itemsError) throw itemsError;
       
       // Create transaction object
-      const transaction: Transaction = {
+      const transaction: TransactionData = {
         id: orderId,
         date: new Date(),
         customer: customerName || "Guest",
-        items: [...items],
-        paymentMethod,
+        items: items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        })),
+        paymentMethod: "Cash",
         total
       };
       
       setCurrentTransaction(transaction);
       
       toast({
-        title: "Payment Successful",
-        description: `Order #${orderId.substring(0, 8)} has been processed.`
+        title: "Order Saved",
+        description: `Order #${orderId.substring(0, 8)} has been saved.`
       });
       
       return transaction;
@@ -105,8 +142,8 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.error("Payment processing error:", error);
       
       toast({
-        title: "Payment Failed",
-        description: error.message || "An error occurred while processing your payment.",
+        title: "Order Failed",
+        description: error.message || "An error occurred while saving your order.",
         variant: "destructive"
       });
       
@@ -124,7 +161,10 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <PaymentContext.Provider value={{ 
       currentTransaction, 
       isProcessing, 
+      connectionStatus,
+      checkConnection,
       processPayment, 
+      setCurrentTransaction,
       clearTransaction 
     }}>
       {children}
