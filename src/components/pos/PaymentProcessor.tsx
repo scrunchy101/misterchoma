@@ -1,6 +1,6 @@
 
-import React, { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState, useEffect } from "react";
+import { supabase, checkSupabaseConnection } from "@/integrations/supabase/client";
 import { MenuItemWithQuantity } from "./types";
 import { useToast } from "@/hooks/use-toast";
 import { TransactionData } from "../billing/receiptUtils";
@@ -13,13 +13,56 @@ interface PaymentContextType {
   processPayment: (cart: MenuItemWithQuantity[], customerName: string, paymentMethod: string) => Promise<TransactionData | null>;
   currentTransaction: TransactionData | null;
   setCurrentTransaction: React.Dispatch<React.SetStateAction<TransactionData | null>>;
+  connectionStatus: { connected: boolean; error?: any };
+  checkConnection: () => Promise<void>;
 }
 
 export const PaymentContext = React.createContext<PaymentContextType | undefined>(undefined);
 
 export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) => {
   const [currentTransaction, setCurrentTransaction] = useState<TransactionData | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<{ connected: boolean; error?: any }>({ connected: false });
   const { toast } = useToast();
+
+  const checkConnection = async () => {
+    try {
+      console.log("Checking Supabase connection...");
+      const status = await checkSupabaseConnection();
+      setConnectionStatus(status);
+      
+      // Show toast based on connection status
+      if (status.connected) {
+        toast({
+          title: "Database Connected",
+          description: "Successfully connected to the Supabase database.",
+        });
+      } else {
+        toast({
+          title: "Connection Failed",
+          description: "Could not connect to the Supabase database. Transactions will not be stored.",
+          variant: "destructive"
+        });
+      }
+      
+      return status;
+    } catch (error) {
+      console.error("Error checking connection:", error);
+      setConnectionStatus({ connected: false, error });
+      
+      toast({
+        title: "Connection Error",
+        description: "Failed to check database connection status.",
+        variant: "destructive"
+      });
+      
+      return { connected: false, error };
+    }
+  };
+
+  // Check connection on component mount
+  useEffect(() => {
+    checkConnection();
+  }, []);
 
   const processPayment = async (
     cart: MenuItemWithQuantity[], 
@@ -32,6 +75,17 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
         toast({
           title: "Empty cart",
           description: "Cannot store an empty cart.",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      // Verify connection before proceeding
+      const connectionCheck = await checkConnection();
+      if (!connectionCheck.connected) {
+        toast({
+          title: "Cannot Process Payment",
+          description: "No connection to the database. Please check your connection and try again.",
           variant: "destructive"
         });
         return null;
@@ -137,7 +191,9 @@ export const PaymentProcessor: React.FC<PaymentProcessorProps> = ({ children }) 
   const value = {
     processPayment,
     currentTransaction,
-    setCurrentTransaction
+    setCurrentTransaction,
+    connectionStatus,
+    checkConnection
   };
 
   return (

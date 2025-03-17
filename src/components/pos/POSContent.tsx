@@ -11,6 +11,8 @@ import { usePayment } from "./PaymentProcessor";
 import { useToast } from "@/hooks/use-toast";
 import { MenuItemWithQuantity } from "./types";
 import { GlobalErrorListener } from "../layout/GlobalErrorListener";
+import { Button } from "@/components/ui/button";
+import { Wifi, WifiOff, AlertCircle } from "lucide-react";
 
 export const POSContent: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -19,7 +21,7 @@ export const POSContent: React.FC = () => {
   
   const { data: menuItems, isLoading, error } = useMenuItems();
   const { cart, addToCart, updateCartItemQuantity, removeFromCart, clearCart, calculateTotal } = useCart();
-  const { processPayment, currentTransaction, setCurrentTransaction } = usePayment();
+  const { processPayment, currentTransaction, setCurrentTransaction, connectionStatus, checkConnection } = usePayment();
   const { toast } = useToast();
 
   // Filter items by category if a category is selected
@@ -79,34 +81,65 @@ export const POSContent: React.FC = () => {
   };
 
   return (
-    <main className="flex-1 overflow-hidden bg-gray-800 flex">
+    <main className="flex-1 overflow-hidden bg-gray-800 flex flex-col">
       <GlobalErrorListener />
-      {/* Left side - Menu Items */}
-      <div className="w-2/3 flex flex-col overflow-hidden">
-        <CategorySelector 
-          categories={categories} 
-          selectedCategory={selectedCategory} 
-          onSelectCategory={setSelectedCategory} 
-        />
-        <div className="flex-1 overflow-y-auto p-4">
-          <POSItemGrid 
-            items={menuItemsWithQuantity} 
-            onAddItem={addToCart} 
-            isLoading={isLoading}
-          />
+      
+      {/* Connection Status Bar */}
+      <div className={`px-4 py-2 flex items-center justify-between ${
+        connectionStatus.connected ? 'bg-green-900/20' : 'bg-red-900/20'
+      }`}>
+        <div className="flex items-center gap-2">
+          {connectionStatus.connected ? (
+            <>
+              <Wifi size={16} className="text-green-400" />
+              <span className="text-green-400 text-sm">Connected to database</span>
+            </>
+          ) : (
+            <>
+              <WifiOff size={16} className="text-red-400" />
+              <span className="text-red-400 text-sm">Not connected to database</span>
+            </>
+          )}
         </div>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={checkConnection}
+          className="h-7 text-xs"
+        >
+          Check Connection
+        </Button>
       </div>
       
-      {/* Right side - Cart */}
-      <div className="w-1/3 border-l border-gray-700 flex flex-col">
-        <POSCart 
-          items={cart}
-          onUpdateQuantity={updateCartItemQuantity}
-          onRemoveItem={removeFromCart}
-          onClearCart={clearCart}
-          onCheckout={handleCheckout}
-          total={calculateTotal()}
-        />
+      {/* Main Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left side - Menu Items */}
+        <div className="w-2/3 flex flex-col overflow-hidden">
+          <CategorySelector 
+            categories={categories} 
+            selectedCategory={selectedCategory} 
+            onSelectCategory={setSelectedCategory} 
+          />
+          <div className="flex-1 overflow-y-auto p-4">
+            <POSItemGrid 
+              items={menuItemsWithQuantity} 
+              onAddItem={addToCart} 
+              isLoading={isLoading}
+            />
+          </div>
+        </div>
+        
+        {/* Right side - Cart */}
+        <div className="w-1/3 border-l border-gray-700 flex flex-col">
+          <POSCart 
+            items={cart}
+            onUpdateQuantity={updateCartItemQuantity}
+            onRemoveItem={removeFromCart}
+            onClearCart={clearCart}
+            onCheckout={handleCheckout}
+            total={calculateTotal()}
+          />
+        </div>
       </div>
       
       {/* Checkout Modal */}

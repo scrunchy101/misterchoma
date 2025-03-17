@@ -1,9 +1,10 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { X, Banknote } from "lucide-react";
+import { X, Banknote, WifiOff, Wifi } from "lucide-react";
+import { usePayment } from "./PaymentProcessor";
 
 interface POSCheckoutProps {
   total: number;
@@ -18,6 +19,7 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
 }) => {
   const [customerName, setCustomerName] = useState("");
   const [processing, setProcessing] = useState(false);
+  const { connectionStatus, checkConnection } = usePayment();
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +57,29 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
             Complete your order by providing customer information.
           </DialogDescription>
         </DialogHeader>
+        
+        {/* Connection Status */}
+        <div className={`flex items-center gap-2 py-2 px-3 rounded text-sm mb-4 ${connectionStatus.connected ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+          {connectionStatus.connected ? (
+            <>
+              <Wifi size={16} className="text-green-400" />
+              <span>Connected to database</span>
+            </>
+          ) : (
+            <>
+              <WifiOff size={16} className="text-red-400" />
+              <span>Not connected to database</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => checkConnection()} 
+                className="ml-auto text-xs h-7 bg-gray-700 border-gray-600 hover:bg-gray-600"
+              >
+                Retry
+              </Button>
+            </>
+          )}
+        </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -95,10 +120,15 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
             <Button 
               type="submit" 
               className="w-full bg-green-600 hover:bg-green-700"
-              disabled={processing}
+              disabled={processing || !connectionStatus.connected}
             >
               {processing ? "Processing..." : "Complete Order"}
             </Button>
+            {!connectionStatus.connected && (
+              <p className="text-xs text-center mt-2 text-red-400">
+                Cannot process orders without database connection
+              </p>
+            )}
           </div>
         </form>
       </DialogContent>
