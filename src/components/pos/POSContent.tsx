@@ -7,7 +7,7 @@ import { POSCheckout } from "./POSCheckout";
 import { ReceiptViewer } from "../billing/ReceiptViewer";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { useCart } from "./CartManager";
-import { usePayment } from "./PaymentProcessor";
+import { usePayment } from "./payment/PaymentContext";
 import { useToast } from "@/hooks/use-toast";
 import { MenuItemWithQuantity } from "./types";
 import { GlobalErrorListener } from "../layout/GlobalErrorListener";

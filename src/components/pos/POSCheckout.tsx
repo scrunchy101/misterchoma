@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { X, Banknote, WifiOff, Wifi } from "lucide-react";
-import { usePayment } from "./PaymentProcessor";
+import { usePayment } from "./payment/PaymentContext";
 
 interface POSCheckoutProps {
   total: number;
