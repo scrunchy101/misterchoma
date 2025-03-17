@@ -14,7 +14,8 @@ interface PaymentContextType {
   currentTransaction: TransactionData | null;
   setCurrentTransaction: React.Dispatch<React.SetStateAction<TransactionData | null>>;
   connectionStatus: { connected: boolean; error?: any };
-  checkConnection: () => Promise<void>;
+  // Fix: Update the return type of checkConnection to match the implementation
+  checkConnection: () => Promise<{ connected: boolean; error?: any }>;
 }
 
 export const PaymentContext = React.createContext<PaymentContextType | undefined>(undefined);
