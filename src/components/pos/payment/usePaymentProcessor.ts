@@ -1,43 +1,35 @@
 
 import { useState } from "react";
-import { supabase, checkSupabaseConnection } from "@/integrations/supabase/client";
-import { MenuItemWithQuantity } from "../types";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { MenuItemWithQuantity } from "../types";
 import { TransactionData } from "../../billing/receiptUtils";
 
 export const usePaymentProcessor = () => {
   const [currentTransaction, setCurrentTransaction] = useState<TransactionData | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<{ connected: boolean; error?: any }>({ connected: false });
+  const [connectionStatus, setConnectionStatus] = useState<{ connected: boolean; error?: any }>({
+    connected: false
+  });
   const { toast } = useToast();
 
   const checkConnection = async () => {
     try {
-      console.log("Checking Supabase connection...");
-      const status = await checkSupabaseConnection();
-      setConnectionStatus(status);
+      // Simple check to verify Supabase connection
+      const { data, error: supabaseError } = await supabase.from('menu_items').select('count').limit(1);
       
-      // Show toast based on connection status
-      if (status.connected) {
-        toast({
-          title: "Database Connected",
-          description: "Successfully connected to the Supabase database.",
-        });
-      } else {
-        toast({
-          title: "Connection Failed",
-          description: "Could not connect to the Supabase database. Transactions will not be stored.",
-          variant: "destructive"
-        });
-      }
+      if (supabaseError) throw new Error(supabaseError.message);
       
-      return status;
-    } catch (error) {
-      console.error("Error checking connection:", error);
+      setConnectionStatus({ connected: true });
+      console.log("Connected to Supabase successfully");
+      return { connected: true };
+    } catch (err) {
+      const error = err as Error;
+      console.error("Failed to connect to Supabase:", error);
       setConnectionStatus({ connected: false, error });
       
       toast({
         title: "Connection Error",
-        description: "Failed to check database connection status.",
+        description: "Could not connect to the database. Some features may be unavailable.",
         variant: "destructive"
       });
       
@@ -46,43 +38,24 @@ export const usePaymentProcessor = () => {
   };
 
   const processPayment = async (
-    cart: MenuItemWithQuantity[], 
-    customerName: string, 
-    paymentMethod: string
+    cartItems: MenuItemWithQuantity[],
+    customerName: string,
+    paymentMethod: string = "Cash" // Always use Cash as default
   ): Promise<TransactionData | null> => {
     try {
-      // Validate cart
-      if (cart.length === 0) {
+      if (cartItems.length === 0) {
         toast({
-          title: "Empty cart",
-          description: "Cannot store an empty cart.",
+          title: "Empty Cart",
+          description: "Cannot process order with an empty cart.",
           variant: "destructive"
         });
         return null;
       }
       
-      // Verify connection before proceeding
-      const connectionCheck = await checkConnection();
-      if (!connectionCheck.connected) {
-        toast({
-          title: "Cannot Process Payment",
-          description: "No connection to the database. Please check your connection and try again.",
-          variant: "destructive"
-        });
-        return null;
-      }
+      // Calculate total
+      const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
-      // Calculate cart total
-      const total = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-      
-      console.log("Storing transaction data:", {
-        customerName,
-        paymentMethod: "Cash", // Always use Cash
-        cartItems: cart.length,
-        total
-      });
-      
-      // Store order in database - No payment processing, just data storage
+      // Create order in database
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -95,20 +68,14 @@ export const usePaymentProcessor = () => {
         .select('id')
         .single();
       
-      if (orderError) {
-        console.error("Database error creating order:", orderError);
-        toast({
-          title: "Storage failed",
-          description: "There was an error storing your transaction data. Please try again.",
-          variant: "destructive"
-        });
-        return null;
-      }
+      if (orderError) throw new Error(orderError.message);
+      
+      if (!orderData) throw new Error("Failed to create order");
       
       const orderId = orderData.id;
       
       // Create order items
-      const orderItems = cart.map(item => ({
+      const orderItems = cartItems.map(item => ({
         order_id: orderId,
         menu_item_id: item.id,
         quantity: item.quantity,
@@ -120,50 +87,41 @@ export const usePaymentProcessor = () => {
         .from('order_items')
         .insert(orderItems);
       
-      if (itemsError) {
-        console.error("Database error creating order items:", itemsError);
-        toast({
-          title: "Transaction partially stored",
-          description: "Order was created but items could not be saved. Please contact support.",
-          variant: "destructive"
-        });
-        // Continue with transaction data since the order was created
-      } else {
-        // Show success notification
-        toast({
-          title: "Transaction stored successfully",
-          description: `Total amount: TZS ${total.toLocaleString()}`,
-        });
-      }
+      if (itemsError) throw new Error(itemsError.message);
       
-      // Prepare transaction data for receipt
-      const transactionData = {
+      // Create transaction data for receipt
+      const transaction: TransactionData = {
         id: orderId,
         date: new Date(),
         customer: customerName || "Guest",
-        items: cart.map(item => ({
+        items: cartItems.map(item => ({
+          id: item.id,
           name: item.name,
-          quantity: item.quantity,
-          price: item.price
+          price: item.price,
+          quantity: item.quantity
         })),
         paymentMethod: "Cash",
-        total: total
+        total
       };
       
-      // Set current transaction
-      setCurrentTransaction(transactionData);
-      
-      console.log("Transaction data stored with ID:", orderId);
-      
-      return transactionData;
-    } catch (error) {
-      console.error("Error storing transaction data:", error);
+      setCurrentTransaction(transaction);
       
       toast({
-        title: "Storage failed",
-        description: error instanceof Error ? error.message : "There was an error storing your transaction data. Please try again.",
+        title: "Order Completed",
+        description: `Order #${orderId.substring(0, 8)} has been recorded.`
+      });
+      
+      return transaction;
+    } catch (err) {
+      const error = err as Error;
+      console.error("Order processing error:", error);
+      
+      toast({
+        title: "Order Failed",
+        description: error.message || "An error occurred while processing your order.",
         variant: "destructive"
       });
+      
       return null;
     }
   };

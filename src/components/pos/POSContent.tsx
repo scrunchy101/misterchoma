@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MenuItemWithQuantity } from "./types";
 import { GlobalErrorListener } from "../layout/GlobalErrorListener";
 import { Button } from "@/components/ui/button";
-import { Wifi, WifiOff, AlertCircle } from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
 
 export const POSContent: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -51,10 +51,11 @@ export const POSContent: React.FC = () => {
     setShowCheckout(true);
   };
 
-  const handleProcessPayment = async (customerName: string, paymentMethod: string) => {
+  const handleProcessPayment = async (customerName: string) => {
     try {
-      console.log("Starting order process with:", { customerName, paymentMethod, cartItems: cart.length });
-      const transaction = await processPayment(cart, customerName, paymentMethod);
+      console.log("Starting order process with:", { customerName, cartItems: cart.length });
+      // Always use Cash as payment method
+      const transaction = await processPayment(cart, customerName, "Cash");
       
       if (transaction) {
         console.log("Transaction successful:", transaction.id);

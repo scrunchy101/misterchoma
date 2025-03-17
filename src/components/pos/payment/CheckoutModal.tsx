@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { X, Banknote, CreditCard, WifiOff, Wifi } from "lucide-react";
+import { X, Banknote, WifiOff, Wifi } from "lucide-react";
 
 interface CheckoutModalProps {
   open: boolean;
@@ -17,7 +17,6 @@ interface CheckoutModalProps {
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ open, onClose, onSuccess }) => {
   const [customerName, setCustomerName] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Card">("Cash");
   const { items, total, clearCart } = useCart();
   const { processPayment, isProcessing } = usePayment();
   const { isConnected, checkConnection } = usePOS();
@@ -29,13 +28,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ open, onClose, onS
     if (!isConnected) {
       toast({
         title: "Connection Error",
-        description: "Cannot process payment while offline. Please check your connection.",
+        description: "Cannot process order while offline. Please check your connection.",
         variant: "destructive"
       });
       return;
     }
     
-    const transaction = await processPayment(items, customerName, paymentMethod);
+    // Always use Cash as the payment method
+    const transaction = await processPayment(items, customerName, "Cash");
     
     if (transaction) {
       clearCart();
@@ -116,29 +116,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ open, onClose, onS
                 <label className="block text-sm font-medium mb-2">
                   Payment Method
                 </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div 
-                    className={`${
-                      paymentMethod === 'Cash' 
-                        ? 'bg-blue-900/50 border-blue-400' 
-                        : 'bg-gray-700 border-gray-600'
-                    } border rounded-md p-3 flex items-center gap-2 cursor-pointer`}
-                    onClick={() => setPaymentMethod('Cash')}
-                  >
-                    <Banknote size={18} className="text-green-400" />
-                    <span>Cash</span>
-                  </div>
-                  <div 
-                    className={`${
-                      paymentMethod === 'Card' 
-                        ? 'bg-blue-900/50 border-blue-400' 
-                        : 'bg-gray-700 border-gray-600'
-                    } border rounded-md p-3 flex items-center gap-2 cursor-pointer`}
-                    onClick={() => setPaymentMethod('Card')}
-                  >
-                    <CreditCard size={18} className="text-blue-400" />
-                    <span>Card</span>
-                  </div>
+                <div className="bg-gray-700 border border-gray-600 rounded-md p-3 flex items-center gap-2">
+                  <Banknote size={18} className="text-green-400" />
+                  <span>Cash</span>
                 </div>
               </div>
             </div>

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { usePayment } from "./payment/PaymentContext";
 interface POSCheckoutProps {
   total: number;
   onClose: () => void;
-  onProcessPayment: (customerName: string, paymentMethod: string) => Promise<boolean>;
+  onProcessPayment: (customerName: string) => Promise<boolean>;
 }
 
 export const POSCheckout: React.FC<POSCheckoutProps> = ({
@@ -26,7 +27,7 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
     
     try {
       // Always use Cash as payment method
-      const success = await onProcessPayment(customerName, "Cash");
+      const success = await onProcessPayment(customerName);
       if (!success) {
         setProcessing(false);
       }
