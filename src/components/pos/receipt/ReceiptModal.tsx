@@ -2,7 +2,8 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { usePayment, Transaction } from "../payment/PaymentContext";
+import { usePayment } from "../payment/PaymentContext";
+import { TransactionData } from "../../billing/receiptUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Printer, Download, X, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
@@ -162,7 +163,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose }) => 
 };
 
 // Helper functions for receipt generation
-function generateReceiptHtml(transaction: Transaction): string {
+function generateReceiptHtml(transaction: TransactionData): string {
   return `
     <html>
       <head>
@@ -209,7 +210,7 @@ function generateReceiptHtml(transaction: Transaction): string {
   `;
 }
 
-function generateReceiptText(transaction: Transaction): string {
+function generateReceiptText(transaction: TransactionData): string {
   return `
 MISTER CHOMA
 123 Main Street, Dar es Salaam

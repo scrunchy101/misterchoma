@@ -20,7 +20,7 @@ export const POSContent: React.FC = () => {
   const [showReceipt, setShowReceipt] = useState(false);
   
   const { data: menuItems, isLoading, error } = useMenuItems();
-  const { items: cart, addItem: addToCart, updateQuantity: updateCartItemQuantity, removeItem: removeFromCart, clearCart, total: calculateTotal } = useCart();
+  const { items: cart, addItem: addToCart, updateQuantity: updateCartItemQuantity, removeItem: removeFromCart, clearCart, total } = useCart();
   const { processPayment, currentTransaction, setCurrentTransaction, connectionStatus, checkConnection } = usePayment();
   const { toast } = useToast();
 
@@ -143,7 +143,7 @@ export const POSContent: React.FC = () => {
             onRemoveItem={removeFromCart}
             onClearCart={clearCart}
             onCheckout={handleCheckout}
-            total={calculateTotal()}
+            total={total}
           />
         </div>
       </div>
@@ -151,7 +151,7 @@ export const POSContent: React.FC = () => {
       {/* Checkout Modal */}
       {showCheckout && (
         <POSCheckout 
-          total={calculateTotal()} 
+          total={total} 
           onClose={() => setShowCheckout(false)}
           onProcessPayment={handleProcessPayment}
         />
