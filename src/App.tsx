@@ -16,6 +16,9 @@ import NotFound from './pages/NotFound';
 import { ErrorProvider } from './components/layout/ErrorProvider';
 import { GlobalErrorListener } from './components/layout/GlobalErrorListener';
 import { ThemeProvider } from './components/layout/ThemeProvider';
+import { AuthProvider } from './context/AuthContext';
+import { AuthPage } from './components/auth/AuthPage';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import './App.css';
 
 // Create a client
@@ -25,25 +28,64 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-        <Router>
-          <ErrorProvider>
-            <GlobalErrorListener />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/menu" element={<MenuManagement />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/reservations" element={<Reservations />} />
-              <Route path="/billing" element={<Billing />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/employees" element={<Employees />} />
-              <Route path="/pos" element={<POS />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-          </ErrorProvider>
-        </Router>
+        <AuthProvider>
+          <Router>
+            <ErrorProvider>
+              <GlobalErrorListener />
+              <Routes>
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/" element={<Index />} />
+                <Route path="/menu" element={
+                  <ProtectedRoute allowedRoles={['admin', 'manager', 'chef']}>
+                    <MenuManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="/inventory" element={
+                  <ProtectedRoute allowedRoles={['admin', 'manager', 'chef']}>
+                    <Inventory />
+                  </ProtectedRoute>
+                } />
+                <Route path="/reservations" element={
+                  <ProtectedRoute allowedRoles={['admin', 'manager', 'waiter']}>
+                    <Reservations />
+                  </ProtectedRoute>
+                } />
+                <Route path="/billing" element={
+                  <ProtectedRoute allowedRoles={['admin', 'manager', 'cashier']}>
+                    <Billing />
+                  </ProtectedRoute>
+                } />
+                <Route path="/reports" element={
+                  <ProtectedRoute allowedRoles={['admin', 'manager']}>
+                    <Reports />
+                  </ProtectedRoute>
+                } />
+                <Route path="/customers" element={
+                  <ProtectedRoute allowedRoles={['admin', 'manager', 'waiter', 'cashier']}>
+                    <Customers />
+                  </ProtectedRoute>
+                } />
+                <Route path="/employees" element={
+                  <ProtectedRoute allowedRoles={['admin', 'manager']}>
+                    <Employees />
+                  </ProtectedRoute>
+                } />
+                <Route path="/pos" element={
+                  <ProtectedRoute allowedRoles={['admin', 'manager', 'cashier', 'waiter']}>
+                    <POS />
+                  </ProtectedRoute>
+                } />
+                <Route path="/orders" element={
+                  <ProtectedRoute allowedRoles={['admin', 'manager', 'chef', 'waiter']}>
+                    <Orders />
+                  </ProtectedRoute>
+                } />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <Toaster />
+            </ErrorProvider>
+          </Router>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
