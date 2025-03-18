@@ -1,15 +1,17 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { X, Banknote, WifiOff, Wifi } from "lucide-react";
+import { X, Banknote, WifiOff, Wifi, User } from "lucide-react";
 import { usePayment } from "./payment/PaymentContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEmployees } from "@/hooks/useEmployees";
 
 interface POSCheckoutProps {
   total: number;
   onClose: () => void;
-  onProcessPayment: (customerName: string) => Promise<boolean>;
+  onProcessPayment: (customerName: string, employeeId?: string) => Promise<boolean>;
 }
 
 export const POSCheckout: React.FC<POSCheckoutProps> = ({
@@ -18,16 +20,18 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
   onProcessPayment
 }) => {
   const [customerName, setCustomerName] = useState("");
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [processing, setProcessing] = useState(false);
   const { connectionStatus, checkConnection } = usePayment();
+  const { employees, loading: loadingEmployees } = useEmployees();
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessing(true);
     
     try {
-      // Always use Cash as payment method
-      const success = await onProcessPayment(customerName);
+      // Process payment with employee ID
+      const success = await onProcessPayment(customerName, selectedEmployeeId || undefined);
       if (!success) {
         setProcessing(false);
       }
@@ -54,7 +58,7 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
             </Button>
           </DialogTitle>
           <DialogDescription className="text-gray-400">
-            Complete your order by providing customer information.
+            Complete your order by providing customer and employee information.
           </DialogDescription>
         </DialogHeader>
         
@@ -102,6 +106,34 @@ export const POSCheckout: React.FC<POSCheckoutProps> = ({
                   className="bg-gray-700 border-gray-600 text-white"
                   disabled={processing}
                 />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Employee Serving
+                </label>
+                <Select 
+                  value={selectedEmployeeId} 
+                  onValueChange={setSelectedEmployeeId}
+                  disabled={processing || loadingEmployees}
+                >
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectValue placeholder="Select employee" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                    {loadingEmployees ? (
+                      <SelectItem value="loading" disabled>Loading employees...</SelectItem>
+                    ) : employees.length === 0 ? (
+                      <SelectItem value="none" disabled>No employees found</SelectItem>
+                    ) : (
+                      employees.map((employee) => (
+                        <SelectItem key={employee.id} value={employee.id}>
+                          {employee.name} ({employee.position})
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div>

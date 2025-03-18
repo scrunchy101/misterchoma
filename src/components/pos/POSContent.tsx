@@ -20,14 +20,14 @@ export const POSContent: React.FC = () => {
   const [showReceipt, setShowReceipt] = useState(false);
   
   const { data: menuItems, isLoading, error } = useMenuItems();
-  const { cart, addToCart, updateCartItemQuantity, removeFromCart, clearCart, calculateTotal } = useCart();
+  const { items: cart, addItem: addToCart, updateItemQuantity: updateCartItemQuantity, removeItem: removeFromCart, clearCart, getTotal: calculateTotal } = useCart();
   const { processPayment, currentTransaction, setCurrentTransaction, connectionStatus, checkConnection } = usePayment();
   const { toast } = useToast();
 
   // Check connection on component mount
   useEffect(() => {
     checkConnection();
-  }, [checkConnection]);
+  }, []);
 
   // Filter items by category if a category is selected
   const filteredItems = selectedCategory 
@@ -56,11 +56,11 @@ export const POSContent: React.FC = () => {
     setShowCheckout(true);
   };
 
-  const handleProcessPayment = async (customerName: string) => {
+  const handleProcessPayment = async (customerName: string, employeeId?: string) => {
     try {
-      console.log("Starting order process with:", { customerName, cartItems: cart.length });
+      console.log("Starting order process with:", { customerName, employeeId, cartItems: cart.length });
       // Always use Cash as payment method
-      const transaction = await processPayment(cart, customerName, "Cash");
+      const transaction = await processPayment(cart, customerName, "Cash", employeeId);
       
       if (transaction) {
         console.log("Transaction successful:", transaction.id);

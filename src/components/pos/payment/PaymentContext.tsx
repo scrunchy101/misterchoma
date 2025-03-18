@@ -16,7 +16,12 @@ export interface PaymentContextType {
   isProcessing: boolean;
   connectionStatus: ConnectionStatus;
   checkConnection: () => Promise<ConnectionStatus>;
-  processPayment: (items: MenuItemWithQuantity[], customerName: string, paymentMethod: string) => Promise<TransactionData | null>;
+  processPayment: (
+    items: MenuItemWithQuantity[], 
+    customerName: string, 
+    paymentMethod: string,
+    employeeId?: string
+  ) => Promise<TransactionData | null>;
   setCurrentTransaction: React.Dispatch<React.SetStateAction<TransactionData | null>>;
   clearTransaction: () => void;
 }
@@ -57,7 +62,8 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const processPayment = async (
     items: MenuItemWithQuantity[], 
     customerName: string, 
-    paymentMethod: string = "Cash" // Default to Cash
+    paymentMethod: string = "Cash", // Default to Cash
+    employeeId?: string
   ): Promise<TransactionData | null> => {
     try {
       if (items.length === 0) {
@@ -88,7 +94,8 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           payment_method: "Cash", // Always use Cash
           payment_status: 'completed',
           total_amount: total,
-          status: 'completed'
+          status: 'completed',
+          employee_id: employeeId || null
         })
         .select('id')
         .single();
@@ -126,7 +133,9 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           quantity: item.quantity
         })),
         paymentMethod: "Cash",
-        total
+        total,
+        employeeId,
+        employeeName: ""
       };
       
       setCurrentTransaction(transaction);
