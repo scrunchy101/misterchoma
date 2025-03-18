@@ -276,6 +276,7 @@ export type Database = {
         Row: {
           created_at: string | null
           customer_name: string | null
+          employee_id: string | null
           id: string
           payment_date: string | null
           payment_method: string | null
@@ -291,6 +292,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           customer_name?: string | null
+          employee_id?: string | null
           id?: string
           payment_date?: string | null
           payment_method?: string | null
@@ -306,6 +308,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           customer_name?: string | null
+          employee_id?: string | null
           id?: string
           payment_date?: string | null
           payment_method?: string | null
@@ -318,7 +321,15 @@ export type Database = {
           transaction_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

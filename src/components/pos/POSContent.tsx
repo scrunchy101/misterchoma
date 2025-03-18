@@ -20,7 +20,7 @@ export const POSContent: React.FC = () => {
   const [showReceipt, setShowReceipt] = useState(false);
   
   const { data: menuItems, isLoading, error } = useMenuItems();
-  const { items: cart, addItem: addToCart, updateItemQuantity: updateCartItemQuantity, removeItem: removeFromCart, clearCart, getTotal: calculateTotal } = useCart();
+  const { items: cart, addItem: addToCart, updateQuantity: updateCartItemQuantity, removeItem: removeFromCart, clearCart, total: calculateTotal } = useCart();
   const { processPayment, currentTransaction, setCurrentTransaction, connectionStatus, checkConnection } = usePayment();
   const { toast } = useToast();
 

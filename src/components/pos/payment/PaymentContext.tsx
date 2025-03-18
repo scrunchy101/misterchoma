@@ -121,6 +121,20 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       if (itemsError) throw itemsError;
       
+      // Get employee name if employee ID is provided
+      let employeeName = "";
+      if (employeeId) {
+        const { data: empData, error: empError } = await supabase
+          .from('employees')
+          .select('name')
+          .eq('id', employeeId)
+          .maybeSingle();
+          
+        if (!empError && empData) {
+          employeeName = empData.name;
+        }
+      }
+      
       // Create transaction object
       const transaction: TransactionData = {
         id: orderId,
@@ -135,7 +149,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         paymentMethod: "Cash",
         total,
         employeeId,
-        employeeName: ""
+        employeeName
       };
       
       setCurrentTransaction(transaction);
