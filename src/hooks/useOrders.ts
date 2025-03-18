@@ -98,6 +98,7 @@ export const useOrders = () => {
 
       const orderTotal = selectedItems.reduce((total, item) => total + (item.price * item.quantity), 0);
 
+      // Removed ON CONFLICT clause by using a simple insert operation
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert([{ 

@@ -86,7 +86,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Calculate total
       const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
-      // Create order in database
+      // Create order in database - Removed the ON CONFLICT statement which was causing the issue
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
