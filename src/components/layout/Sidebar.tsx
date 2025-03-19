@@ -1,142 +1,65 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Users,
-  ChefHat,
-  ClipboardList,
-  BookOpenCheck,
-  Calendar,
-  ShoppingCart,
-  BarChart,
-  CreditCard,
-  Store
-} from "lucide-react";
+import { Calendar, CreditCard, FileText, Home, MessageSquare, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
-  const handleTabClick = (tab: string) => {
-    setActiveTab(tab);
-  };
-
-  return (
-    <div className="w-20 md:w-64 bg-gray-900 text-white flex flex-col min-h-screen">
-      <div className="p-4 flex items-center justify-center md:justify-start">
-        <h2 className="text-xl font-bold hidden md:block">Mister Choma</h2>
-        <h2 className="text-xl font-bold md:hidden">MC</h2>
-      </div>
-      <nav className="flex-1 overflow-y-auto py-4">
-        <ul className="space-y-1">
-          <SidebarItem
-            icon={<LayoutDashboard />}
-            text="Dashboard"
-            isActive={activeTab === "dashboard"}
-            onClick={() => handleTabClick("dashboard")}
-            to="/"
-          />
-          <SidebarItem
-            icon={<Store />}
-            text="POS"
-            isActive={activeTab === "pos"}
-            onClick={() => handleTabClick("pos")}
-            to="/pos"
-          />
-          <SidebarItem
-            icon={<ChefHat />}
-            text="Menu"
-            isActive={activeTab === "menu"}
-            onClick={() => handleTabClick("menu")}
-            to="/menu"
-          />
-          <SidebarItem
-            icon={<ShoppingCart />}
-            text="Orders"
-            isActive={activeTab === "orders"}
-            onClick={() => handleTabClick("orders")}
-            to="/orders"
-          />
-          <SidebarItem
-            icon={<ClipboardList />}
-            text="Inventory"
-            isActive={activeTab === "inventory"}
-            onClick={() => handleTabClick("inventory")}
-            to="/inventory"
-          />
-          <SidebarItem
-            icon={<Calendar />}
-            text="Reservations"
-            isActive={activeTab === "reservations"}
-            onClick={() => handleTabClick("reservations")}
-            to="/reservations"
-          />
-          <SidebarItem
-            icon={<CreditCard />}
-            text="Billing"
-            isActive={activeTab === "billing"}
-            onClick={() => handleTabClick("billing")}
-            to="/billing"
-          />
-          <SidebarItem
-            icon={<Users />}
-            text="Customers"
-            isActive={activeTab === "customers"}
-            onClick={() => handleTabClick("customers")}
-            to="/customers"
-          />
-          <SidebarItem
-            icon={<Users />}
-            text="Employees"
-            isActive={activeTab === "employees"}
-            onClick={() => handleTabClick("employees")}
-            to="/employees"
-          />
-          <SidebarItem
-            icon={<BarChart />}
-            text="Reports"
-            isActive={activeTab === "reports"}
-            onClick={() => handleTabClick("reports")}
-            to="/reports"
-          />
-        </ul>
-      </nav>
-    </div>
-  );
-};
-
-interface SidebarItemProps {
-  icon: React.ReactNode;
-  text: string;
-  isActive: boolean;
-  onClick: () => void;
-  to: string;
+interface NavItemProps {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  activeTab: string;
+  onClick: (value: string) => void;
 }
 
-const SidebarItem: React.FC<SidebarItemProps> = ({
-  icon,
-  text,
-  isActive,
-  onClick,
-  to,
-}) => {
+const NavItem = ({ icon: Icon, label, value, activeTab, onClick }: NavItemProps) => (
+  <div 
+    className={cn(
+      "flex items-center px-4 py-3 cursor-pointer",
+      activeTab === value 
+        ? "bg-blue-50 text-blue-600 border-l-4 border-blue-600" 
+        : "text-gray-600 hover:bg-gray-50"
+    )}
+    onClick={() => onClick(value)}
+  >
+    <Icon size={18} className="mr-3" />
+    <span>{label}</span>
+  </div>
+);
+
+export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
+  const navItems = [
+    { icon: Home, label: "Dashboard", value: "dashboard" },
+    { icon: Calendar, label: "Reservations", value: "reservations" },
+    { icon: Users, label: "Customers", value: "customers" },
+    { icon: MessageSquare, label: "Feedback", value: "feedback" },
+    { icon: CreditCard, label: "Billing", value: "billing" },
+    { icon: FileText, label: "Reports", value: "reports" },
+  ];
+
   return (
-    <li>
-      <Link
-        to={to}
-        className={`flex items-center px-4 py-3 ${
-          isActive
-            ? "bg-blue-600 text-white"
-            : "text-gray-300 hover:bg-gray-700 hover:text-white"
-        } transition-colors rounded-md mx-2`}
-        onClick={onClick}
-      >
-        <span className="mr-3">{icon}</span>
-        <span className="hidden md:block">{text}</span>
-      </Link>
-    </li>
+    <div className="w-64 bg-white shadow-md">
+      <div className="p-4 border-b border-gray-200">
+        <h1 className="text-xl font-bold text-blue-600">TableMaster CRM</h1>
+        <p className="text-sm text-gray-500">Restaurant Management</p>
+      </div>
+      
+      <nav className="mt-6">
+        {navItems.map((item) => (
+          <NavItem
+            key={item.value}
+            icon={item.icon}
+            label={item.label}
+            value={item.value}
+            activeTab={activeTab}
+            onClick={setActiveTab}
+          />
+        ))}
+      </nav>
+    </div>
   );
 };
