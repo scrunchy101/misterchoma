@@ -2,8 +2,8 @@
 import React from "react";
 import { Clock, Plus, Users } from "lucide-react";
 
-export interface Reservation {
-  id: string;
+interface Reservation {
+  id: number;
   name: string;
   people: number;
   time: string;

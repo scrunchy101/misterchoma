@@ -1,22 +1,15 @@
 
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { CustomersList } from "@/components/customers/CustomersList";
 import { CustomerStats } from "@/components/customers/CustomerStats";
 import { Button } from "@/components/ui/button";
 import { Plus, Search } from "lucide-react";
-import { CustomerAddDialog } from "./CustomerAddDialog";
 
 export const CustomersPage = () => {
   const [activeTab, setActiveTab] = useState('customers');
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  const refreshCustomers = useCallback(() => {
-    setRefreshTrigger(prev => prev + 1);
-  }, []);
 
   return (
     <div className="flex h-screen bg-gray-100 text-gray-800">
@@ -42,27 +35,17 @@ export const CustomersPage = () => {
               />
               <Search size={16} className="absolute left-3 top-2.5 text-gray-400" />
             </div>
-            <Button 
-              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
-              onClick={() => setIsAddDialogOpen(true)}
-            >
+            <Button className="w-full sm:w-auto">
               <Plus size={16} className="mr-1" />
               Add Customer
             </Button>
           </div>
           
           {/* Customer Stats */}
-          <CustomerStats key={`stats-${refreshTrigger}`} />
+          <CustomerStats />
           
           {/* Customer List */}
-          <CustomersList searchTerm={searchTerm} refreshTrigger={refreshTrigger} />
-          
-          {/* Add Customer Dialog */}
-          <CustomerAddDialog 
-            isOpen={isAddDialogOpen} 
-            onOpenChange={setIsAddDialogOpen} 
-            onCustomerAdded={refreshCustomers}
-          />
+          <CustomersList searchTerm={searchTerm} />
         </main>
       </div>
     </div>

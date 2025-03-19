@@ -3,33 +3,32 @@ import React, { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { MetricsCard } from "@/components/dashboard/MetricsCard";
-import { ReservationsTable, Reservation } from "@/components/dashboard/ReservationsTable";
-import { CustomersCard, Customer } from "@/components/dashboard/CustomersCard";
-import { useDashboardData } from "@/hooks/useDashboardData";
-import { AlertCircle } from "lucide-react";
+import { ReservationsTable } from "@/components/dashboard/ReservationsTable";
+import { CustomersCard } from "@/components/dashboard/CustomersCard";
 
 export const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { data, isLoading, error } = useDashboardData();
 
-  // Prepare metrics data for display
-  const getMetrics = () => {
-    if (!data) {
-      return [
-        { name: 'Total Reservations', value: '0', change: '0%', color: 'bg-blue-500' },
-        { name: 'Avg. Table Time', value: '0 min', change: '0%', color: 'bg-green-500' },
-        { name: 'Revenue Today', value: '$0', change: '0%', color: 'bg-purple-500' },
-        { name: 'Customer Feedback', value: 'N/A', change: '0', color: 'bg-yellow-500' },
-      ];
-    }
+  // Sample data
+  const recentReservations = [
+    { id: 1, name: 'James Wilson', people: 4, time: '7:30 PM', date: 'Today', status: 'confirmed', phone: '(555) 123-4567' },
+    { id: 2, name: 'Sarah Johnson', people: 2, time: '8:00 PM', date: 'Today', status: 'confirmed', phone: '(555) 234-5678' },
+    { id: 3, name: 'Michael Chen', people: 6, time: '6:45 PM', date: 'Tomorrow', status: 'pending', phone: '(555) 345-6789' },
+  ];
 
-    return [
-      { name: 'Total Reservations', value: String(data.metrics.totalReservations), change: '+0%', color: 'bg-blue-500' },
-      { name: 'Avg. Table Time', value: data.metrics.avgTableTime, change: '+0%', color: 'bg-green-500' },
-      { name: 'Revenue Today', value: data.metrics.revenueToday, change: '+0%', color: 'bg-purple-500' },
-      { name: 'Customer Feedback', value: data.metrics.customerFeedback, change: '+0', color: 'bg-yellow-500' },
-    ];
-  };
+  const regularCustomers = [
+    { id: 1, name: 'Lisa Rodriguez', visits: 28, lastVisit: '3 days ago', spendAvg: '$85', preference: 'Outdoor seating, Pescatarian' },
+    { id: 2, name: 'Robert Kim', visits: 22, lastVisit: '1 week ago', spendAvg: '$110', preference: 'Wine enthusiast, Booth seating' },
+    { id: 3, name: 'Emma Davis', visits: 17, lastVisit: '2 days ago', spendAvg: '$65', preference: 'Vegetarian, Allergic to nuts' },
+  ];
+
+  // Key metrics
+  const metrics = [
+    { name: 'Total Reservations', value: '42', change: '+8%', color: 'bg-blue-500' },
+    { name: 'Avg. Table Time', value: '96 min', change: '+3%', color: 'bg-green-500' },
+    { name: 'Revenue Today', value: '$3,850', change: '+12%', color: 'bg-purple-500' },
+    { name: 'Customer Feedback', value: '4.8/5', change: '+0.2', color: 'bg-yellow-500' },
+  ];
 
   return (
     <div className="flex h-screen bg-gray-100 text-gray-800">
@@ -47,7 +46,7 @@ export const DashboardPage = () => {
             <>
               {/* Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                {getMetrics().map((metric, index) => (
+                {metrics.map((metric, index) => (
                   <MetricsCard
                     key={index}
                     name={metric.name}
@@ -58,34 +57,14 @@ export const DashboardPage = () => {
                 ))}
               </div>
               
-              {/* Loading State */}
-              {isLoading && (
-                <div className="flex justify-center items-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-700"></div>
-                </div>
-              )}
-              
-              {/* Error State */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-6 flex items-start">
-                  <AlertCircle className="mr-2 h-5 w-5 text-red-600 mt-0.5" />
-                  <div>
-                    <h3 className="font-medium">Error loading dashboard data</h3>
-                    <p className="text-sm">{error instanceof Error ? error.message : 'Unknown error'}</p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Data Display */}
-              {!isLoading && !error && data && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Today's Reservations */}
-                  <ReservationsTable reservations={data.reservations} />
-                  
-                  {/* Regular Customers */}
-                  <CustomersCard customers={data.customers} />
-                </div>
-              )}
+              {/* Two-column layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Today's Reservations */}
+                <ReservationsTable reservations={recentReservations} />
+                
+                {/* Regular Customers */}
+                <CustomersCard customers={regularCustomers} />
+              </div>
             </>
           )}
           

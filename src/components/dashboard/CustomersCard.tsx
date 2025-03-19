@@ -2,8 +2,8 @@
 import React from "react";
 import { Star, User } from "lucide-react";
 
-export interface Customer {
-  id: string;
+interface Customer {
+  id: number;
   name: string;
   visits: number;
   lastVisit: string;

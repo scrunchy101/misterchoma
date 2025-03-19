@@ -7,25 +7,25 @@ export const BillingStats = () => {
     { 
       icon: <Wallet size={20} className="text-blue-500" />, 
       label: "Monthly Revenue", 
-      value: "TZS 24,300,000",
+      value: "$24,300",
       subtitle: "+8% from last month" 
     },
     { 
       icon: <Receipt size={20} className="text-green-500" />, 
       label: "Open Invoices", 
       value: "12",
-      subtitle: "TZS 3,590,000 total outstanding" 
+      subtitle: "$3,590 total outstanding" 
     },
     { 
       icon: <CreditCard size={20} className="text-purple-500" />, 
       label: "Avg. Check Size", 
-      value: "TZS 86,500",
+      value: "$86.50",
       subtitle: "+4.2% from last month" 
     },
     { 
       icon: <BadgeDollarSign size={20} className="text-yellow-500" />, 
       label: "Today's Sales", 
-      value: "TZS 1,250,000",
+      value: "$1,250",
       subtitle: "16 transactions" 
     },
   ];

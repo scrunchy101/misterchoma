@@ -1,92 +1,96 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Edit, MoreHorizontal, Phone, Star, User } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  address: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 interface CustomersListProps {
   searchTerm: string;
-  refreshTrigger?: number;
 }
 
-export const CustomersList = ({ searchTerm, refreshTrigger = 0 }: CustomersListProps) => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("customers")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        setCustomers(data || []);
-      } catch (error) {
-        console.error("Error fetching customers:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load customers. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCustomers();
-  }, [refreshTrigger, toast]);
+export const CustomersList = ({ searchTerm }: CustomersListProps) => {
+  // Sample customer data
+  const customerData = [
+    {
+      id: 1,
+      name: "Sarah Johnson",
+      email: "sarah.j@example.com",
+      phone: "(555) 123-4567",
+      joinDate: new Date(2022, 5, 15),
+      visits: 18,
+      lastVisit: new Date(2023, 7, 28),
+      avgSpend: "$95",
+      preferences: ["Booth seating", "Wine enthusiast", "Seafood"],
+      tags: ["VIP", "Wine Club"],
+      birthdate: new Date(1988, 3, 12)
+    },
+    {
+      id: 2,
+      name: "Michael Chen",
+      email: "mchen@example.com",
+      phone: "(555) 987-6543",
+      joinDate: new Date(2021, 2, 8),
+      visits: 42,
+      lastVisit: new Date(2023, 8, 2),
+      avgSpend: "$120",
+      preferences: ["Window table", "Whiskey connoisseur", "Steak medium-rare"],
+      tags: ["VIP", "Loyalty Program"],
+      birthdate: new Date(1975, 11, 3)
+    },
+    {
+      id: 3,
+      name: "Emma Davis",
+      email: "emma.d@example.com",
+      phone: "(555) 456-7890",
+      joinDate: new Date(2023, 1, 20),
+      visits: 5,
+      lastVisit: new Date(2023, 7, 15),
+      avgSpend: "$65",
+      preferences: ["Vegetarian", "Allergic to nuts", "Prefers quiet area"],
+      tags: ["New Customer"],
+      birthdate: new Date(1992, 8, 28)
+    },
+    {
+      id: 4,
+      name: "James Wilson",
+      email: "jwilson@example.com",
+      phone: "(555) 789-0123",
+      joinDate: new Date(2020, 10, 5),
+      visits: 32,
+      lastVisit: new Date(2023, 8, 1),
+      avgSpend: "$110",
+      preferences: ["Bar seating", "Beer enthusiast", "Spicy food"],
+      tags: ["Loyalty Program"],
+      birthdate: new Date(1983, 6, 17)
+    },
+    {
+      id: 5,
+      name: "Lisa Rodriguez",
+      email: "lrodriguez@example.com",
+      phone: "(555) 234-5678",
+      joinDate: new Date(2021, 7, 12),
+      visits: 28,
+      lastVisit: new Date(2023, 8, 5),
+      avgSpend: "$85",
+      preferences: ["Outdoor seating", "Pescatarian", "Dessert lover"],
+      tags: ["VIP", "Birthday This Month"],
+      birthdate: new Date(1990, 8, 21)
+    }
+  ];
 
   // Filter customers based on search term
-  const filteredCustomers = customers.filter(customer => 
+  const filteredCustomers = customerData.filter(customer => 
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (customer.phone && customer.phone.includes(searchTerm))
+    customer.phone.includes(searchTerm)
   );
-
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm p-8">
-        <div className="flex justify-center">
-          <div className="animate-pulse flex space-x-4">
-            <div className="flex-1 space-y-6 py-1">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="h-4 bg-gray-200 rounded col-span-2"></div>
-                  <div className="h-4 bg-gray-200 rounded col-span-1"></div>
-                </div>
-                <div className="h-4 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <div className="p-4 border-b border-gray-100 flex justify-between items-center">
         <h3 className="font-semibold">Customer List</h3>
-        <div className="text-sm text-gray-500">Showing {filteredCustomers.length} of {customers.length} customers</div>
+        <div className="text-sm text-gray-500">Showing {filteredCustomers.length} of {customerData.length} customers</div>
       </div>
       
       <div className="overflow-x-auto">
@@ -95,7 +99,9 @@ export const CustomersList = ({ searchTerm, refreshTrigger = 0 }: CustomersListP
             <tr className="text-left bg-gray-50">
               <th className="px-4 py-3 font-medium">Customer</th>
               <th className="px-4 py-3 font-medium">Contact Info</th>
-              <th className="px-4 py-3 font-medium">Details</th>
+              <th className="px-4 py-3 font-medium">Activity</th>
+              <th className="px-4 py-3 font-medium">Preferences</th>
+              <th className="px-4 py-3 font-medium">Tags</th>
               <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
@@ -111,31 +117,49 @@ export const CustomersList = ({ searchTerm, refreshTrigger = 0 }: CustomersListP
                       <p className="font-medium">{customer.name}</p>
                       <div className="flex items-center text-xs text-gray-500">
                         <Calendar size={12} className="mr-1" />
-                        <span>Joined {format(new Date(customer.created_at), "MMM yyyy")}</span>
+                        <span>Joined {format(customer.joinDate, "MMM yyyy")}</span>
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-4">
                   <p className="mb-1">{customer.email}</p>
-                  {customer.phone && (
-                    <div className="flex items-center text-gray-500">
-                      <Phone size={12} className="mr-1" />
-                      <span>{customer.phone}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center text-gray-500">
+                    <Phone size={12} className="mr-1" />
+                    <span>{customer.phone}</span>
+                  </div>
                 </td>
                 <td className="px-4 py-4">
-                  {customer.address && (
-                    <div className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium">Address:</span> {customer.address}
-                    </div>
-                  )}
-                  {customer.notes && (
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Notes:</span> {customer.notes}
-                    </div>
-                  )}
+                  <div className="mb-1 flex items-center">
+                    <User size={12} className="mr-1 text-gray-500" />
+                    <span>{customer.visits} visits</span>
+                  </div>
+                  <div className="text-gray-500 text-xs">
+                    Last: {format(customer.lastVisit, "MMM d, yyyy")}
+                  </div>
+                  <div className="font-medium">{customer.avgSpend}/visit</div>
+                </td>
+                <td className="px-4 py-4">
+                  <div className="max-w-[200px]">
+                    {customer.preferences.map((pref, i) => (
+                      <div key={i} className="text-xs mb-1 last:mb-0 truncate">• {pref}</div>
+                    ))}
+                  </div>
+                </td>
+                <td className="px-4 py-4">
+                  <div className="flex flex-wrap gap-1">
+                    {customer.tags.map((tag, i) => (
+                      <Badge key={i} variant="outline" className={
+                        tag === "VIP" ? "border-yellow-500 text-yellow-700 bg-yellow-50" :
+                        tag === "Loyalty Program" ? "border-blue-500 text-blue-700 bg-blue-50" :
+                        tag === "New Customer" ? "border-green-500 text-green-700 bg-green-50" :
+                        tag === "Birthday This Month" ? "border-purple-500 text-purple-700 bg-purple-50" :
+                        ""
+                      }>
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex space-x-2">
@@ -155,13 +179,17 @@ export const CustomersList = ({ searchTerm, refreshTrigger = 0 }: CustomersListP
       
       {filteredCustomers.length === 0 && (
         <div className="p-8 text-center text-gray-500">
-          {customers.length === 0 ? "No customers added yet." : "No customers found matching your search criteria."}
+          No customers found matching your search criteria.
         </div>
       )}
       
       <div className="p-4 border-t border-gray-100 flex justify-between items-center">
         <div className="text-sm text-gray-500">
-          Showing {filteredCustomers.length} of {customers.length} customers
+          Showing {filteredCustomers.length} of {customerData.length} customers
+        </div>
+        <div className="flex space-x-2">
+          <Button variant="outline" size="sm" disabled>Previous</Button>
+          <Button variant="outline" size="sm" disabled>Next</Button>
         </div>
       </div>
     </div>
