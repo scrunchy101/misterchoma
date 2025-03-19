@@ -1,7 +1,10 @@
 
-import React, { useState } from "react";
-import { Search, Plus, Filter, Edit, Trash2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Search, Plus, Filter, Edit, Trash2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Card } from "@/components/ui/card";
 
 interface InventoryItem {
   id: string;
@@ -12,92 +15,79 @@ interface InventoryItem {
   threshold: number;
   status: string;
   cost: number;
-  lastUpdated: string;
+  supplier?: string;
+  last_updated: string;
 }
 
 export const InventoryList = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
   
-  // Sample data for inventory
-  const inventoryItems: InventoryItem[] = [
-    {
-      id: "INV-1001",
-      name: "Beef Sirloin",
-      category: "Meat",
-      stock: 45,
-      unit: "kg",
-      threshold: 10,
-      status: "In Stock",
-      cost: 12.99,
-      lastUpdated: "2023-10-15"
-    },
-    {
-      id: "INV-1002",
-      name: "Tomatoes",
-      category: "Vegetables",
-      stock: 8,
-      unit: "kg",
-      threshold: 10,
-      status: "Low Stock",
-      cost: 3.50,
-      lastUpdated: "2023-10-18"
-    },
-    {
-      id: "INV-1003",
-      name: "Olive Oil",
-      category: "Oils",
-      stock: 24,
-      unit: "bottle",
-      threshold: 5,
-      status: "In Stock",
-      cost: 15.75,
-      lastUpdated: "2023-10-10"
-    },
-    {
-      id: "INV-1004",
-      name: "Chicken Breast",
-      category: "Meat",
-      stock: 3,
-      unit: "kg",
-      threshold: 7,
-      status: "Low Stock",
-      cost: 9.50,
-      lastUpdated: "2023-10-17"
-    },
-    {
-      id: "INV-1005",
-      name: "Red Wine",
-      category: "Beverages",
-      stock: 32,
-      unit: "bottle",
-      threshold: 10,
-      status: "In Stock",
-      cost: 22.99,
-      lastUpdated: "2023-10-05"
-    },
-    {
-      id: "INV-1006",
-      name: "Potatoes",
-      category: "Vegetables",
-      stock: 60,
-      unit: "kg",
-      threshold: 15,
-      status: "In Stock",
-      cost: 2.25,
-      lastUpdated: "2023-10-16"
-    },
-    {
-      id: "INV-1007",
-      name: "Garlic",
-      category: "Spices",
-      stock: 4,
-      unit: "kg",
-      threshold: 5,
-      status: "Low Stock",
-      cost: 6.75,
-      lastUpdated: "2023-10-14"
-    },
-  ];
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error } = await supabase
+          .from('inventory')
+          .select('*');
+
+        if (error) throw error;
+
+        // Process the data to match the component's expected format
+        const processedItems = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          stock: Number(item.stock),
+          unit: item.unit,
+          threshold: Number(item.threshold),
+          status: Number(item.stock) > Number(item.threshold) 
+            ? 'In Stock' 
+            : Number(item.stock) > 0 
+              ? 'Low Stock' 
+              : 'Out of Stock',
+          cost: Number(item.cost),
+          supplier: item.supplier,
+          last_updated: new Date(item.last_updated).toISOString().split('T')[0]
+        }));
+
+        setInventoryItems(processedItems);
+      } catch (error) {
+        console.error('Error fetching inventory:', error);
+        setError('Failed to load inventory data. Please try again later.');
+        toast({
+          title: "Error",
+          description: "Failed to load inventory data",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInventory();
+    
+    // Set up a subscription for real-time updates
+    const subscription = supabase
+      .channel('inventory_changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'inventory' 
+      }, (payload) => {
+        fetchInventory();
+      })
+      .subscribe();
+      
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [toast]);
 
   const filteredItems = inventoryItems.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,35 +108,42 @@ export const InventoryList = () => {
     }
   };
 
-  return (
-    <div className="bg-gray-700 rounded-lg shadow-lg p-6">
-      <div className="flex justify-between mb-6">
-        <h2 className="text-xl font-semibold">Inventory Items</h2>
-        <Button className="bg-green-600 hover:bg-green-700 text-white">
-          <Plus size={16} className="mr-2" />
-          Add Item
-        </Button>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={18} className="text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search inventory..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
         </div>
-        <Button variant="outline" className="text-white border-gray-600 bg-gray-800 hover:bg-gray-700">
-          <Filter size={16} className="mr-2" />
-          Filter
-        </Button>
-      </div>
+      );
+    }
 
+    if (error) {
+      return (
+        <Card className="p-6 bg-red-900/20 border-red-800">
+          <div className="flex items-center gap-2 text-red-400">
+            <AlertCircle size={20} />
+            <p>{error}</p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="mt-4 border-red-700 text-red-400 hover:bg-red-950"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
+        </Card>
+      );
+    }
+
+    if (filteredItems.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-400">
+          <p>{inventoryItems.length === 0 ? "No inventory items found" : "No matching items found"}</p>
+        </div>
+      );
+    }
+
+    return (
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -187,7 +184,7 @@ export const InventoryList = () => {
                   </span>
                 </td>
                 <td className="py-4">${item.cost.toFixed(2)}</td>
-                <td className="py-4 text-gray-400">{item.lastUpdated}</td>
+                <td className="py-4 text-gray-400">{item.last_updated}</td>
                 <td className="py-4">
                   <div className="flex space-x-2">
                     <button className="text-blue-400 hover:text-blue-300">
@@ -203,6 +200,39 @@ export const InventoryList = () => {
           </tbody>
         </table>
       </div>
+    );
+  };
+
+  return (
+    <div className="bg-gray-700 rounded-lg shadow-lg p-6">
+      <div className="flex justify-between mb-6">
+        <h2 className="text-xl font-semibold">Inventory Items</h2>
+        <Button className="bg-green-600 hover:bg-green-700 text-white">
+          <Plus size={16} className="mr-2" />
+          Add Item
+        </Button>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={18} className="text-gray-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search inventory..."
+            className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Button variant="outline" className="text-white border-gray-600 bg-gray-800 hover:bg-gray-700">
+          <Filter size={16} className="mr-2" />
+          Filter
+        </Button>
+      </div>
+
+      {renderContent()}
     </div>
   );
 };
