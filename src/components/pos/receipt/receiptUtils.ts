@@ -1,8 +1,18 @@
 
-import { TransactionData } from "../../billing/receiptUtils";
 import { format } from "date-fns";
+import { CartItem } from "@/hooks/usePOSSystem";
 
-export function generateReceiptHtml(transaction: TransactionData): string {
+export interface ReceiptTransaction {
+  id: string;
+  date: Date;
+  customer: string;
+  items: CartItem[];
+  total: number;
+  paymentMethod: string;
+  employeeName?: string;
+}
+
+export const generateReceiptHtml = (transaction: ReceiptTransaction): string => {
   return `
     <html>
       <head>
@@ -48,9 +58,9 @@ export function generateReceiptHtml(transaction: TransactionData): string {
       </body>
     </html>
   `;
-}
+};
 
-export function generateReceiptText(transaction: TransactionData): string {
+export const generateReceiptText = (transaction: ReceiptTransaction): string => {
   return `
 MISTER CHOMA
 123 Main Street, Dar es Salaam
@@ -72,4 +82,38 @@ Payment Method: ${transaction.paymentMethod}
 Thank you for dining with us!
 Please come again
   `;
-}
+};
+
+export const printReceipt = (transaction: ReceiptTransaction): void => {
+  const receiptContent = generateReceiptHtml(transaction);
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    console.error("Unable to open print window");
+    return;
+  }
+  
+  printWindow.document.open();
+  printWindow.document.write(receiptContent);
+  printWindow.document.close();
+  
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.onafterprint = () => printWindow.close();
+  }, 500);
+};
+
+export const downloadReceipt = (transaction: ReceiptTransaction): void => {
+  const receiptText = generateReceiptText(transaction);
+  const blob = new Blob([receiptText], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `receipt-${transaction.id.substring(0, 8)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};

@@ -13,21 +13,21 @@ export const ReceiptActions: React.FC<ReceiptActionsProps> = ({
   onDownload 
 }) => {
   return (
-    <div className="flex space-x-2 justify-end">
+    <div className="flex space-x-2 justify-end mt-4">
       <Button 
         variant="outline" 
         onClick={onPrint}
         className="border-gray-600"
       >
         <Printer size={16} className="mr-2" />
-        Print
+        Print Receipt
       </Button>
       <Button 
         variant="default"
         onClick={onDownload}
       >
         <Download size={16} className="mr-2" />
-        Download
+        Download Receipt
       </Button>
     </div>
   );

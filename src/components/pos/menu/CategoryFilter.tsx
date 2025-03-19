@@ -1,7 +1,7 @@
 
 import React from "react";
-import { useMenu } from "./MenuContext";
-import { UtensilsCrossed } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useMenu } from "@/hooks/useMenuItems";
 
 interface CategoryFilterProps {
   selectedCategory: string | null;
@@ -12,55 +12,36 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   selectedCategory,
   onSelectCategory
 }) => {
-  const { categories, isLoading } = useMenu();
+  const { data: menuItems = [] } = useMenu();
   
-  if (isLoading) {
-    return (
-      <div className="flex overflow-x-auto p-4 bg-gray-700 border-b border-gray-600 space-x-2">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div 
-            key={index} 
-            className="h-8 w-20 bg-gray-600 rounded animate-pulse shrink-0"
-          />
-        ))}
-      </div>
-    );
-  }
-  
-  if (categories.length === 0) {
-    return (
-      <div className="flex items-center justify-center p-4 bg-gray-700 border-b border-gray-600">
-        <UtensilsCrossed className="text-gray-400 mr-2 h-4 w-4" />
-        <span className="text-gray-400">No categories available</span>
-      </div>
-    );
-  }
+  // Extract unique categories
+  const categories = React.useMemo(() => {
+    const uniqueCategories = new Set<string>();
+    menuItems.forEach(item => {
+      if (item.category) uniqueCategories.add(item.category);
+    });
+    return Array.from(uniqueCategories);
+  }, [menuItems]);
 
   return (
-    <div className="flex overflow-x-auto p-4 bg-gray-700 border-b border-gray-600">
-      <button
-        className={`px-4 py-2 rounded-full whitespace-nowrap mr-2 ${
-          selectedCategory === null 
-            ? 'bg-blue-600 text-white' 
-            : 'bg-gray-600 text-gray-200 hover:bg-gray-500'
-        }`}
+    <div className="flex overflow-x-auto p-2 bg-gray-700 border-b border-gray-600">
+      <Button
+        variant={selectedCategory === null ? "default" : "outline"}
+        className="mx-1 shrink-0 bg-gray-600"
         onClick={() => onSelectCategory(null)}
       >
         All Items
-      </button>
+      </Button>
       
       {categories.map(category => (
-        <button
+        <Button
           key={category}
-          className={`px-4 py-2 rounded-full whitespace-nowrap mr-2 ${
-            selectedCategory === category 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-600 text-gray-200 hover:bg-gray-500'
-          }`}
+          variant={selectedCategory === category ? "default" : "outline"}
+          className="mx-1 shrink-0 bg-gray-600"
           onClick={() => onSelectCategory(category)}
         >
           {category}
-        </button>
+        </Button>
       ))}
     </div>
   );
