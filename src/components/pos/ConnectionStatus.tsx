@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Wifi, WifiOff } from "lucide-react";
+import { Wifi, WifiOff, Loader2 } from "lucide-react";
 
 interface ConnectionStatusProps {
   isConnected: boolean;
@@ -14,35 +14,34 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   isChecking,
   onCheckConnection
 }) => {
-  const handleCheckConnection = async () => {
-    await onCheckConnection();
-  };
-
   return (
-    <div className={`px-4 py-2 flex items-center justify-between ${
-      isConnected ? 'bg-green-900/30' : 'bg-red-900/30'
-    }`}>
-      <div className="flex items-center gap-2">
+    <div className={`px-4 py-2 flex items-center justify-between ${isConnected ? 'bg-green-900/20' : 'bg-red-900/20'}`}>
+      <div className="flex items-center">
         {isConnected ? (
-          <>
-            <Wifi size={16} className="text-green-400" />
-            <span className="text-green-400 text-sm">Connected to database</span>
-          </>
+          <Wifi className="h-4 w-4 text-green-500 mr-2" />
         ) : (
-          <>
-            <WifiOff size={16} className="text-red-400" />
-            <span className="text-red-400 text-sm">Not connected to database</span>
-          </>
+          <WifiOff className="h-4 w-4 text-red-500 mr-2" />
         )}
+        <span className="text-sm">
+          {isConnected ? 'Connected to POS system' : 'Disconnected from POS system'}
+        </span>
       </div>
+      
       <Button 
         variant="outline" 
         size="sm"
-        onClick={handleCheckConnection}
+        onClick={() => onCheckConnection()}
         disabled={isChecking}
-        className="h-7 text-xs"
+        className={`text-xs h-7 ${isConnected ? 'border-green-600' : 'border-red-600'}`}
       >
-        {isChecking ? "Checking..." : "Check Connection"}
+        {isChecking ? (
+          <>
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            Checking...
+          </>
+        ) : (
+          'Check Connection'
+        )}
       </Button>
     </div>
   );
