@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { useMenu } from "@/hooks/useMenuItems";
+import { useMenuItems } from "@/hooks/useMenuItems";
 
 interface CategoryFilterProps {
   selectedCategory: string | null;
@@ -12,7 +12,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   selectedCategory,
   onSelectCategory
 }) => {
-  const { data: menuItems = [] } = useMenu();
+  const { data: menuItems = [] } = useMenuItems();
   
   // Extract unique categories
   const categories = React.useMemo(() => {

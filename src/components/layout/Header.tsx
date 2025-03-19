@@ -1,6 +1,9 @@
 
 import React from "react";
 import { ChevronDown, Search } from "lucide-react";
+import { LoginButton } from "@/components/auth/LoginButton";
+import { UserMenu } from "@/components/auth/UserMenu";
+import { useAuth } from "@/context/AuthContext";
 
 interface HeaderProps {
   title: string;
@@ -8,6 +11,7 @@ interface HeaderProps {
 
 export const Header = ({ title }: HeaderProps) => {
   const currentDate = new Date();
+  const { profile } = useAuth();
   
   return (
     <header className="bg-gray-900 shadow-md">
@@ -34,10 +38,14 @@ export const Header = ({ title }: HeaderProps) => {
             <Search size={16} className="absolute left-3 top-2.5 text-gray-400" />
           </div>
           
-          <div className="flex items-center cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold">A</div>
-            <ChevronDown size={16} className="ml-2 text-gray-400" />
-          </div>
+          {profile ? (
+            <UserMenu />
+          ) : (
+            <LoginButton 
+              variant="outline" 
+              className="text-white bg-transparent border-gray-600 hover:bg-gray-700"
+            />
+          )}
         </div>
       </div>
     </header>

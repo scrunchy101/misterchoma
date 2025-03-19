@@ -6,7 +6,7 @@ import { Wifi, WifiOff } from "lucide-react";
 interface ConnectionStatusProps {
   isConnected: boolean;
   isChecking: boolean;
-  onCheckConnection: () => Promise<void>;
+  onCheckConnection: () => Promise<boolean | void>;
 }
 
 export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
@@ -14,6 +14,10 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   isChecking,
   onCheckConnection
 }) => {
+  const handleCheckConnection = async () => {
+    await onCheckConnection();
+  };
+
   return (
     <div className={`px-4 py-2 flex items-center justify-between ${
       isConnected ? 'bg-green-900/30' : 'bg-red-900/30'
@@ -34,7 +38,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
       <Button 
         variant="outline" 
         size="sm"
-        onClick={onCheckConnection}
+        onClick={handleCheckConnection}
         disabled={isChecking}
         className="h-7 text-xs"
       >
