@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Session, User } from "@supabase/supabase-js";
-import { useNavigate } from "react-router-dom";
 
 // Define types for our profile and auth context
 export interface Profile {
@@ -169,9 +168,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Signed out",
         description: "You have been signed out successfully"
       });
-      
-      // Redirect to auth page after sign out
-      window.location.href = "/auth";
     } catch (error: any) {
       console.error('Sign out error:', error);
       toast({
