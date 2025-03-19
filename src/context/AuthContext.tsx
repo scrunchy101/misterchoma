@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +22,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, userData: Partial<Profile>) => Promise<void>;
   signOut: () => Promise<void>;
   isAllowed: (allowedRoles: string[]) => boolean;
+  adminLogin: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,11 +35,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
-    // Initial session check
     const initAuth = async () => {
       setIsLoading(true);
       try {
-        // Get current session
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
         
@@ -51,7 +49,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await fetchProfile(currentSession.user.id);
         }
         
-        // Listen for auth changes
         const { data: authListener } = supabase.auth.onAuthStateChange(
           async (event, newSession) => {
             console.log('Auth state changed:', event);
@@ -137,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             full_name: userData.full_name,
-            role: 'cashier' // Default role for new users
+            role: 'cashier'
           }
         }
       });
@@ -183,6 +180,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const adminLogin = async () => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: "misterchoma@gmail.com",
+        password: "Tanzania101"
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Administrator Login",
+        description: "You have successfully signed in as administrator"
+      });
+    } catch (error: any) {
+      console.error('Admin login error:', error);
+      toast({
+        title: "Admin login failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const isAllowed = (allowedRoles: string[]) => {
     if (!profile) return false;
     return allowedRoles.includes(profile.role);
@@ -198,7 +222,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signIn,
         signUp,
         signOut,
-        isAllowed
+        isAllowed,
+        adminLogin
       }}
     >
       {children}

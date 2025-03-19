@@ -6,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ShieldCheck } from "lucide-react";
 
 export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname || "/";
-  const { signIn, signUp, isLoading, session } = useAuth();
+  const { signIn, signUp, isLoading, session, adminLogin } = useAuth();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,6 +52,16 @@ export const AuthPage: React.FC = () => {
       // Don't navigate immediately as the user might need to confirm email
     } catch (error: any) {
       setAuthError(error.message || "Failed to sign up");
+    }
+  };
+
+  const handleAdminLogin = async () => {
+    setAuthError(null);
+    try {
+      await adminLogin();
+      navigate(from, { replace: true });
+    } catch (error: any) {
+      setAuthError(error.message || "Admin login failed");
     }
   };
 
@@ -99,6 +110,15 @@ export const AuthPage: React.FC = () => {
                 {authError && (
                   <div className="text-red-500 text-sm">{authError}</div>
                 )}
+                <Button 
+                  type="button" 
+                  className="w-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center"
+                  onClick={handleAdminLogin}
+                  disabled={isLoading}
+                >
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  {isLoading ? "Signing in..." : "Administrator Login"}
+                </Button>
               </CardContent>
               <CardFooter>
                 <Button 
