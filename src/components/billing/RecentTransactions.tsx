@@ -1,12 +1,16 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, CreditCard, Download, Search, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ReceiptViewer } from "@/components/billing/ReceiptViewer";
 
 export const RecentTransactions = () => {
   const { toast } = useToast();
+  const [receiptData, setReceiptData] = useState(null);
+  const [isReceiptViewerOpen, setIsReceiptViewerOpen] = useState(false);
   
   // Sample transaction data
   const transactions = [
@@ -57,11 +61,48 @@ export const RecentTransactions = () => {
     }
   ];
 
-  const handleDownloadReceipt = (transactionId: string) => {
-    toast({
-      title: "Download Started",
-      description: `Downloading receipt for transaction ${transactionId}`,
-    });
+  // Sample items for each transaction - in a real app, these would come from the database
+  const transactionItems = {
+    "TX-2023-08-001": [
+      { name: "Beef Burger", quantity: 2, price: 25000 },
+      { name: "Fries", quantity: 2, price: 15000 },
+      { name: "Soda", quantity: 2, price: 6250 },
+    ],
+    "TX-2023-08-002": [
+      { name: "Chicken Pizza", quantity: 1, price: 45000 },
+      { name: "Garlic Bread", quantity: 1, price: 12000 },
+      { name: "Beer", quantity: 2, price: 14875 },
+    ],
+    "TX-2023-08-003": [
+      { name: "Seafood Platter", quantity: 1, price: 120000 },
+      { name: "Grilled Fish", quantity: 1, price: 65000 },
+      { name: "White Wine", quantity: 1, price: 50000 },
+    ],
+    "TX-2023-08-004": [
+      { name: "Vegetable Pasta", quantity: 2, price: 36000 },
+      { name: "Caesar Salad", quantity: 1, price: 20250 },
+    ],
+    "TX-2023-08-005": [
+      { name: "T-Bone Steak", quantity: 2, price: 75000 },
+      { name: "Mashed Potatoes", quantity: 2, price: 12000 },
+      { name: "Red Wine", quantity: 1, price: 45000 },
+    ]
+  };
+
+  const handleViewReceipt = (transactionId) => {
+    const transaction = transactions.find(t => t.id === transactionId);
+    
+    if (transaction) {
+      setReceiptData({
+        id: transaction.id,
+        date: transaction.date,
+        customer: transaction.customer,
+        paymentMethod: transaction.paymentMethod,
+        total: transaction.amount,
+        items: transactionItems[transactionId] || []
+      });
+      setIsReceiptViewerOpen(true);
+    }
   };
 
   return (
@@ -128,7 +169,7 @@ export const RecentTransactions = () => {
                     variant="outline" 
                     size="sm" 
                     className="h-8"
-                    onClick={() => handleDownloadReceipt(transaction.id)}
+                    onClick={() => handleViewReceipt(transaction.id)}
                   >
                     <Download size={14} className="mr-1" />
                     Receipt
@@ -149,6 +190,12 @@ export const RecentTransactions = () => {
           <Button variant="outline" size="sm">Next</Button>
         </div>
       </div>
+
+      <ReceiptViewer 
+        isOpen={isReceiptViewerOpen}
+        onClose={() => setIsReceiptViewerOpen(false)}
+        transactionData={receiptData}
+      />
     </div>
   );
 };

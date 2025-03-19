@@ -34,3 +34,49 @@ export const checkSupabaseConnection = async () => {
     return { connected: false, error };
   }
 };
+
+// Helper to fetch order details including items
+export const fetchOrderDetails = async (orderId: string) => {
+  try {
+    // Get order information
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+    
+    if (orderError) throw orderError;
+    
+    // Get order items
+    const { data: orderItems, error: itemsError } = await supabase
+      .from('order_items')
+      .select(`
+        id,
+        quantity,
+        unit_price,
+        subtotal,
+        menu_items (
+          id,
+          name,
+          price
+        )
+      `)
+      .eq('order_id', orderId);
+    
+    if (itemsError) throw itemsError;
+    
+    return {
+      order,
+      items: orderItems.map(item => ({
+        id: item.id,
+        name: item.menu_items?.name || 'Unknown Item',
+        price: item.unit_price,
+        quantity: item.quantity,
+        subtotal: item.subtotal
+      }))
+    };
+  } catch (error) {
+    console.error("Error fetching order details:", error);
+    throw error;
+  }
+};

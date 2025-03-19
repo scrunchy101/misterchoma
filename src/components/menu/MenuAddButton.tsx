@@ -2,9 +2,9 @@
 import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { InventoryAddDialog } from "./InventoryAddDialog";
+import { MenuAddDialog } from "./MenuAddDialog";
 
-export const InventoryAddButton = () => {
+export const MenuAddButton = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
@@ -17,7 +17,7 @@ export const InventoryAddButton = () => {
         Add Item
       </Button>
       
-      <InventoryAddDialog 
+      <MenuAddDialog 
         isOpen={isDialogOpen} 
         onOpenChange={setIsDialogOpen} 
       />
