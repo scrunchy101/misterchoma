@@ -3,7 +3,6 @@ import React, { useState, useCallback } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { MetricsCard } from "@/components/dashboard/MetricsCard";
-import { ReservationsTable, Reservation } from "@/components/dashboard/ReservationsTable";
 import { CustomersCard, Customer } from "@/components/dashboard/CustomersCard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useQuery } from "@tanstack/react-query";
@@ -112,11 +111,7 @@ export const DashboardPage = () => {
               )}
               
               {!isLoading && !error && dashboardData && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <ReservationsTable 
-                    reservations={dashboardData.reservations} 
-                    onCancelReservation={refreshData} 
-                  />
+                <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
                   <CustomersCard customers={dashboardData.customers} />
                 </div>
               )}

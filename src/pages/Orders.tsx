@@ -1,8 +1,6 @@
 
 import { OrdersPage } from "@/components/orders/OrdersPage";
 
-const Orders = () => {
+export default function Orders() {
   return <OrdersPage />;
-};
-
-export default Orders;
+}

@@ -1,126 +1,99 @@
 
-import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState } from "react";
 import { ReservationListHeader } from "./ReservationListHeader";
-import { ReservationDateDisplay } from "./ReservationDateDisplay";
 import { ReservationsTable } from "./ReservationsTable";
 import { AddReservationDialog } from "./AddReservationDialog";
 import { Reservation, ReservationStatusType } from "./types";
+import { format } from "date-fns";
 
-interface ReservationsListProps {
-  selectedDate: Date;
-  setSelectedDate: (date: Date) => void;
-}
+// Sample reservation data with updated types
+const sampleReservations: Reservation[] = [
+  {
+    id: "1",
+    customerName: "John Smith",
+    phoneNumber: "+255 123 456 789",
+    date: new Date(2023, 9, 15, 19, 0),
+    partySize: 4,
+    tableNumber: 7,
+    status: "confirmed",
+    notes: "Anniversary dinner"
+  },
+  {
+    id: "2",
+    customerName: "Maria Garcia",
+    phoneNumber: "+255 987 654 321",
+    date: new Date(2023, 9, 15, 20, 30),
+    partySize: 2,
+    tableNumber: 3,
+    status: "confirmed",
+    notes: "Window seat requested"
+  },
+  {
+    id: "3",
+    customerName: "David Wong",
+    phoneNumber: "+255 555 123 456",
+    date: new Date(2023, 9, 16, 18, 0),
+    partySize: 6,
+    tableNumber: 10,
+    status: "pending",
+    notes: "Birthday celebration"
+  },
+  {
+    id: "4",
+    customerName: "Sophia Johnson",
+    phoneNumber: "+255 444 789 123",
+    date: new Date(2023, 9, 16, 19, 15),
+    partySize: 3,
+    tableNumber: 5,
+    status: "confirmed",
+    notes: ""
+  },
+  {
+    id: "5",
+    customerName: "James Williams",
+    phoneNumber: "+255 777 888 999",
+    date: new Date(2023, 9, 17, 20, 0),
+    partySize: 2,
+    tableNumber: 2,
+    status: "cancelled",
+    notes: "Cancelled due to illness"
+  }
+];
 
-// Simple type for the database response
-interface OrderRecord {
-  id: string;
-  customer_name: string | null;
-  table_number: number | null;
-  created_at: string | null;
-  status: string | null;
-}
-
-export const ReservationsList = ({ selectedDate, setSelectedDate }: ReservationsListProps) => {
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [loading, setLoading] = useState(true);
+export const ReservationsList = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<ReservationStatusType>("all");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const { toast } = useToast();
   
-  useEffect(() => {
-    fetchReservations();
-  }, [selectedDate]);
-
-  const fetchReservations = async () => {
-    try {
-      setLoading(true);
-      
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('orders')
-        .select('id, customer_name, table_number, created_at, status')
-        .eq('created_at::date', formattedDate);
-
-      if (error) throw error;
-      
-      const formattedReservations: Reservation[] = [];
-      
-      if (data && Array.isArray(data) && data.length > 0) {
-        // Use type assertion to avoid deep instantiation issues
-        (data as OrderRecord[]).forEach((item) => {
-          const orderDate = item.created_at ? new Date(item.created_at) : new Date();
-          
-          formattedReservations.push({
-            id: item.id,
-            name: item.customer_name ?? 'Guest',
-            people: item.table_number ?? 2,
-            time: orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            date: format(orderDate, 'yyyy-MM-dd'),
-            status: (item.status as "confirmed" | "pending" | "cancelled") ?? 'pending',
-            phone: "(No phone on record)",
-            tableNumber: item.table_number ?? undefined
-          });
-        });
-      }
-      
-      setReservations(formattedReservations);
-    } catch (error) {
-      console.error('Error fetching reservations:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load reservations data",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // In a real app, this would be fetched from an API
+  const reservations = sampleReservations;
   
-  const filteredReservations = statusFilter === 'all' 
-    ? reservations 
-    : reservations.filter(res => res.status === statusFilter);
-
-  const handleDateChange = (date: Date) => {
-    setSelectedDate(date);
-  };
-
-  const handleAddReservation = () => {
-    setIsAddDialogOpen(true);
-  };
-
+  // Apply status filter
+  const filteredReservations = statusFilter !== "all"
+    ? reservations.filter(res => res.status === statusFilter)
+    : reservations;
+  
   return (
-    <div className="bg-white rounded-lg shadow-sm">
+    <div className="bg-white rounded-lg shadow overflow-hidden">
       <ReservationListHeader 
-        statusFilter={statusFilter} 
+        statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
-        onAddReservation={handleAddReservation}
+        onAddReservation={() => setIsOpen(true)}
       />
       
-      <ReservationDateDisplay 
-        selectedDate={selectedDate} 
-        handleDateChange={handleDateChange}
-      />
-
-      <div className="p-4">
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-2 text-gray-500">Loading reservations...</p>
-          </div>
-        ) : (
-          <ReservationsTable reservations={filteredReservations} />
-        )}
-      </div>
-
-      <AddReservationDialog 
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        onSuccess={fetchReservations}
-        selectedDate={selectedDate}
+      <ReservationsTable reservations={filteredReservations} />
+      
+      <AddReservationDialog
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        onSuccess={() => {
+          console.log("Reservation added successfully");
+          // Here we would refetch reservations
+        }}
+        onAddReservation={(data) => {
+          console.log("Add reservation:", data);
+          setIsOpen(false);
+          // Here we would add the reservation to the database
+        }}
       />
     </div>
   );

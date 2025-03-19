@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ReceiptContent } from "./ReceiptContent";
 import { ReceiptActions } from "./ReceiptActions";
 import { TransactionData, generatePrintableReceiptHtml, generateReceiptTextContent } from "./receiptUtils";
+import { useTransactionItems } from "@/hooks/useTransactionItems";
 
 interface ReceiptViewerProps {
   isOpen: boolean;
@@ -16,6 +17,16 @@ interface ReceiptViewerProps {
 
 export const ReceiptViewer = ({ isOpen, onClose, transactionData }: ReceiptViewerProps) => {
   const { toast } = useToast();
+  
+  // Fetch items from database
+  const { data: items = [] } = useTransactionItems(transactionData?.id || null);
+  
+  // Update items if we have new data from the query
+  React.useEffect(() => {
+    if (transactionData && isOpen && items.length > 0) {
+      transactionData.items = items;
+    }
+  }, [transactionData, items, isOpen]);
   
   if (!transactionData) return null;
   
@@ -65,7 +76,7 @@ export const ReceiptViewer = ({ isOpen, onClose, transactionData }: ReceiptViewe
     
     toast({
       title: "Receipt Downloaded",
-      description: `Receipt for transaction ${transactionData.id} has been downloaded.`
+      description: `Receipt for transaction has been downloaded.`
     });
   };
   
@@ -74,7 +85,7 @@ export const ReceiptViewer = ({ isOpen, onClose, transactionData }: ReceiptViewe
       <DialogContent className="sm:max-w-md bg-gray-800 text-white">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center text-white">
-            <span>Receipt #{transactionData.id}</span>
+            <span>Receipt #{transactionData.id.substring(0, 8)}</span>
             <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 text-gray-300 hover:text-white hover:bg-gray-700">
               <X size={16} />
             </Button>

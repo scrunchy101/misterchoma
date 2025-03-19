@@ -1,214 +1,158 @@
 
-import React, { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import React, { useState } from "react";
+import { OrdersTable } from "./OrdersTable";
+import { useOrders } from "@/hooks/useOrders";
+import { OrderDetailsDialog } from "./OrderDetailsDialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { OrderTable } from "@/components/orders/OrderTable";
-import { OrderSearchBar } from "@/components/orders/OrderSearchBar";
-import { NewOrderDialog } from "@/components/orders/NewOrderDialog";
-import { format } from "date-fns";
+import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
-interface Order {
-  id: string;
-  customer: string;
-  table: number | null;
-  items: number;
-  total: number;
-  status: string;
-  time: string;
-  paymentStatus: string;
-  created_at: string;
+interface OrdersListProps {
+  statusFilter: string;
+  searchQuery: string;
 }
 
-interface OrderItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
+export const OrdersList: React.FC<OrdersListProps> = ({ 
+  statusFilter,
+  searchQuery
+}) => {
+  const { orders, loading, fetchOrders } = useOrders();
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 10;
 
-export const OrdersList = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-  const [showNewOrderDialog, setShowNewOrderDialog] = useState(false);
-  const [newOrder, setNewOrder] = useState({
-    customerName: "",
-    tableNumber: "",
-    status: "pending",
-    paymentStatus: "pending"
+  // Apply filters
+  const filteredOrders = orders.filter(order => {
+    // Status filter
+    if (statusFilter !== "all" && order.status.toLowerCase() !== statusFilter.toLowerCase()) {
+      return false;
+    }
+    
+    // Search filter
+    if (searchQuery && !order.id.toLowerCase().includes(searchQuery.toLowerCase()) && 
+        !order.customer.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    
+    return true;
   });
-  const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
 
-  // Fetch orders when component mounts
-  useEffect(() => {
+  // Pagination
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+
+  const handleRefresh = () => {
     fetchOrders();
-  }, []);
+  };
 
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      
-      // Get all orders with their order items
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select(`
-          id, 
-          customer_name, 
-          table_number, 
-          status, 
-          payment_status, 
-          total_amount,
-          created_at,
-          order_items (count)
-        `)
-        .order('created_at', { ascending: false });
+  const handleViewOrderDetails = (orderId: string) => {
+    setSelectedOrderId(orderId);
+  };
 
-      if (ordersError) {
-        throw ordersError;
-      }
+  const handleCloseOrderDetails = () => {
+    setSelectedOrderId(null);
+  };
 
-      // Format orders for display
-      const formattedOrders: Order[] = (ordersData || []).map(order => ({
-        id: order.id,
-        customer: order.customer_name || "Guest",
-        table: order.table_number,
-        items: order.order_items?.length || 0,
-        total: order.total_amount || 0,
-        status: order.status || "Pending",
-        time: format(new Date(order.created_at), 'h:mm a'),
-        paymentStatus: order.payment_status || "Pending",
-        created_at: order.created_at
-      }));
-
-      setOrders(formattedOrders);
-      console.log("Fetched orders:", formattedOrders);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load orders",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+  // Handlers for pagination navigation
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(p => p - 1);
     }
   };
 
-  const filteredOrders = orders.filter(order => 
-    order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.status.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleOpenNewOrderDialog = () => {
-    setNewOrder({
-      customerName: "",
-      tableNumber: "",
-      status: "pending",
-      paymentStatus: "pending"
-    });
-    setSelectedItems([]);
-    setShowNewOrderDialog(true);
-  };
-
-  const calculateOrderTotal = () => {
-    return selectedItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
-
-  const handleAddOrder = async () => {
-    try {
-      if (selectedItems.length === 0) {
-        toast({
-          title: "Error",
-          description: "Please add at least one item to the order",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .insert([
-          { 
-            customer_name: newOrder.customerName || null,
-            table_number: newOrder.tableNumber ? parseInt(newOrder.tableNumber) : null,
-            status: newOrder.status,
-            payment_status: newOrder.paymentStatus,
-            total_amount: calculateOrderTotal()
-          }
-        ])
-        .select();
-
-      if (orderError) throw orderError;
-      
-      if (!orderData || orderData.length === 0) {
-        throw new Error("Failed to create order");
-      }
-      
-      const orderId = orderData[0].id;
-      
-      const orderItems = selectedItems.map(item => ({
-        order_id: orderId,
-        menu_item_id: item.id,
-        quantity: item.quantity,
-        unit_price: item.price,
-        subtotal: item.price * item.quantity
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-      
-      toast({
-        title: "Success",
-        description: "New order created successfully",
-      });
-      
-      // Refresh orders list
-      fetchOrders();
-      
-      setShowNewOrderDialog(false);
-    } catch (error) {
-      console.error('Error creating order:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create new order",
-        variant: "destructive"
-      });
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(p => p + 1);
     }
   };
 
   return (
-    <div className="bg-gray-700 rounded-lg shadow-lg p-6">
-      <div className="flex justify-between mb-6">
-        <h2 className="text-xl font-semibold">Orders</h2>
-        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={handleOpenNewOrderDialog}>
-          <Plus size={16} className="mr-2" />
-          New Order
+    <Card className="bg-gray-900 border-gray-800">
+      <CardHeader className="flex flex-row items-center justify-between px-6">
+        <CardTitle>All Orders</CardTitle>
+        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          <span className="ml-2">Refresh</span>
         </Button>
-      </div>
-
-      <OrderSearchBar 
-        searchTerm={searchTerm} 
-        onSearchChange={setSearchTerm} 
-      />
-
-      <OrderTable 
-        orders={filteredOrders} 
-        loading={loading} 
-        onRefresh={fetchOrders}
-      />
-
-      <NewOrderDialog 
-        open={showNewOrderDialog} 
-        onOpenChange={setShowNewOrderDialog}
-        onAddOrder={handleAddOrder}
-      />
-    </div>
+      </CardHeader>
+      <CardContent className="px-0">
+        {loading ? (
+          <div className="flex justify-center items-center p-12">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading orders...</span>
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="text-center p-12 text-gray-400">
+            <p>No orders found matching your filters.</p>
+          </div>
+        ) : (
+          <>
+            <OrdersTable 
+              orders={currentOrders} 
+              onViewDetails={handleViewOrderDetails}
+            />
+            
+            {totalPages > 1 && (
+              <div className="py-4">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      {currentPage === 1 ? (
+                        <span className="opacity-50 inline-flex items-center gap-1 pl-2.5 h-10 px-4 py-2">
+                          <ChevronLeft className="h-4 w-4" />
+                          <span>Previous</span>
+                        </span>
+                      ) : (
+                        <PaginationPrevious onClick={goToPreviousPage} />
+                      )}
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <PaginationItem key={page}>
+                        <PaginationLink 
+                          isActive={currentPage === page}
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    
+                    <PaginationItem>
+                      {currentPage === totalPages ? (
+                        <span className="opacity-50 inline-flex items-center gap-1 pr-2.5 h-10 px-4 py-2">
+                          <span>Next</span>
+                          <ChevronRight className="h-4 w-4" />
+                        </span>
+                      ) : (
+                        <PaginationNext onClick={goToNextPage} />
+                      )}
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+      
+      {selectedOrderId && (
+        <OrderDetailsDialog 
+          orderId={selectedOrderId} 
+          isOpen={!!selectedOrderId} 
+          onClose={handleCloseOrderDetails}
+        />
+      )}
+    </Card>
   );
 };

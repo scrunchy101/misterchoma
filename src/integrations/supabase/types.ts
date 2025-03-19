@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      billing_stats: {
+        Row: {
+          avg_transaction_amount: number | null
+          created_at: string | null
+          date: string
+          id: string
+          total_revenue: number | null
+          transaction_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avg_transaction_amount?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          total_revenue?: number | null
+          transaction_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avg_transaction_amount?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          total_revenue?: number | null
+          transaction_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -246,35 +276,153 @@ export type Database = {
         Row: {
           created_at: string | null
           customer_name: string | null
+          employee_id: string | null
           id: string
+          payment_date: string | null
           payment_method: string | null
+          payment_processor: string | null
           payment_status: string | null
+          receipt_url: string | null
           status: string | null
           table_number: number | null
           total_amount: number | null
+          transaction_id: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           customer_name?: string | null
+          employee_id?: string | null
           id?: string
+          payment_date?: string | null
           payment_method?: string | null
+          payment_processor?: string | null
           payment_status?: string | null
+          receipt_url?: string | null
           status?: string | null
           table_number?: number | null
           total_amount?: number | null
+          transaction_id?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           customer_name?: string | null
+          employee_id?: string | null
           id?: string
+          payment_date?: string | null
           payment_method?: string | null
+          payment_processor?: string | null
           payment_status?: string | null
+          receipt_url?: string | null
           status?: string | null
           table_number?: number | null
           total_amount?: number | null
+          transaction_id?: string | null
           updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          role?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      reservations: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          date: string
+          id: string
+          notes: string | null
+          party_size: number
+          status: string
+          time: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: string | null
+          date: string
+          id?: string
+          notes?: string | null
+          party_size: number
+          status: string
+          time: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          party_size?: number
+          status?: string
+          time?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          role: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          role?: string
         }
         Relationships: []
       }
@@ -283,7 +431,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

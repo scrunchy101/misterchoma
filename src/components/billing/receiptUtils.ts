@@ -6,12 +6,15 @@ export interface TransactionData {
   date: Date;
   customer: string;
   items: Array<{
+    id?: string;
     name: string;
     quantity: number;
     price: number;
   }>;
   paymentMethod: string;
   total: number;
+  employeeId?: string;
+  employeeName?: string;
 }
 
 export const generatePrintableReceiptHtml = (transactionData: TransactionData): string => {
