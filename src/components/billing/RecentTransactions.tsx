@@ -1,18 +1,25 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, CreditCard, Download, Search, Users } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { ReceiptViewer } from "@/components/billing/ReceiptViewer";
+import { TransactionData } from "@/components/billing/receiptUtils";
 
 export const RecentTransactions = () => {
+  const { toast } = useToast();
+  const [receiptData, setReceiptData] = useState<TransactionData | null>(null);
+  const [isReceiptViewerOpen, setIsReceiptViewerOpen] = useState(false);
+  
   // Sample transaction data
   const transactions = [
     {
       id: "TX-2023-08-001",
       date: new Date(2023, 7, 25, 19, 30),
       customer: "James Wilson",
-      amount: 142.50,
+      amount: 142500,
       items: 6,
       paymentMethod: "Credit Card",
       status: "completed"
@@ -21,7 +28,7 @@ export const RecentTransactions = () => {
       id: "TX-2023-08-002",
       date: new Date(2023, 7, 25, 20, 15),
       customer: "Sarah Johnson",
-      amount: 86.75,
+      amount: 86750,
       items: 3,
       paymentMethod: "Credit Card",
       status: "completed"
@@ -30,7 +37,7 @@ export const RecentTransactions = () => {
       id: "TX-2023-08-003",
       date: new Date(2023, 7, 25, 21, 0),
       customer: "Michael Chen",
-      amount: 235.00,
+      amount: 235000,
       items: 8,
       paymentMethod: "Credit Card",
       status: "completed"
@@ -39,7 +46,7 @@ export const RecentTransactions = () => {
       id: "TX-2023-08-004",
       date: new Date(2023, 7, 26, 18, 45),
       customer: "Lisa Rodriguez",
-      amount: 92.25,
+      amount: 92250,
       items: 4,
       paymentMethod: "Credit Card",
       status: "completed"
@@ -48,12 +55,56 @@ export const RecentTransactions = () => {
       id: "TX-2023-08-005",
       date: new Date(2023, 7, 26, 19, 30),
       customer: "Robert Kim",
-      amount: 176.80,
+      amount: 176800,
       items: 7,
       paymentMethod: "Credit Card",
       status: "completed"
     }
   ];
+
+  // Sample items for each transaction - in a real app, these would come from the database
+  const transactionItems = {
+    "TX-2023-08-001": [
+      { name: "Beef Burger", quantity: 2, price: 25000 },
+      { name: "Fries", quantity: 2, price: 15000 },
+      { name: "Soda", quantity: 2, price: 6250 },
+    ],
+    "TX-2023-08-002": [
+      { name: "Chicken Pizza", quantity: 1, price: 45000 },
+      { name: "Garlic Bread", quantity: 1, price: 12000 },
+      { name: "Beer", quantity: 2, price: 14875 },
+    ],
+    "TX-2023-08-003": [
+      { name: "Seafood Platter", quantity: 1, price: 120000 },
+      { name: "Grilled Fish", quantity: 1, price: 65000 },
+      { name: "White Wine", quantity: 1, price: 50000 },
+    ],
+    "TX-2023-08-004": [
+      { name: "Vegetable Pasta", quantity: 2, price: 36000 },
+      { name: "Caesar Salad", quantity: 1, price: 20250 },
+    ],
+    "TX-2023-08-005": [
+      { name: "T-Bone Steak", quantity: 2, price: 75000 },
+      { name: "Mashed Potatoes", quantity: 2, price: 12000 },
+      { name: "Red Wine", quantity: 1, price: 45000 },
+    ]
+  };
+
+  const handleViewReceipt = (transactionId) => {
+    const transaction = transactions.find(t => t.id === transactionId);
+    
+    if (transaction) {
+      setReceiptData({
+        id: transaction.id,
+        date: transaction.date,
+        customer: transaction.customer,
+        paymentMethod: transaction.paymentMethod,
+        total: transaction.amount,
+        items: transactionItems[transactionId] || []
+      });
+      setIsReceiptViewerOpen(true);
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -99,7 +150,7 @@ export const RecentTransactions = () => {
                     <span>{transaction.items} items</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 font-medium">${transaction.amount.toFixed(2)}</td>
+                <td className="px-4 py-3 font-medium">TZS {transaction.amount.toLocaleString()}</td>
                 <td className="px-4 py-3">
                   <Badge variant="outline" className={
                     transaction.status === "completed" ? "border-green-500 text-green-700 bg-green-50" :
@@ -115,7 +166,12 @@ export const RecentTransactions = () => {
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <Button variant="outline" size="sm" className="h-8">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8"
+                    onClick={() => handleViewReceipt(transaction.id)}
+                  >
                     <Download size={14} className="mr-1" />
                     Receipt
                   </Button>
@@ -135,6 +191,12 @@ export const RecentTransactions = () => {
           <Button variant="outline" size="sm">Next</Button>
         </div>
       </div>
+
+      <ReceiptViewer 
+        isOpen={isReceiptViewerOpen}
+        onClose={() => setIsReceiptViewerOpen(false)}
+        transactionData={receiptData}
+      />
     </div>
   );
 };

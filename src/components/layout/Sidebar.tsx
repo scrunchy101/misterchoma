@@ -9,7 +9,9 @@ import {
   Users, 
   Package, 
   ShoppingCart, 
-  UserCog 
+  UserCog,
+  Store,
+  Utensils
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
@@ -47,7 +49,8 @@ const NavItem = ({ icon: Icon, label, value, activeTab, onClick, to }: NavItemPr
 export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
   const navItems = [
     { icon: Home, label: "Dashboard", value: "dashboard", to: "/" },
-    { icon: Calendar, label: "Reservations", value: "reservations", to: "/reservations" },
+    { icon: Store, label: "POS", value: "pos", to: "/pos" },
+    { icon: Utensils, label: "Menu", value: "menu", to: "/menu" },
     { icon: Users, label: "Customers", value: "customers", to: "/customers" },
     { icon: UserCog, label: "Employees", value: "employees", to: "/employees" },
     { icon: ShoppingCart, label: "Orders", value: "orders", to: "/orders" },

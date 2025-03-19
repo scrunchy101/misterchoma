@@ -1,9 +1,11 @@
 
 import React from "react";
 import { Clock, Plus, Users } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-interface Reservation {
-  id: number;
+export interface Reservation {
+  id: string;
   name: string;
   people: number;
   time: string;
@@ -14,9 +16,42 @@ interface Reservation {
 
 interface ReservationsTableProps {
   reservations: Reservation[];
+  onCancelReservation?: () => void;
 }
 
-export const ReservationsTable = ({ reservations }: ReservationsTableProps) => {
+export const ReservationsTable = ({ reservations, onCancelReservation }: ReservationsTableProps) => {
+  const { toast } = useToast();
+
+  const handleCancelReservation = async (id: string) => {
+    try {
+      // Update the order status to 'cancelled' in the database
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Show success toast
+      toast({
+        title: "Reservation cancelled",
+        description: "The reservation has been successfully cancelled.",
+      });
+      
+      // Call the callback to refresh the dashboard data
+      if (onCancelReservation) {
+        onCancelReservation();
+      }
+    } catch (error) {
+      console.error('Error cancelling reservation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel reservation. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="lg:col-span-2 bg-white rounded-lg shadow-sm">
       <div className="p-4 border-b border-gray-100 flex justify-between items-center">
@@ -39,47 +74,65 @@ export const ReservationsTable = ({ reservations }: ReservationsTableProps) => {
               </tr>
             </thead>
             <tbody>
-              {reservations.map(reservation => (
-                <tr key={reservation.id} className="border-b border-gray-100">
-                  <td className="py-3">
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold mr-2">
-                        {reservation.name.charAt(0)}
+              {reservations.length > 0 ? (
+                reservations.map(reservation => (
+                  <tr key={reservation.id} className="border-b border-gray-100">
+                    <td className="py-3">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold mr-2">
+                          {reservation.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-medium">{reservation.name}</p>
+                          <p className="text-gray-500 text-xs">{reservation.phone}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{reservation.name}</p>
-                        <p className="text-gray-500 text-xs">{reservation.phone}</p>
+                    </td>
+                    <td className="py-3">
+                      <div className="flex items-center">
+                        <Clock size={14} className="mr-1 text-gray-400" />
+                        <span>{reservation.time}</span>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-3">
-                    <div className="flex items-center">
-                      <Clock size={14} className="mr-1 text-gray-400" />
-                      <span>{reservation.time}</span>
-                    </div>
-                    <div className="text-xs text-gray-500">{reservation.date}</div>
-                  </td>
-                  <td className="py-3">
-                    <div className="flex items-center">
-                      <Users size={14} className="mr-1 text-gray-400" />
-                      <span>{reservation.people} people</span>
-                    </div>
-                  </td>
-                  <td className="py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      reservation.status === 'confirmed' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {reservation.status}
-                    </span>
-                  </td>
-                  <td className="py-3">
-                    <button className="text-blue-600 hover:text-blue-800 mr-3">Edit</button>
-                    <button className="text-gray-500 hover:text-gray-700">Cancel</button>
+                      <div className="text-xs text-gray-500">{reservation.date}</div>
+                    </td>
+                    <td className="py-3">
+                      <div className="flex items-center">
+                        <Users size={14} className="mr-1 text-gray-400" />
+                        <span>{reservation.people} people</span>
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        reservation.status === 'confirmed' 
+                          ? 'bg-green-100 text-green-800' 
+                          : reservation.status === 'cancelled'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {reservation.status}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <button className="text-blue-600 hover:text-blue-800 mr-3">Edit</button>
+                      {reservation.status !== 'cancelled' ? (
+                        <button 
+                          onClick={() => handleCancelReservation(reservation.id)}
+                          className="text-gray-500 hover:text-red-700">
+                          Cancel
+                        </button>
+                      ) : (
+                        <span className="text-gray-400">Cancelled</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="py-6 text-center text-gray-500">
+                    No reservations found
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

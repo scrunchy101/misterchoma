@@ -1,21 +1,20 @@
 
 import React, { useState, useEffect } from "react";
-import { Search, Filter } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Loader2, Search, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { usePOSContext } from "@/components/pos/POSContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface MenuItem {
   id: string;
   name: string;
   price: number;
-  category: string;
   description?: string;
+  category: string;
   image_url?: string;
-  available: boolean;
 }
 
 interface POSMenuProps {
@@ -23,38 +22,85 @@ interface POSMenuProps {
   isLoading: boolean;
 }
 
-export const POSMenu = ({ categories, isLoading }: POSMenuProps) => {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("");
-  const [isMenuLoading, setIsMenuLoading] = useState(true);
-  const { toast } = useToast();
-  const { addItemToCart } = usePOSContext();
+// Sample products with images for the demo
+const sampleProducts = [
+  {
+    id: "prod1",
+    name: "Hot Fudge Sundae",
+    price: 40.00,
+    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    image: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png"
+  },
+  {
+    id: "prod2",
+    name: "Hot Caramel Sundae",
+    price: 32.00,
+    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    image: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png"
+  },
+  {
+    id: "prod3",
+    name: "McFlurry w/ Oreo",
+    price: 53.00,
+    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    image: "/lovable-uploads/6d4c469f-6bac-4583-9cc5-654712a55973.png"
+  },
+  {
+    id: "prod4",
+    name: "ItemBurger",
+    price: 10.00,
+    description: "test",
+    image: ""
+  },
+  {
+    id: "prod5",
+    name: "baklava",
+    price: 7000.00,
+    description: "",
+    image: ""
+  },
+  {
+    id: "prod6",
+    name: "test item",
+    price: 6.49,
+    description: "sdfasdf",
+    image: ""
+  }
+];
 
+export const POSMenu = ({ categories, isLoading }: POSMenuProps) => {
+  const [activeCategory, setActiveCategory] = useState<string>("");
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isMenuLoading, setIsMenuLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { addItemToCart, formatCurrency } = usePOSContext();
+  const { toast } = useToast();
+
+  // Set active category when categories are loaded
   useEffect(() => {
-    // Set initial active category once categories are loaded
     if (categories.length > 0 && !activeCategory) {
-      setActiveCategory(categories[0]);
+      setActiveCategory("Desserts & Drinks");
     }
   }, [categories, activeCategory]);
 
+  // Fetch menu items when active category changes
   useEffect(() => {
     const fetchMenuItems = async () => {
-      if (!activeCategory) return;
+      // For demo purposes, using sample products
+      setIsMenuLoading(true);
       
       try {
-        setIsMenuLoading(true);
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 300));
         
-        const { data, error } = await supabase
-          .from('menu_items')
-          .select('*')
-          .eq('category', activeCategory)
-          .eq('available', true)
-          .order('name');
-          
-        if (error) throw error;
-        
-        setMenuItems(data);
+        if (searchQuery) {
+          const filtered = sampleProducts.filter(item => 
+            item.name.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          setMenuItems(filtered as MenuItem[]);
+        } else {
+          setMenuItems(sampleProducts as MenuItem[]);
+        }
       } catch (error) {
         console.error('Error fetching menu items:', error);
         toast({
@@ -68,16 +114,10 @@ export const POSMenu = ({ categories, isLoading }: POSMenuProps) => {
     };
 
     fetchMenuItems();
-  }, [activeCategory, toast]);
-
-  const filteredMenuItems = searchTerm 
-    ? menuItems.filter(item => 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    : menuItems;
+  }, [activeCategory, searchQuery, toast]);
 
   const handleAddToCart = (item: MenuItem) => {
+    console.log("Adding to cart:", item);
     addItemToCart({
       id: item.id,
       name: item.name,
@@ -87,102 +127,101 @@ export const POSMenu = ({ categories, isLoading }: POSMenuProps) => {
     
     toast({
       title: "Added to order",
-      description: `${item.name} added to the current order`,
+      description: `${item.name} added to your order`
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-      </div>
-    );
-  }
+  // Sample categories based on the image
+  const filteredCategories = ["Desserts & Drinks", "Group Meals", "Rice Bowls", "Breakfast", "Featured"];
 
   return (
-    <div className="h-full">
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={18} className="text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search menu items..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Button variant="outline" className="text-white border-gray-600 bg-gray-700 hover:bg-gray-600">
-          <Filter size={16} className="mr-2" />
-          Filter
-        </Button>
+    <div className="h-full flex flex-col">
+      <div className="mb-4 relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+        <Input
+          type="text"
+          placeholder="Search menu items..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 border-gray-300"
+        />
       </div>
-
-      {categories.length > 0 ? (
-        <Tabs defaultValue={categories[0]} value={activeCategory} onValueChange={setActiveCategory}>
-          <TabsList className="bg-gray-700 mb-4 overflow-x-auto flex w-full justify-start">
-            {categories.map(category => (
-              <TabsTrigger
-                key={category}
-                value={category}
-                className="text-sm"
-              >
-                {category}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          
-          {categories.map(category => (
-            <TabsContent key={category} value={category} className="mt-0">
-              {isMenuLoading ? (
-                <div className="flex justify-center items-center h-64">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
-                </div>
-              ) : filteredMenuItems.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredMenuItems.map(item => (
-                    <Card 
-                      key={item.id} 
-                      className="bg-gray-700 border-gray-600 overflow-hidden hover:border-green-500 transition cursor-pointer"
-                      onClick={() => handleAddToCart(item)}
-                    >
-                      <div className="p-4">
-                        {item.image_url && (
-                          <div className="aspect-video w-full overflow-hidden rounded-md mb-3 bg-gray-800 flex justify-center items-center">
-                            <img 
-                              src={item.image_url || '/placeholder.svg'} 
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/placeholder.svg';
-                              }}
-                            />
-                          </div>
-                        )}
-                        <h3 className="font-semibold text-lg mb-1">{item.name}</h3>
-                        {item.description && (
-                          <p className="text-gray-300 text-sm mb-2 line-clamp-2">{item.description}</p>
-                        )}
-                        <div className="font-bold text-green-400">${item.price.toFixed(2)}</div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex justify-center items-center h-64 text-gray-400">
-                  <p>No menu items found</p>
-                </div>
-              )}
-            </TabsContent>
+      
+      <Tabs 
+        value={activeCategory} 
+        onValueChange={setActiveCategory} 
+        className="flex-1 flex flex-col"
+      >
+        <TabsList className="bg-gray-100 mb-4 h-auto flex flex-wrap justify-start">
+          {filteredCategories.map((category) => (
+            <TabsTrigger 
+              key={category} 
+              value={category}
+              className={`mr-2 ${activeCategory === category ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'}`}
+            >
+              {category}
+            </TabsTrigger>
           ))}
-        </Tabs>
-      ) : (
-        <div className="flex justify-center items-center h-64 text-gray-400">
-          <p>No menu categories available</p>
-        </div>
-      )}
+        </TabsList>
+        
+        {filteredCategories.map((category) => (
+          <TabsContent 
+            key={category} 
+            value={category} 
+            className="flex-1 overflow-y-auto mt-0"
+          >
+            {isLoading || isMenuLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                <p className="ml-2 text-gray-600">Loading menu items...</p>
+              </div>
+            ) : menuItems.length === 0 ? (
+              <div className="text-center py-10 text-gray-600">
+                <p>No menu items available in this category.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {menuItems.map((item) => (
+                  <Card 
+                    key={item.id}
+                    className="overflow-hidden hover:shadow-md transition-shadow border border-gray-200"
+                  >
+                    {/* Product Image */}
+                    <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
+                      {item.image_url || (item as any).image ? (
+                        <img 
+                          src={(item as any).image || item.image_url} 
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-gray-400 text-sm">No Image</div>
+                      )}
+                    </div>
+                    
+                    {/* Product Info */}
+                    <div className="p-3">
+                      <h3 className="font-medium text-gray-800">{item.name}</h3>
+                      {item.description && (
+                        <p className="text-gray-500 text-sm mt-1 line-clamp-2">{item.description}</p>
+                      )}
+                      <div className="mt-2 flex justify-between items-center">
+                        <p className="font-bold text-gray-800">{formatCurrency(item.price)}</p>
+                        <button 
+                          className="text-gray-500 hover:text-gray-700"
+                          onClick={() => handleAddToCart(item)}
+                        >
+                          <Plus size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 };
