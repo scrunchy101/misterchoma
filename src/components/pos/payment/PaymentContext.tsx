@@ -91,7 +91,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         .from('orders')
         .insert({
           customer_name: customerName || "Guest",
-          payment_method: "Cash", // Always use Cash
+          payment_method: paymentMethod,
           payment_status: 'completed',
           total_amount: total,
           status: 'completed',
@@ -146,7 +146,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           price: item.price,
           quantity: item.quantity
         })),
-        paymentMethod: "Cash",
+        paymentMethod: paymentMethod,
         total,
         employeeId,
         employeeName

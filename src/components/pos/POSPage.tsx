@@ -35,7 +35,10 @@ export const POSPage: React.FC = () => {
   
   // Initialize
   useEffect(() => {
-    checkConnection();
+    // Explicitly ignoring the boolean return since we only care about the side effect
+    checkConnection().then(() => {
+      // Connection status is already updated in the hook
+    });
   }, []);
   
   const handleCheckout = () => {

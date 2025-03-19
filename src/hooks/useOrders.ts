@@ -101,13 +101,13 @@ export const useOrders = () => {
       // Removed ON CONFLICT clause by using a simple insert operation
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .insert([{ 
+        .insert({ 
           customer_name: newOrder.customerName || null,
           table_number: newOrder.tableNumber ? parseInt(newOrder.tableNumber) : null,
           status: newOrder.status,
           payment_status: newOrder.paymentStatus,
           total_amount: orderTotal
-        }])
+        })
         .select();
 
       if (orderError) {
