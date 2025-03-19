@@ -1,19 +1,20 @@
-
 import React from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download, FileText } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export const InvoicesList = () => {
-  // Sample invoice data
+  const { toast } = useToast();
+  
   const invoices = [
     {
       id: "INV-2023-001",
       date: new Date(2023, 7, 1),
       dueDate: new Date(2023, 7, 15),
       customer: "Corporate Event Inc.",
-      amount: 1850.00,
+      amount: 1850000,
       status: "paid"
     },
     {
@@ -21,7 +22,7 @@ export const InvoicesList = () => {
       date: new Date(2023, 7, 5),
       dueDate: new Date(2023, 7, 19),
       customer: "Johnson Wedding",
-      amount: 3200.00,
+      amount: 3200000,
       status: "paid"
     },
     {
@@ -29,7 +30,7 @@ export const InvoicesList = () => {
       date: new Date(2023, 7, 10),
       dueDate: new Date(2023, 7, 24),
       customer: "Chen Birthday Party",
-      amount: 950.00,
+      amount: 950000,
       status: "pending"
     },
     {
@@ -37,7 +38,7 @@ export const InvoicesList = () => {
       date: new Date(2023, 7, 15),
       dueDate: new Date(2023, 7, 29),
       customer: "Miller Anniversary",
-      amount: 1200.00,
+      amount: 1200000,
       status: "pending"
     },
     {
@@ -45,10 +46,24 @@ export const InvoicesList = () => {
       date: new Date(2023, 7, 20),
       dueDate: new Date(2023, 8, 3),
       customer: "Tech Startup Meetup",
-      amount: 750.00,
+      amount: 750000,
       status: "pending"
     }
   ];
+
+  const handleViewInvoice = (invoiceId: string) => {
+    toast({
+      title: "View Invoice",
+      description: `Viewing invoice ${invoiceId}`,
+    });
+  };
+
+  const handleDownloadAll = () => {
+    toast({
+      title: "Download Started",
+      description: "Your invoices will be downloaded shortly.",
+    });
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -85,11 +100,16 @@ export const InvoicesList = () => {
               </div>
               <div className="text-sm font-medium">
                 <div className="text-gray-500">Amount:</div>
-                <div>${invoice.amount.toFixed(2)}</div>
+                <div>TZS {invoice.amount.toLocaleString()}</div>
               </div>
             </div>
             
-            <Button variant="outline" size="sm" className="w-full">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={() => handleViewInvoice(invoice.id)}
+            >
               <FileText size={14} className="mr-1" />
               View Invoice
             </Button>
@@ -98,7 +118,7 @@ export const InvoicesList = () => {
       </div>
       
       <div className="p-4 border-t border-gray-100 text-center">
-        <Button className="w-full">
+        <Button className="w-full" onClick={handleDownloadAll}>
           <Download size={14} className="mr-1" />
           Download All Invoices
         </Button>
