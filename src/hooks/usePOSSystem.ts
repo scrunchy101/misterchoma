@@ -140,7 +140,7 @@ export const usePOSSystem = () => {
       // Calculate total
       const total = getTotal();
       
-      // Create order in database (simple insert, no ON CONFLICT)
+      // Create order in database - using simple insert without ON CONFLICT
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
