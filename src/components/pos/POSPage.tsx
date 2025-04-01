@@ -33,11 +33,11 @@ export const POSPage: React.FC = () => {
   
   const { toast } = useToast();
   
-  // Initialize
+  // Initialize connection check
   useEffect(() => {
-    // Call checkConnection without caring about the return value
     const initConnection = async () => {
       try {
+        console.log("Checking initial Firebase connection");
         await checkConnection();
       } catch (error) {
         console.error("Failed to check connection during initialization:", error);
@@ -61,12 +61,22 @@ export const POSPage: React.FC = () => {
   };
   
   const handleOrderConfirm = async (customerName: string, employeeId: string) => {
-    const transaction = await processOrder(customerName, employeeId);
-    
-    if (transaction) {
-      setShowCheckout(false);
-      clearCart();
-      setShowReceipt(true);
+    try {
+      console.log("Processing order with Firebase...");
+      const transaction = await processOrder(customerName, employeeId);
+      
+      if (transaction) {
+        setShowCheckout(false);
+        clearCart();
+        setShowReceipt(true);
+      }
+    } catch (error) {
+      console.error("Order processing error:", error);
+      toast({
+        title: "Order Failed",
+        description: "There was an error processing your order. Please try again.",
+        variant: "destructive"
+      });
     }
   };
   

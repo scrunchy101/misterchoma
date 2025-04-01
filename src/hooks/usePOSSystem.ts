@@ -1,9 +1,23 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
+import { db } from "@/integrations/firebase/config";
+import { 
+  collection, 
+  doc, 
+  addDoc, 
+  getDocs, 
+  query, 
+  where, 
+  limit, 
+  getDoc,
+  serverTimestamp,
+  setDoc,
+  updateDoc
+} from "firebase/firestore";
+import { onSnapshot } from "firebase/firestore";
 
 export interface MenuItem {
   id: string;
@@ -37,25 +51,27 @@ export const usePOSSystem = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Check database connection
+  // Check Firebase connection
   const checkConnection = async () => {
     try {
       setConnectionStatus(prev => ({ ...prev, checking: true }));
+      console.log("Checking Firebase connection...");
       
-      // Simple query to check if Supabase is accessible
-      const { data, error } = await supabase.from('menu_items').select('id').limit(1);
+      // Simple query to check if Firebase is accessible
+      const menuRef = collection(db, "menu_items");
+      const q = query(menuRef, limit(1));
+      const querySnapshot = await getDocs(q);
       
-      if (error) throw error;
-      
+      console.log("Firebase connection successful:", querySnapshot.size >= 0);
       setConnectionStatus({ connected: true, checking: false });
       return true;
     } catch (error) {
-      console.error("Database connection check failed:", error);
+      console.error("Firebase connection check failed:", error);
       setConnectionStatus({ connected: false, checking: false });
       
       toast({
         title: "Connection Error",
-        description: "Could not connect to the database. Please check your internet connection.",
+        description: "Could not connect to Firebase. Please check your internet connection.",
         variant: "destructive"
       });
       
@@ -121,7 +137,7 @@ export const usePOSSystem = () => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
-  // Process payment and create order
+  // Process payment and create order in Firebase
   const processOrder = async (customerName: string, employeeId?: string, paymentMethod: string = "Cash") => {
     try {
       setLoading(true);
@@ -129,18 +145,18 @@ export const usePOSSystem = () => {
       // Check connection
       const isConnected = await checkConnection();
       if (!isConnected) {
-        throw new Error("Cannot process order without database connection");
+        throw new Error("Cannot process order without Firebase connection");
       }
       
       // Validate cart
       if (cart.length === 0) {
-        throw new Error("Cannot process an empty cart");
+        throw new Error("Cannot process an empty order");
       }
       
       // Calculate total
       const total = getTotal();
       
-      console.log("Processing order with:", { 
+      console.log("Processing order with Firebase:", { 
         customerName, 
         employeeId, 
         paymentMethod, 
@@ -148,62 +164,55 @@ export const usePOSSystem = () => {
         items: cart.length 
       });
       
-      // Create order in database - using simplified insert without complex statements
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          customer_name: customerName || "Guest",
-          payment_method: paymentMethod,
-          payment_status: 'completed',
-          total_amount: total,
-          status: 'completed',
-          employee_id: employeeId || null
-        })
-        .select('id');
+      // Create order in Firebase
+      const ordersRef = collection(db, "orders");
+      const newOrder = {
+        customer_name: customerName || "Guest",
+        payment_method: paymentMethod,
+        payment_status: 'completed',
+        total_amount: total,
+        status: 'completed',
+        employee_id: employeeId || null,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp()
+      };
       
-      if (orderError) {
-        console.error("Order creation error:", orderError);
-        throw orderError;
-      }
+      const orderDocRef = await addDoc(ordersRef, newOrder);
+      const orderId = orderDocRef.id;
       
-      if (!orderData || orderData.length === 0) {
-        throw new Error("Failed to create order - no order ID returned");
-      }
-      
-      const orderId = orderData[0].id;
       console.log("Order created with ID:", orderId);
       
-      // Create order items - simplifying the data structure
-      const orderItems = cart.map(item => ({
-        order_id: orderId,
-        menu_item_id: item.id,
-        quantity: item.quantity,
-        unit_price: item.price,
-        subtotal: item.price * item.quantity
-      }));
+      // Create order items
+      const orderItemsPromises = cart.map(async (item) => {
+        const orderItemRef = collection(db, "order_items");
+        const orderItem = {
+          order_id: orderId,
+          menu_item_id: item.id,
+          quantity: item.quantity,
+          unit_price: item.price,
+          subtotal: item.price * item.quantity,
+          created_at: serverTimestamp()
+        };
+        
+        return addDoc(orderItemRef, orderItem);
+      });
       
-      console.log("Inserting order items:", orderItems.length);
-      
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-      
-      if (itemsError) {
-        console.error("Order items creation error:", itemsError);
-        throw itemsError;
-      }
+      await Promise.all(orderItemsPromises);
+      console.log("All order items created successfully");
       
       // Get employee name if employee ID is provided
       let employeeName = "";
       if (employeeId) {
-        const { data: empData } = await supabase
-          .from('employees')
-          .select('name')
-          .eq('id', employeeId)
-          .maybeSingle();
+        try {
+          const employeeRef = doc(db, "employees", employeeId);
+          const employeeDoc = await getDoc(employeeRef);
           
-        if (empData) {
-          employeeName = empData.name;
+          if (employeeDoc.exists()) {
+            employeeName = employeeDoc.data().name || "";
+          }
+        } catch (error) {
+          console.error("Error fetching employee name:", error);
+          // Continue processing even if employee name can't be fetched
         }
       }
       
@@ -247,9 +256,10 @@ export const usePOSSystem = () => {
   useEffect(() => {
     const initConnection = async () => {
       try {
+        console.log("Running initial Firebase connection check");
         await checkConnection();
       } catch (error) {
-        console.error("Initial connection check failed:", error);
+        console.error("Initial Firebase connection check failed:", error);
       }
     };
     

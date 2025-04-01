@@ -36,8 +36,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       // Try checking connection one more time before refusing
       setIsCheckingConnection(true);
       try {
+        console.log("Checking Firebase connection before processing order...");
         const connected = await onCheckConnection();
         if (!connected) {
+          console.log("Still not connected to Firebase");
           setIsCheckingConnection(false);
           return; // Still not connected
         }
@@ -49,12 +51,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setIsCheckingConnection(false);
     }
     
-    await onConfirm(customerName, employeeId);
+    try {
+      console.log("Submitting order to Firebase...");
+      await onConfirm(customerName, employeeId);
+    } catch (error) {
+      console.error("Error confirming order:", error);
+    }
   };
   
   const handleCheckConnection = async () => {
     setIsCheckingConnection(true);
     try {
+      console.log("Manually checking Firebase connection...");
       await onCheckConnection();
     } catch (error) {
       console.error("Error checking connection:", error);
@@ -91,12 +99,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           {isConnected ? (
             <>
               <Wifi size={16} className="text-green-400" />
-              <span>Connected to database</span>
+              <span>Connected to Firebase</span>
             </>
           ) : (
             <>
               <WifiOff size={16} className="text-red-400" />
-              <span>Not connected to database</span>
+              <span>Not connected to Firebase</span>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -161,7 +169,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </Button>
             {!isConnected && !isCheckingConnection && (
               <p className="text-xs text-center mt-2 text-red-400">
-                Cannot process orders without database connection
+                Cannot process orders without Firebase connection
               </p>
             )}
           </div>
