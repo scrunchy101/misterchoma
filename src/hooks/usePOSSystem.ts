@@ -140,7 +140,15 @@ export const usePOSSystem = () => {
       // Calculate total
       const total = getTotal();
       
-      // Create order in database - using simple insert without ON CONFLICT
+      console.log("Processing order with:", { 
+        customerName, 
+        employeeId, 
+        paymentMethod, 
+        total, 
+        items: cart.length 
+      });
+      
+      // Create order in database - using simplified insert without complex statements
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -151,16 +159,21 @@ export const usePOSSystem = () => {
           status: 'completed',
           employee_id: employeeId || null
         })
-        .select('id')
-        .single();
+        .select('id');
       
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error("Order creation error:", orderError);
+        throw orderError;
+      }
       
-      if (!orderData) throw new Error("Failed to create order");
+      if (!orderData || orderData.length === 0) {
+        throw new Error("Failed to create order - no order ID returned");
+      }
       
-      const orderId = orderData.id;
+      const orderId = orderData[0].id;
+      console.log("Order created with ID:", orderId);
       
-      // Create order items
+      // Create order items - simplifying the data structure
       const orderItems = cart.map(item => ({
         order_id: orderId,
         menu_item_id: item.id,
@@ -169,11 +182,16 @@ export const usePOSSystem = () => {
         subtotal: item.price * item.quantity
       }));
       
+      console.log("Inserting order items:", orderItems.length);
+      
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems);
       
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error("Order items creation error:", itemsError);
+        throw itemsError;
+      }
       
       // Get employee name if employee ID is provided
       let employeeName = "";
@@ -202,6 +220,7 @@ export const usePOSSystem = () => {
       };
       
       setCurrentTransaction(transaction);
+      console.log("Transaction completed successfully:", transaction);
       
       toast({
         title: "Order Complete",
@@ -226,7 +245,15 @@ export const usePOSSystem = () => {
 
   // Initialize - check connection on first load
   useEffect(() => {
-    checkConnection();
+    const initConnection = async () => {
+      try {
+        await checkConnection();
+      } catch (error) {
+        console.error("Initial connection check failed:", error);
+      }
+    };
+    
+    initConnection();
   }, []);
 
   return {

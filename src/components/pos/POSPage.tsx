@@ -36,7 +36,15 @@ export const POSPage: React.FC = () => {
   // Initialize
   useEffect(() => {
     // Call checkConnection without caring about the return value
-    checkConnection();
+    const initConnection = async () => {
+      try {
+        await checkConnection();
+      } catch (error) {
+        console.error("Failed to check connection during initialization:", error);
+      }
+    };
+    
+    initConnection();
   }, []);
   
   const handleCheckout = () => {

@@ -12,7 +12,7 @@ interface CheckoutModalProps {
   onConfirm: (customerName: string, employeeId: string) => Promise<void>;
   total: number;
   isConnected: boolean;
-  onCheckConnection: () => Promise<void>;
+  onCheckConnection: () => Promise<boolean | void>;
   isProcessing: boolean;
 }
 
@@ -27,10 +27,40 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 }) => {
   const [customerName, setCustomerName] = useState("");
   const [employeeId, setEmployeeId] = useState("");
+  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isConnected) {
+      // Try checking connection one more time before refusing
+      setIsCheckingConnection(true);
+      try {
+        const connected = await onCheckConnection();
+        if (!connected) {
+          setIsCheckingConnection(false);
+          return; // Still not connected
+        }
+      } catch (error) {
+        console.error("Error checking connection:", error);
+        setIsCheckingConnection(false);
+        return;
+      }
+      setIsCheckingConnection(false);
+    }
+    
     await onConfirm(customerName, employeeId);
+  };
+  
+  const handleCheckConnection = async () => {
+    setIsCheckingConnection(true);
+    try {
+      await onCheckConnection();
+    } catch (error) {
+      console.error("Error checking connection:", error);
+    } finally {
+      setIsCheckingConnection(false);
+    }
   };
 
   return (
@@ -70,10 +100,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={onCheckConnection} 
+                onClick={handleCheckConnection} 
                 className="ml-auto text-xs h-7 bg-gray-700 border-gray-600 hover:bg-gray-600"
+                disabled={isCheckingConnection}
               >
-                Retry
+                {isCheckingConnection ? "Checking..." : "Retry"}
               </Button>
             </>
           )}
@@ -124,11 +155,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <Button 
               type="submit" 
               className="w-full bg-green-600 hover:bg-green-700"
-              disabled={isProcessing || !isConnected}
+              disabled={isProcessing || (!isConnected && !isCheckingConnection)}
             >
               {isProcessing ? "Processing..." : "Complete Order"}
             </Button>
-            {!isConnected && (
+            {!isConnected && !isCheckingConnection && (
               <p className="text-xs text-center mt-2 text-red-400">
                 Cannot process orders without database connection
               </p>
