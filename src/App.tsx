@@ -13,6 +13,7 @@ import Employees from './pages/Employees';
 import POS from './pages/POS';
 import Orders from './pages/Orders';
 import NotFound from './pages/NotFound';
+import DatabaseTest from './pages/DatabaseTest';
 import { ErrorProvider } from './components/layout/ErrorProvider';
 import { GlobalErrorListener } from './components/layout/GlobalErrorListener';
 import { ThemeProvider } from './components/layout/ThemeProvider';
@@ -78,6 +79,11 @@ function App() {
                 <Route path="/orders" element={
                   <ProtectedRoute allowedRoles={['admin', 'manager', 'chef', 'waiter']}>
                     <Orders />
+                  </ProtectedRoute>
+                } />
+                <Route path="/database-test" element={
+                  <ProtectedRoute allowedRoles={['admin', 'manager']}>
+                    <DatabaseTest />
                   </ProtectedRoute>
                 } />
                 <Route path="*" element={<NotFound />} />
