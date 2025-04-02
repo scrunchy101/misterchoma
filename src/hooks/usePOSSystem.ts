@@ -1,11 +1,11 @@
 
 import { useEffect } from "react";
 import { useCart } from "./pos/useCart";
-import { useFirebaseConnection } from "./pos/useFirebaseConnection";
+import { useFirebaseStatus } from "@/hooks/useFirebaseStatus";
 import { useOrderProcessing } from "./pos/useOrderProcessing";
-import { CartItem, MenuItem, POSTransaction } from "./pos/types";
+import { CartItem, MenuItem, OrderTransaction } from "./pos/types";
 
-export type { MenuItem, CartItem, POSTransaction };
+export type { MenuItem, CartItem, OrderTransaction };
 
 export const usePOSSystem = () => {
   const { 
@@ -21,7 +21,7 @@ export const usePOSSystem = () => {
   const { 
     connectionStatus, 
     checkConnection 
-  } = useFirebaseConnection();
+  } = useFirebaseStatus();
   
   const { 
     loading, 

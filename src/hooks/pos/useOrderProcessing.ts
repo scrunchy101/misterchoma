@@ -13,6 +13,7 @@ import { CartItem, OrderTransaction } from "./types";
 
 export const useOrderProcessing = () => {
   const [loading, setLoading] = useState(false);
+  const [currentTransaction, setCurrentTransaction] = useState<OrderTransaction | null>(null);
 
   // Process order in Firebase
   const processOrder = async (
@@ -120,6 +121,9 @@ export const useOrderProcessing = () => {
         employeeName
       };
       
+      // Set the current transaction
+      setCurrentTransaction(transaction);
+      
       console.log("Transaction completed successfully:", transaction);
       return transaction;
     } catch (error) {
@@ -132,6 +136,8 @@ export const useOrderProcessing = () => {
 
   return {
     loading,
+    currentTransaction,
+    setCurrentTransaction,
     processOrder
   };
 };
