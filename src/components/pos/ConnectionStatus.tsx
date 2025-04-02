@@ -1,7 +1,8 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Wifi, WifiOff } from "lucide-react";
+import { Wifi, WifiOff, AlertCircle } from "lucide-react";
+import { ConnectionIndicator } from "@/components/ui/connection-indicator";
 
 interface ConnectionStatusProps {
   isConnected: boolean;
@@ -23,18 +24,24 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
       isConnected ? 'bg-green-900/30' : 'bg-red-900/30'
     }`}>
       <div className="flex items-center gap-2">
-        {isConnected ? (
-          <>
-            <Wifi size={16} className="text-green-400" />
-            <span className="text-green-400 text-sm">Connected to database</span>
-          </>
-        ) : (
-          <>
-            <WifiOff size={16} className="text-red-400" />
-            <span className="text-red-400 text-sm">Not connected to database</span>
-          </>
+        <ConnectionIndicator 
+          status={isChecking ? "checking" : isConnected ? "connected" : "disconnected"}
+          label={isChecking 
+            ? "Checking Firebase connection..." 
+            : isConnected 
+              ? "Connected to Firebase" 
+              : "Firebase connection failed"
+          }
+        />
+        
+        {!isConnected && !isChecking && (
+          <span className="text-xs text-amber-400 flex items-center gap-1 ml-2">
+            <AlertCircle size={12} />
+            Check console for detailed error information
+          </span>
         )}
       </div>
+      
       <Button 
         variant="outline" 
         size="sm"

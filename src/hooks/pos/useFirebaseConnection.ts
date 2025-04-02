@@ -18,27 +18,45 @@ export const useFirebaseConnection = () => {
       setConnectionStatus(prev => ({ ...prev, checking: true }));
       console.log("Checking Firebase connection...");
       
-      // Try a simpler approach to test Firebase connection
-      // Just getting the database reference without actually querying
+      // Validate that Firebase is properly initialized
       if (!db) {
         throw new Error("Firebase database reference is not initialized");
       }
       
-      // Try to get a collection reference - this doesn't make a network request yet
-      const menuRef = collection(db, "menu_items");
-      
-      // Now make a small query to check connectivity
-      const q = query(menuRef, limit(1));
-      
       try {
-        // Execute the query to test actual connection
-        const querySnapshot = await getDocs(q);
-        console.log("Firebase connection successful:", querySnapshot.size >= 0);
+        // Test with a simpler approach - just checking if we can get a collection reference
+        const testRef = collection(db, "test_connection");
+        
+        // Create a minimal query that doesn't require specific collections to exist
+        const testQuery = query(testRef, limit(1));
+        
+        // Execute the query to test connection
+        await getDocs(testQuery);
+        
+        console.log("Firebase connection successful");
         setConnectionStatus({ connected: true, checking: false });
+        
         return true;
-      } catch (queryError) {
+      } catch (queryError: any) {
         console.error("Firebase query failed:", queryError);
-        throw new Error("Could not query Firestore database");
+        
+        // Check for specific error types
+        const errorMsg = queryError.message || String(queryError);
+        const errorCode = queryError.code;
+        
+        let userFriendlyMessage = "Could not connect to Firebase database.";
+        
+        if (errorMsg.includes("permission-denied") || errorCode === "permission-denied") {
+          userFriendlyMessage = "Firebase connection failed: Permission denied. Check your security rules.";
+        } else if (errorMsg.includes("unavailable") || errorCode === "unavailable") {
+          userFriendlyMessage = "Firebase service is currently unavailable. Please try again later.";
+        } else if (errorMsg.includes("not-found") || errorCode === "not-found") {
+          userFriendlyMessage = "Firebase project or collection not found. Check your configuration.";
+        } else if (errorMsg.includes("cancelled") || errorCode === "cancelled") {
+          userFriendlyMessage = "Firebase connection was cancelled. This may be due to network issues.";
+        }
+        
+        throw new Error(userFriendlyMessage);
       }
     } catch (error) {
       console.error("Firebase connection check failed:", error);
