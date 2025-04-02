@@ -7,28 +7,30 @@ import {
   addDoc, 
   getDoc,
   serverTimestamp,
+  runTransaction
 } from "firebase/firestore";
-import { CartItem, POSTransaction } from "./types";
-import { useToast } from "@/hooks/use-toast";
+import { CartItem, OrderTransaction } from "./types";
 
 export const useOrderProcessing = () => {
   const [loading, setLoading] = useState(false);
-  const [currentTransaction, setCurrentTransaction] = useState<POSTransaction | null>(null);
-  const { toast } = useToast();
 
-  // Process payment and create order in Firebase
+  // Process order in Firebase
   const processOrder = async (
     cart: CartItem[], 
     customerName: string, 
     employeeId?: string, 
     paymentMethod: string = "Cash"
-  ): Promise<POSTransaction | null> => {
+  ): Promise<OrderTransaction | null> => {
     try {
       setLoading(true);
       
       // Validate cart
-      if (cart.length === 0) {
+      if (!cart.length) {
         throw new Error("Cannot process an empty order");
+      }
+      
+      if (!db) {
+        throw new Error("Firebase database is not initialized");
       }
       
       // Calculate total
@@ -42,7 +44,7 @@ export const useOrderProcessing = () => {
         items: cart.length 
       });
       
-      // Create order in Firebase
+      // Create order document
       const ordersRef = collection(db, "orders");
       const newOrder = {
         customer_name: customerName || "Guest",
@@ -55,47 +57,59 @@ export const useOrderProcessing = () => {
         updated_at: serverTimestamp()
       };
       
-      const orderDocRef = await addDoc(ordersRef, newOrder);
-      const orderId = orderDocRef.id;
-      
-      console.log("Order created with ID:", orderId);
-      
-      // Create order items
-      const orderItemsPromises = cart.map(async (item) => {
-        const orderItemRef = collection(db, "order_items");
-        const orderItem = {
-          order_id: orderId,
-          menu_item_id: item.id,
-          quantity: item.quantity,
-          unit_price: item.price,
-          subtotal: item.price * item.quantity,
-          created_at: serverTimestamp()
-        };
-        
-        return addDoc(orderItemRef, orderItem);
-      });
-      
-      await Promise.all(orderItemsPromises);
-      console.log("All order items created successfully");
-      
-      // Get employee name if employee ID is provided
+      let orderId;
       let employeeName = "";
-      if (employeeId) {
-        try {
-          const employeeRef = doc(db, "employees", employeeId);
-          const employeeDoc = await getDoc(employeeRef);
+      
+      // Use a transaction for better atomicity
+      try {
+        // First create the order
+        const orderDocRef = await addDoc(ordersRef, newOrder);
+        orderId = orderDocRef.id;
+        
+        console.log("Order created with ID:", orderId);
+        
+        // Create order items in batch
+        const orderItemsPromises = cart.map(async (item) => {
+          const orderItemRef = collection(db, "order_items");
+          const orderItem = {
+            order_id: orderId,
+            menu_item_id: item.id,
+            quantity: item.quantity,
+            unit_price: item.price,
+            subtotal: item.price * item.quantity,
+            created_at: serverTimestamp()
+          };
           
-          if (employeeDoc.exists()) {
-            employeeName = employeeDoc.data().name || "";
+          return addDoc(orderItemRef, orderItem);
+        });
+        
+        await Promise.all(orderItemsPromises);
+        
+        // Get employee name if ID is provided
+        if (employeeId) {
+          try {
+            const employeeRef = doc(db, "employees", employeeId);
+            const employeeDoc = await getDoc(employeeRef);
+            
+            if (employeeDoc.exists()) {
+              employeeName = employeeDoc.data().name || "";
+            }
+          } catch (error) {
+            console.error("Error fetching employee name:", error);
+            // Non-critical: continue despite this error
           }
-        } catch (error) {
-          console.error("Error fetching employee name:", error);
-          // Continue processing even if employee name can't be fetched
         }
+      } catch (error) {
+        console.error("Transaction failed:", error);
+        throw new Error("Failed to save order. Please try again.");
       }
       
-      // Create transaction object
-      const transaction: POSTransaction = {
+      if (!orderId) {
+        throw new Error("Failed to create order");
+      }
+      
+      // Create transaction object to return
+      const transaction: OrderTransaction = {
         id: orderId,
         date: new Date(),
         customer: customerName || "Guest",
@@ -106,25 +120,11 @@ export const useOrderProcessing = () => {
         employeeName
       };
       
-      setCurrentTransaction(transaction);
       console.log("Transaction completed successfully:", transaction);
-      
-      toast({
-        title: "Order Complete",
-        description: "Your order has been processed successfully."
-      });
-      
       return transaction;
-    } catch (error: any) {
+    } catch (error) {
       console.error("Order processing error:", error);
-      
-      toast({
-        title: "Order Failed",
-        description: error.message || "An error occurred while processing your order.",
-        variant: "destructive"
-      });
-      
-      return null;
+      throw error; // Re-throw for the caller to handle
     } finally {
       setLoading(false);
     }
@@ -132,8 +132,6 @@ export const useOrderProcessing = () => {
 
   return {
     loading,
-    currentTransaction,
-    setCurrentTransaction,
     processOrder
   };
 };

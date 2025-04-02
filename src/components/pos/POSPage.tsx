@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { CategoryFilter } from "./menu/CategoryFilter";
@@ -8,8 +8,9 @@ import { Cart } from "./cart/Cart";
 import { CheckoutModal } from "./checkout/CheckoutModal";
 import { ReceiptModal } from "./receipt/ReceiptModal";
 import { ConnectionStatus } from "./ConnectionStatus";
-import { usePOSSystem } from "@/hooks/usePOSSystem";
-import { useToast } from "@/hooks/use-toast";
+import { usePOS } from "@/hooks/pos/usePOS";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export const POSPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -17,66 +18,42 @@ export const POSPage: React.FC = () => {
   const [showReceipt, setShowReceipt] = useState(false);
   
   const { 
+    // Cart operations
     cart, 
     addToCart, 
     updateQuantity, 
     removeFromCart, 
     clearCart, 
-    getTotal, 
-    processOrder,
-    loading,
+    getTotal,
+    
+    // Order processing
+    submitOrder,
+    isProcessingOrder,
+    currentTransaction,
+    setCurrentTransaction,
+    
+    // Connection status
     connectionStatus,
     checkConnection,
-    currentTransaction,
-    setCurrentTransaction
-  } = usePOSSystem();
-  
-  const { toast } = useToast();
-  
-  // Initialize connection check
-  useEffect(() => {
-    const initConnection = async () => {
-      try {
-        console.log("Checking initial Firebase connection");
-        await checkConnection();
-      } catch (error) {
-        console.error("Failed to check connection during initialization:", error);
-      }
-    };
     
-    initConnection();
-  }, []);
+    // Error handling
+    error
+  } = usePOS();
   
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast({
-        title: "Empty Cart",
-        description: "Please add items to your cart before checkout",
-        variant: "destructive"
-      });
-      return;
+      return; // Cart validation happens in the usePOS hook
     }
     
     setShowCheckout(true);
   };
   
   const handleOrderConfirm = async (customerName: string, employeeId: string) => {
-    try {
-      console.log("Processing order with Firebase...");
-      const transaction = await processOrder(customerName, employeeId);
-      
-      if (transaction) {
-        setShowCheckout(false);
-        clearCart();
-        setShowReceipt(true);
-      }
-    } catch (error) {
-      console.error("Order processing error:", error);
-      toast({
-        title: "Order Failed",
-        description: "There was an error processing your order. Please try again.",
-        variant: "destructive"
-      });
+    const transaction = await submitOrder(customerName, employeeId);
+    
+    if (transaction) {
+      setShowCheckout(false);
+      setShowReceipt(true);
     }
   };
   
@@ -97,6 +74,15 @@ export const POSPage: React.FC = () => {
           isChecking={connectionStatus.checking}
           onCheckConnection={checkConnection}
         />
+        
+        {error && (
+          <Alert variant="destructive" className="mx-4 mt-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {error.message}
+            </AlertDescription>
+          </Alert>
+        )}
         
         <div className="flex-1 flex overflow-hidden">
           {/* Menu Section */}
@@ -135,7 +121,7 @@ export const POSPage: React.FC = () => {
           total={getTotal()}
           isConnected={connectionStatus.connected}
           onCheckConnection={checkConnection}
-          isProcessing={loading}
+          isProcessing={isProcessingOrder}
         />
         
         <ReceiptModal

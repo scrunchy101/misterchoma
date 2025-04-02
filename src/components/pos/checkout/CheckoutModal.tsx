@@ -3,8 +3,9 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { X, Banknote, WifiOff, Wifi } from "lucide-react";
+import { X, Banknote, WifiOff, Wifi, AlertTriangle } from "lucide-react";
 import { EmployeeSelector } from "../EmployeeSelector";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CheckoutModalProps {
   open: boolean;
@@ -12,7 +13,7 @@ interface CheckoutModalProps {
   onConfirm: (customerName: string, employeeId: string) => Promise<void>;
   total: number;
   isConnected: boolean;
-  onCheckConnection: () => Promise<boolean | void>;
+  onCheckConnection: () => Promise<boolean>;
   isProcessing: boolean;
 }
 
@@ -28,23 +29,24 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [customerName, setCustomerName] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(null);
     
     if (!isConnected) {
       // Try checking connection one more time before refusing
       setIsCheckingConnection(true);
       try {
-        console.log("Checking Firebase connection before processing order...");
         const connected = await onCheckConnection();
         if (!connected) {
-          console.log("Still not connected to Firebase");
+          setLocalError("Cannot process order without Firebase connection");
           setIsCheckingConnection(false);
-          return; // Still not connected
+          return;
         }
       } catch (error) {
-        console.error("Error checking connection:", error);
+        setLocalError("Error checking connection status");
         setIsCheckingConnection(false);
         return;
       }
@@ -52,20 +54,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }
     
     try {
-      console.log("Submitting order to Firebase...");
       await onConfirm(customerName, employeeId);
     } catch (error) {
-      console.error("Error confirming order:", error);
+      console.error("Error during order confirmation:", error);
+      setLocalError(error instanceof Error ? error.message : "Failed to process order");
     }
   };
   
   const handleCheckConnection = async () => {
     setIsCheckingConnection(true);
+    setLocalError(null);
     try {
-      console.log("Manually checking Firebase connection...");
       await onCheckConnection();
     } catch (error) {
-      console.error("Error checking connection:", error);
+      setLocalError("Failed to check connection");
     } finally {
       setIsCheckingConnection(false);
     }
@@ -117,6 +119,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </>
           )}
         </div>
+        
+        {localError && (
+          <Alert variant="destructive" className="mb-4 bg-red-900/20 border-red-800 text-red-200">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{localError}</AlertDescription>
+          </Alert>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

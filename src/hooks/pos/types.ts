@@ -1,18 +1,22 @@
 
+// Basic types for menu items
 export interface MenuItem {
   id: string;
   name: string;
-  price: number;
-  category: string;
   description?: string;
-  image_url?: string | null;
+  price: number;
+  category?: string;
+  imageUrl?: string;
+  available?: boolean;
 }
 
+// Cart item extends MenuItem with quantity
 export interface CartItem extends MenuItem {
   quantity: number;
 }
 
-export interface POSTransaction {
+// Transaction record for completed orders
+export interface OrderTransaction {
   id: string;
   date: Date;
   customer: string;
@@ -23,6 +27,7 @@ export interface POSTransaction {
   employeeName?: string;
 }
 
+// Firebase connection status
 export interface ConnectionStatus {
   connected: boolean;
   checking: boolean;
