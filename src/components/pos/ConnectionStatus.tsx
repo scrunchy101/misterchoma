@@ -2,7 +2,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Wifi, WifiOff, AlertCircle } from "lucide-react";
-import { ConnectionIndicator } from "@/components/ui/connection-indicator";
 
 interface ConnectionStatusProps {
   isConnected: boolean;
@@ -16,7 +15,12 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   onCheckConnection
 }) => {
   const handleCheckConnection = async () => {
-    await onCheckConnection();
+    try {
+      console.log("Manual connection check initiated");
+      await onCheckConnection();
+    } catch (error) {
+      console.error("Connection check failed:", error);
+    }
   };
 
   return (
@@ -24,21 +28,27 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
       isConnected ? 'bg-green-900/30' : 'bg-red-900/30'
     }`}>
       <div className="flex items-center gap-2">
-        <ConnectionIndicator 
-          status={isChecking ? "checking" : isConnected ? "connected" : "disconnected"}
-          label={isChecking 
-            ? "Checking Firebase connection..." 
-            : isConnected 
-              ? "Connected to Firebase" 
-              : "Firebase connection failed"
-          }
-        />
-        
-        {!isConnected && !isChecking && (
-          <span className="text-xs text-amber-400 flex items-center gap-1 ml-2">
-            <AlertCircle size={12} />
-            Check console for detailed error information
-          </span>
+        {isChecking ? (
+          <>
+            <div className="animate-pulse">
+              <Wifi size={16} className="text-yellow-400" />
+            </div>
+            <span className="text-yellow-400 text-sm">Checking Firebase connection...</span>
+          </>
+        ) : isConnected ? (
+          <>
+            <Wifi size={16} className="text-green-400" />
+            <span className="text-green-400 text-sm">Connected to Firebase</span>
+          </>
+        ) : (
+          <>
+            <WifiOff size={16} className="text-red-400" />
+            <span className="text-red-400 text-sm">Firebase connection failed</span>
+            <span className="text-xs text-amber-400 flex items-center gap-1 ml-2">
+              <AlertCircle size={12} />
+              Check console for details
+            </span>
+          </>
         )}
       </div>
       

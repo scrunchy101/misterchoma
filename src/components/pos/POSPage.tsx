@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { CategoryFilter } from "./menu/CategoryFilter";
@@ -8,14 +8,16 @@ import { Cart } from "./cart/Cart";
 import { CheckoutModal } from "./checkout/CheckoutModal";
 import { ReceiptModal } from "./receipt/ReceiptModal";
 import { ConnectionStatus } from "./ConnectionStatus";
-import { usePOS } from "@/hooks/pos/usePOS";
+import { usePOSSystem } from "@/hooks/usePOSSystem";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export const POSPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
   
   const { 
     // Cart operations
@@ -25,41 +27,78 @@ export const POSPage: React.FC = () => {
     removeFromCart, 
     clearCart, 
     getTotal,
+    itemCount,
     
     // Order processing
-    submitOrder,
-    isProcessingOrder,
+    processOrder,
+    loading,
     currentTransaction,
     setCurrentTransaction,
     
     // Connection status
     connectionStatus,
     checkConnection,
-    
-    // Error handling
-    error
-  } = usePOS();
+  } = usePOSSystem();
   
+  const { toast } = useToast();
+  
+  // Debug logging
+  useEffect(() => {
+    console.log("POS Page Debug:", { 
+      connectionStatus,
+      cartItems: cart.length,
+      hasTransaction: !!currentTransaction,
+      showingReceipt: showReceipt,
+      showingCheckout: showCheckout
+    });
+  }, [connectionStatus, cart.length, currentTransaction, showReceipt, showCheckout]);
+
   const handleCheckout = () => {
     if (cart.length === 0) {
-      return; // Cart validation happens in the usePOS hook
+      toast({
+        title: "Empty cart",
+        description: "Please add items to your cart before checkout.",
+        variant: "destructive"
+      });
+      return;
     }
     
     setShowCheckout(true);
   };
-  
-  const handleOrderConfirm = async (customerName: string, employeeId: string) => {
-    const transaction = await submitOrder(customerName, employeeId);
-    
-    if (transaction) {
-      setShowCheckout(false);
-      setShowReceipt(true);
+
+  const handleProcessPayment = async (customerName: string, employeeId?: string) => {
+    try {
+      setError(null);
+      console.log("Starting order process with:", { customerName, employeeId, cartItems: cart.length });
+      
+      // Process the order
+      const transaction = await processOrder(customerName, employeeId);
+      
+      if (transaction) {
+        console.log("Transaction successful:", transaction.id);
+        // Show receipt
+        setShowReceipt(true);
+        
+        // Clear cart and close checkout
+        clearCart();
+        setShowCheckout(false);
+        return true;
+      }
+      
+      console.log("Transaction failed - processOrder returned null");
+      return false;
+    } catch (error) {
+      console.error("Error in handleProcessPayment:", error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      setError(errorObj);
+      
+      toast({
+        title: "Order Error",
+        description: errorObj.message || "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+      return false;
     }
-  };
-  
-  const handleCloseReceipt = () => {
-    setShowReceipt(false);
-    setCurrentTransaction(null);
   };
 
   return (
@@ -117,16 +156,19 @@ export const POSPage: React.FC = () => {
         <CheckoutModal
           open={showCheckout}
           onClose={() => setShowCheckout(false)}
-          onConfirm={handleOrderConfirm}
+          onConfirm={handleProcessPayment}
           total={getTotal()}
           isConnected={connectionStatus.connected}
           onCheckConnection={checkConnection}
-          isProcessing={isProcessingOrder}
+          isProcessing={loading}
         />
         
         <ReceiptModal
           open={showReceipt}
-          onClose={handleCloseReceipt}
+          onClose={() => {
+            setShowReceipt(false);
+            setCurrentTransaction(null);
+          }}
           transaction={currentTransaction}
         />
       </div>
