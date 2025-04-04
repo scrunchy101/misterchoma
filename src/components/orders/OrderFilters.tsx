@@ -14,16 +14,16 @@ import { Card, CardContent } from "@/components/ui/card";
 
 interface OrderFiltersProps {
   statusFilter: string;
-  setStatusFilter: (status: string) => void;
   searchQuery: string;
-  setSearchQuery: (query: string) => void;
+  onStatusChange: (status: string) => void;
+  onSearchChange: (query: string) => void;
 }
 
 export const OrderFilters: React.FC<OrderFiltersProps> = ({
   statusFilter,
-  setStatusFilter,
   searchQuery,
-  setSearchQuery,
+  onStatusChange,
+  onSearchChange,
 }) => {
   return (
     <Card className="bg-gray-900 border-gray-800">
@@ -33,7 +33,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
             <div className="font-medium">Status:</div>
             <Select
               value={statusFilter}
-              onValueChange={setStatusFilter}
+              onValueChange={onStatusChange}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Filter by status" />
@@ -55,7 +55,7 @@ export const OrderFilters: React.FC<OrderFiltersProps> = ({
               <Input
                 placeholder="Search by order ID or customer name"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => onSearchChange(e.target.value)}
                 className="pl-9 bg-gray-800 border-gray-700"
               />
             </div>
