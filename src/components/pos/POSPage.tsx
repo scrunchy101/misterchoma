@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -17,9 +16,8 @@ import { useErrorHandler } from "@/hooks/useErrorHandler";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { PaymentProcessor } from "./payment/PaymentProcessor";
 import { usePayment } from "./payment/PaymentContext";
-import { CartItem } from "./cart/CartContext";
 import { TransactionData } from "../billing/receiptUtils";
-import { convertCartItemToMenuItemWithQuantity } from "./types";
+import { convertCartItemToMenuItemWithQuantity, convertToTransactionItem } from "./types";
 
 export const POSPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -117,8 +115,11 @@ export const POSPage: React.FC = () => {
         throw new Error("Cannot process payments while offline");
       }
       
-      // Process payment with raw cart items - the processPayment function now handles the conversion
-      const transaction = await processPayment(cart, customerName, "Cash", employeeId);
+      // Convert cart items to the expected format
+      const menuItems = cart.map(item => convertCartItemToMenuItemWithQuantity(item));
+      
+      // Process payment with converted items
+      const transaction = await processPayment(menuItems, customerName, "Cash", employeeId);
       
       if (transaction) {
         console.log("Transaction successful:", transaction.id);

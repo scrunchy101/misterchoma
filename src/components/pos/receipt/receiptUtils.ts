@@ -1,18 +1,25 @@
 
 import { format } from "date-fns";
-import { CartItem } from "@/hooks/usePOSSystem";
+import { MenuItemWithQuantity } from "../types";
+import { TransactionData } from "../../billing/receiptUtils";
 
+// Update the ReceiptTransaction type to align with TransactionData
 export interface ReceiptTransaction {
   id: string;
   date: Date;
   customer: string;
-  items: CartItem[];
+  items: Array<{
+    id?: string;  // Make id optional to match TransactionData
+    name: string;
+    quantity: number;
+    price: number;
+  }>;
   total: number;
   paymentMethod: string;
   employeeName?: string;
 }
 
-export const generateReceiptHtml = (transaction: ReceiptTransaction): string => {
+export const generateReceiptHtml = (transaction: ReceiptTransaction | TransactionData): string => {
   return `
     <html>
       <head>
@@ -60,7 +67,7 @@ export const generateReceiptHtml = (transaction: ReceiptTransaction): string => 
   `;
 };
 
-export const generateReceiptText = (transaction: ReceiptTransaction): string => {
+export const generateReceiptText = (transaction: ReceiptTransaction | TransactionData): string => {
   return `
 MISTER CHOMA
 123 Main Street, Dar es Salaam
@@ -84,7 +91,7 @@ Please come again
   `;
 };
 
-export const printReceipt = (transaction: ReceiptTransaction): void => {
+export const printReceipt = (transaction: ReceiptTransaction | TransactionData): void => {
   const receiptContent = generateReceiptHtml(transaction);
   
   const printWindow = window.open('', '_blank');
@@ -103,7 +110,7 @@ export const printReceipt = (transaction: ReceiptTransaction): void => {
   }, 500);
 };
 
-export const downloadReceipt = (transaction: ReceiptTransaction): void => {
+export const downloadReceipt = (transaction: ReceiptTransaction | TransactionData): void => {
   const receiptText = generateReceiptText(transaction);
   const blob = new Blob([receiptText], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
