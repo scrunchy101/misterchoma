@@ -1,185 +1,286 @@
 
-import React, { useEffect, useState } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription
-} from "@/components/ui/dialog";
+import React, { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, AlertCircle, Receipt as ReceiptIcon } from "lucide-react";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
-import { Loader2, X, Printer, Clock, Receipt } from "lucide-react";
-import { fetchOrderDetails } from "@/integrations/supabase/client";
-import { useErrorHandler } from "@/hooks/useErrorHandler";
-import { format } from "date-fns";
-import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { TransactionData } from "@/components/billing/receiptUtils";
+import { generateReceiptHtml, printReceipt, downloadReceipt } from "@/components/pos/receipt/receiptUtils";
 
-interface OrderDetailsDialogProps {
+interface OrderItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+}
+
+interface OrderDetailsProps {
   orderId: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface OrderItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  subtotal: number;
-}
-
-interface OrderDetails {
-  order: {
-    id: string;
-    customer_name: string;
-    table_number: number | null;
-    status: string;
-    payment_status: string;
-    total_amount: number;
-    created_at: string;
-    payment_method: string | null;
-  };
-  items: OrderItem[];
-}
-
-export const OrderDetailsDialog: React.FC<OrderDetailsDialogProps> = ({
-  orderId,
-  isOpen,
-  onClose,
+export const OrderDetailsDialog: React.FC<OrderDetailsProps> = ({ 
+  orderId, 
+  isOpen, 
+  onClose 
 }) => {
-  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const { handleError } = useErrorHandler();
+  const [error, setError] = useState<string | null>(null);
+  const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const getOrderDetails = async () => {
-      try {
-        setLoading(true);
-        const details = await fetchOrderDetails(orderId);
-        setOrderDetails(details);
-      } catch (error) {
-        handleError(error, {
-          context: "Fetching order details",
-          showToast: true,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (isOpen && orderId) {
-      getOrderDetails();
+      fetchOrderDetails();
     }
-  }, [orderId, isOpen, handleError]);
+  }, [isOpen, orderId]);
 
-  if (!isOpen) return null;
+  const fetchOrderDetails = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch order details
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*, employees(name)')
+        .eq('id', orderId)
+        .single();
+        
+      if (orderError) throw orderError;
+      
+      if (!order) {
+        throw new Error("Order not found");
+      }
+      
+      setOrderDetails(order);
+      
+      // Fetch order items
+      const { data: items, error: itemsError } = await supabase
+        .from('order_items')
+        .select(`
+          id,
+          quantity,
+          unit_price,
+          subtotal,
+          menu_items(id, name)
+        `)
+        .eq('order_id', orderId);
+        
+      if (itemsError) throw itemsError;
+      
+      // Format order items
+      const formattedItems: OrderItem[] = (items || []).map(item => ({
+        id: item.menu_items?.id || item.id,
+        name: item.menu_items?.name || "Unknown Item",
+        quantity: item.quantity,
+        price: item.unit_price
+      }));
+      
+      setOrderItems(formattedItems);
+    } catch (err) {
+      console.error("Failed to fetch order details:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch order details");
+      
+      toast({
+        title: "Error",
+        description: "Failed to load order details",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePrintReceipt = () => {
+    if (!orderDetails || !orderItems.length) return;
+    
+    try {
+      const transaction: TransactionData = {
+        id: orderDetails.id,
+        date: new Date(orderDetails.created_at),
+        customer: orderDetails.customer_name || "Guest",
+        items: orderItems,
+        total: orderDetails.total_amount,
+        paymentMethod: orderDetails.payment_method || "Cash",
+        employeeName: orderDetails.employees?.name,
+      };
+      
+      printReceipt(transaction);
+      
+      toast({
+        title: "Success",
+        description: "Receipt sent to printer",
+      });
+    } catch (err) {
+      console.error("Failed to print receipt:", err);
+      
+      toast({
+        title: "Error",
+        description: "Failed to print receipt",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadReceipt = () => {
+    if (!orderDetails || !orderItems.length) return;
+    
+    try {
+      const transaction: TransactionData = {
+        id: orderDetails.id,
+        date: new Date(orderDetails.created_at),
+        customer: orderDetails.customer_name || "Guest",
+        items: orderItems,
+        total: orderDetails.total_amount,
+        paymentMethod: orderDetails.payment_method || "Cash",
+        employeeName: orderDetails.employees?.name,
+      };
+      
+      downloadReceipt(transaction);
+      
+      toast({
+        title: "Success",
+        description: "Receipt downloaded successfully",
+      });
+    } catch (err) {
+      console.error("Failed to download receipt:", err);
+      
+      toast({
+        title: "Error",
+        description: "Failed to download receipt",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg bg-gray-800 text-white border-gray-700">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex justify-between items-center">
-            <span>Order Details</span>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onClose} 
-              className="h-8 w-8 p-0 text-gray-400 hover:text-white"
-            >
-              <X size={16} />
-            </Button>
-          </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            Complete information about this order
-          </DialogDescription>
+          <DialogTitle>Order Details</DialogTitle>
         </DialogHeader>
         
         {loading ? (
-          <div className="flex justify-center p-12">
+          <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <AlertCircle className="h-10 w-10 text-red-500 mb-4" />
+            <p>{error}</p>
+          </div>
         ) : orderDetails ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-gray-500">Order ID</p>
+                <p className="font-medium">{orderDetails.id.substring(0, 8)}</p>
+              </div>
+              <div className="flex space-x-2">
+                <OrderStatusBadge status={orderDetails.status} />
+                <PaymentStatusBadge status={orderDetails.payment_status} />
+              </div>
+            </div>
+            
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-gray-400 text-sm">Order ID</p>
-                <p className="font-medium">{orderDetails.order.id.substring(0, 8)}</p>
+                <p className="text-sm text-gray-500">Customer</p>
+                <p className="font-medium">{orderDetails.customer_name || "Guest"}</p>
               </div>
               <div>
-                <p className="text-gray-400 text-sm">Date & Time</p>
+                <p className="text-sm text-gray-500">Date</p>
                 <p className="font-medium">
-                  {format(new Date(orderDetails.order.created_at), "MMM d, yyyy h:mm a")}
+                  {new Date(orderDetails.created_at).toLocaleDateString()}
+                  {" "}
+                  {new Date(orderDetails.created_at).toLocaleTimeString()}
                 </p>
               </div>
-              <div>
-                <p className="text-gray-400 text-sm">Customer</p>
-                <p className="font-medium">{orderDetails.order.customer_name || "Guest"}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Table</p>
-                <p className="font-medium">
-                  {orderDetails.order.table_number ? `Table ${orderDetails.order.table_number}` : "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Status</p>
-                <OrderStatusBadge status={orderDetails.order.status} />
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Payment</p>
-                <div className="flex flex-col space-y-1">
-                  <PaymentStatusBadge status={orderDetails.order.payment_status} />
-                  <span className="text-xs text-gray-400">
-                    {orderDetails.order.payment_method || "N/A"}
-                  </span>
+              {orderDetails.table_number && (
+                <div>
+                  <p className="text-sm text-gray-500">Table</p>
+                  <p className="font-medium">{orderDetails.table_number}</p>
                 </div>
-              </div>
+              )}
+              {orderDetails.employees?.name && (
+                <div>
+                  <p className="text-sm text-gray-500">Employee</p>
+                  <p className="font-medium">{orderDetails.employees.name}</p>
+                </div>
+              )}
             </div>
-
-            <Separator className="bg-gray-700" />
             
             <div>
-              <h3 className="font-medium mb-3">Order Items</h3>
-              <div className="space-y-3">
-                {orderDetails.items.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center">
-                    <div className="flex-1">
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-gray-400">
-                        {item.quantity} x TZS {item.price.toLocaleString()}
-                      </p>
-                    </div>
-                    <p className="font-medium">TZS {item.subtotal.toLocaleString()}</p>
-                  </div>
-                ))}
+              <p className="text-sm text-gray-500 mb-2">Items</p>
+              <div className="border rounded-md overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-700">
+                  <thead className="bg-gray-800">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-400">Item</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-400">Qty</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-400">Price</th>
+                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-400">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {orderItems.map((item) => (
+                      <tr key={item.id}>
+                        <td className="px-4 py-2">{item.name}</td>
+                        <td className="px-4 py-2">{item.quantity}</td>
+                        <td className="px-4 py-2">TZS {item.price.toLocaleString()}</td>
+                        <td className="px-4 py-2 text-right">
+                          TZS {(item.price * item.quantity).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-gray-800">
+                    <tr>
+                      <td colSpan={3} className="px-4 py-2 text-right font-medium">Total</td>
+                      <td className="px-4 py-2 text-right font-medium">
+                        TZS {orderDetails.total_amount.toLocaleString()}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
-            </div>
-            
-            <Separator className="bg-gray-700" />
-            
-            <div className="flex justify-between items-center font-bold text-lg">
-              <span>Total</span>
-              <span>TZS {orderDetails.order.total_amount.toLocaleString()}</span>
-            </div>
-            
-            <div className="flex space-x-2 pt-2">
-              <Button className="flex-1" variant="outline">
-                <Printer className="mr-2 h-4 w-4" />
-                Print Receipt
-              </Button>
-              <Button className="flex-1">
-                <Receipt className="mr-2 h-4 w-4" />
-                View Receipt
-              </Button>
             </div>
           </div>
         ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-400">Could not load order details.</p>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <AlertCircle className="h-10 w-10 text-yellow-500 mb-4" />
+            <p>No order details found</p>
           </div>
         )}
+        
+        <DialogFooter className="flex justify-between">
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrintReceipt}
+              disabled={loading || !orderDetails}
+            >
+              <ReceiptIcon className="h-4 w-4 mr-2" />
+              Print Receipt
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadReceipt}
+              disabled={loading || !orderDetails}
+            >
+              <ReceiptIcon className="h-4 w-4 mr-2" />
+              Download Receipt
+            </Button>
+          </div>
+          <Button variant="default" onClick={onClose}>Close</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
