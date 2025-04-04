@@ -1,18 +1,10 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { CartItem } from "@/hooks/usePOSSystem";
+import { TransactionData } from "../../billing/receiptUtils";
 
 interface ReceiptProps {
-  transaction: {
-    id: string;
-    date: Date;
-    customer: string;
-    items: CartItem[];
-    total: number;
-    paymentMethod: string;
-    employeeName?: string;
-  };
+  transaction: TransactionData;
 }
 
 export const Receipt: React.FC<ReceiptProps> = ({ transaction }) => {

@@ -6,20 +6,12 @@ import { X, CheckCircle2 } from "lucide-react";
 import { Receipt } from "./Receipt";
 import { ReceiptActions } from "./ReceiptActions";
 import { printReceipt, downloadReceipt } from "./receiptUtils";
-import { CartItem } from "@/hooks/usePOSSystem";
+import { TransactionData } from "../../billing/receiptUtils";
 
 interface ReceiptModalProps {
   open: boolean;
   onClose: () => void;
-  transaction: {
-    id: string;
-    date: Date;
-    customer: string;
-    items: CartItem[];
-    total: number;
-    paymentMethod: string;
-    employeeName?: string;
-  } | null;
+  transaction: TransactionData;
 }
 
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({ 

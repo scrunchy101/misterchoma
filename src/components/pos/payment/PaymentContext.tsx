@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CartItem } from "../cart/CartContext";
-import { MenuItemWithQuantity } from "../types";
+import { MenuItemWithQuantity, convertCartItemToMenuItemWithQuantity } from "../types";
 import { TransactionData } from "../../billing/receiptUtils";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
 
@@ -19,7 +19,7 @@ export interface PaymentContextType {
   connectionStatus: ConnectionStatus;
   checkConnection: () => Promise<ConnectionStatus>;
   processPayment: (
-    items: MenuItemWithQuantity[], 
+    items: CartItem[] | MenuItemWithQuantity[], 
     customerName: string, 
     paymentMethod: string,
     employeeId?: string
@@ -72,7 +72,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const processPayment = async (
-    items: MenuItemWithQuantity[], 
+    items: CartItem[] | MenuItemWithQuantity[], 
     customerName: string, 
     paymentMethod: string = "Cash",
     employeeId?: string
@@ -95,8 +95,11 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw new Error("Cannot process order: No database connection");
       }
       
+      // Convert items to ensure they have all required fields
+      const processItems = items.map(item => convertCartItemToMenuItemWithQuantity(item));
+      
       // Calculate total
-      const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const total = processItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
       // Create order in database - Simpler insert without ON CONFLICT
       console.log("Creating order with:", { customerName, paymentMethod, employeeId, items: items.length });
@@ -126,7 +129,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.log("Order created with ID:", orderId);
       
       // Create order items
-      const orderItems = items.map(item => ({
+      const orderItems = processItems.map(item => ({
         order_id: orderId,
         menu_item_id: item.id,
         quantity: item.quantity,
@@ -163,7 +166,7 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         id: orderId,
         date: new Date(),
         customer: customerName || "Guest",
-        items: items.map(item => ({
+        items: processItems.map(item => ({
           id: item.id,
           name: item.name,
           price: item.price,
