@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -34,14 +33,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const { employees, loading: loadingEmployees, error: employeeError } = useEmployees();
   const { toast } = useToast();
   
-  // Reset error when modal opens
   useEffect(() => {
     if (open) {
       setLocalError(null);
     }
   }, [open]);
   
-  // Verify connection when modal opens
   useEffect(() => {
     if (open) {
       const verifyConnection = async () => {
@@ -56,7 +53,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }
   }, [open, onCheckConnection]);
 
-  // Clear local error when connection status changes
   useEffect(() => {
     if (isConnected && localError?.includes("connection")) {
       setLocalError(null);
@@ -96,7 +92,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }
     
     try {
-      // Process payment with employee ID
       const success = await onConfirm(customerName, selectedEmployeeId || undefined);
       
       if (!success) {
@@ -129,7 +124,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        {/* Connection Status */}
         <div className={`flex items-center gap-2 py-2 px-3 rounded text-sm mb-4 ${
           isRetrying ? 'bg-yellow-900/30 text-yellow-400' :
           isConnected ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'
@@ -161,7 +155,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           )}
         </div>
         
-        {/* Error message */}
         {localError && (
           <div className="bg-red-900/20 border border-red-900/50 rounded p-3 mb-4 text-sm text-red-400 flex items-start gap-2">
             <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
@@ -169,7 +162,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           </div>
         )}
         
-        {/* Employee loading/error states */}
         {employeeError && (
           <div className="bg-yellow-900/20 border border-yellow-900/50 rounded p-3 mb-4 text-sm text-yellow-400 flex items-start gap-2">
             <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />

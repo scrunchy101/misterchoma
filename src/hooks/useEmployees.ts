@@ -12,22 +12,25 @@ export interface Employee {
 export const useEmployees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      setError(null);
+      const { data, error: supabaseError } = await supabase
         .from('employees')
         .select('id, name, position')
         .eq('status', 'active')
         .order('name');
 
-      if (error) throw error;
+      if (supabaseError) throw supabaseError;
       
       setEmployees(data || []);
-    } catch (error) {
-      console.error('Error fetching employees:', error);
+    } catch (err) {
+      console.error('Error fetching employees:', err);
+      setError(err instanceof Error ? err : new Error(String(err)));
       toast({
         title: "Error",
         description: "Failed to load employees data",
@@ -42,5 +45,5 @@ export const useEmployees = () => {
     fetchEmployees();
   }, []);
 
-  return { employees, loading, fetchEmployees };
+  return { employees, loading, fetchEmployees, error };
 };

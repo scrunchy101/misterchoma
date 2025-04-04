@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -11,6 +10,7 @@ import { ConnectionStatus } from "./ConnectionStatus";
 import { usePOSSystem } from "@/hooks/usePOSSystem";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, WifiOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
@@ -22,7 +22,6 @@ export const POSPage: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   
   const { 
-    // Cart operations
     cart, 
     addToCart, 
     updateQuantity, 
@@ -31,21 +30,18 @@ export const POSPage: React.FC = () => {
     getTotal,
     itemCount,
     
-    // Order processing
     processOrder,
     loading,
     currentTransaction,
     setCurrentTransaction,
     
-    // Connection status
     connectionStatus,
     checkConnection,
   } = usePOSSystem();
   
   const { toast } = useToast();
   const { error, handleError, clearError } = useErrorHandler();
-  
-  // Network status monitoring
+
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -71,7 +67,6 @@ export const POSPage: React.FC = () => {
     };
   }, [toast, checkConnection]);
   
-  // Debug logging
   useEffect(() => {
     console.log("POS Page Debug:", { 
       connectionStatus,
@@ -114,15 +109,11 @@ export const POSPage: React.FC = () => {
         throw new Error("Cannot process payments while offline");
       }
       
-      // Process the order
       const transaction = await processOrder(customerName, employeeId);
       
       if (transaction) {
         console.log("Transaction successful:", transaction.id);
-        // Show receipt
         setShowReceipt(true);
-        
-        // Clear cart and close checkout
         clearCart();
         setShowCheckout(false);
         return true;
@@ -166,7 +157,6 @@ export const POSPage: React.FC = () => {
       )}
       
       <div className="flex-1 flex overflow-hidden">
-        {/* Menu Section */}
         <div className="w-2/3 flex flex-col overflow-hidden">
           <CategoryFilter
             selectedCategory={selectedCategory}
@@ -181,7 +171,6 @@ export const POSPage: React.FC = () => {
           </div>
         </div>
         
-        {/* Cart Section */}
         <div className="w-1/3 border-l border-gray-700 flex flex-col">
           <Cart
             items={cart}
@@ -194,7 +183,6 @@ export const POSPage: React.FC = () => {
         </div>
       </div>
       
-      {/* Modals */}
       <CheckoutModal
         open={showCheckout}
         onClose={() => setShowCheckout(false)}
