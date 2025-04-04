@@ -9,15 +9,17 @@ import { CheckoutModal } from "./checkout/CheckoutModal";
 import { ReceiptModal } from "./receipt/ReceiptModal";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { usePOSSystem } from "@/hooks/usePOSSystem";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 export const POSPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   
   const { 
     // Cart operations
@@ -41,6 +43,33 @@ export const POSPage: React.FC = () => {
   } = usePOSSystem();
   
   const { toast } = useToast();
+  const { error, handleError, clearError } = useErrorHandler();
+  
+  // Network status monitoring
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      checkConnection(false);
+      toast({ title: "Online", description: "Your internet connection has been restored." });
+    };
+    
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast({ 
+        title: "You're offline", 
+        description: "Your internet connection appears to be offline.", 
+        variant: "destructive" 
+      });
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [toast, checkConnection]);
   
   // Debug logging
   useEffect(() => {
@@ -49,11 +78,21 @@ export const POSPage: React.FC = () => {
       cartItems: cart.length,
       hasTransaction: !!currentTransaction,
       showingReceipt: showReceipt,
-      showingCheckout: showCheckout
+      showingCheckout: showCheckout,
+      networkOnline: isOnline
     });
-  }, [connectionStatus, cart.length, currentTransaction, showReceipt, showCheckout]);
+  }, [connectionStatus, cart.length, currentTransaction, showReceipt, showCheckout, isOnline]);
 
   const handleCheckout = () => {
+    if (!isOnline) {
+      toast({
+        title: "You're offline",
+        description: "Cannot proceed to checkout while offline.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (cart.length === 0) {
       toast({
         title: "Empty cart",
@@ -68,8 +107,12 @@ export const POSPage: React.FC = () => {
 
   const handleProcessPayment = async (customerName: string, employeeId?: string) => {
     try {
-      setError(null);
+      clearError();
       console.log("Starting order process with:", { customerName, employeeId, cartItems: cart.length });
+      
+      if (!isOnline) {
+        throw new Error("Cannot process payments while offline");
+      }
       
       // Process the order
       const transaction = await processOrder(customerName, employeeId);
@@ -89,17 +132,89 @@ export const POSPage: React.FC = () => {
       return false;
     } catch (error) {
       console.error("Error in handleProcessPayment:", error);
-      const errorObj = error instanceof Error ? error : new Error(String(error));
-      setError(errorObj);
-      
-      toast({
-        title: "Order Error",
-        description: errorObj.message || "An unexpected error occurred. Please try again.",
-        variant: "destructive"
-      });
+      handleError(error, { showToast: true, context: "Payment Processing" });
       return false;
     }
   };
+
+  const renderContent = () => (
+    <>
+      <ConnectionStatus 
+        isConnected={connectionStatus.connected}
+        isChecking={connectionStatus.checking}
+        onCheckConnection={checkConnection}
+      />
+      
+      {error && (
+        <Alert variant="destructive" className="mx-4 mt-2">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error.message || "An unknown error occurred"}
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {!isOnline && (
+        <Alert variant="default" className="mx-4 mt-2 bg-gray-700 border-gray-600">
+          <WifiOff className="h-4 w-4 text-gray-400" />
+          <AlertTitle className="text-gray-300">Offline Mode</AlertTitle>
+          <AlertDescription className="text-gray-400">
+            You are currently offline. Some features may be limited.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <div className="flex-1 flex overflow-hidden">
+        {/* Menu Section */}
+        <div className="w-2/3 flex flex-col overflow-hidden">
+          <CategoryFilter
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+          />
+          
+          <div className="flex-1 overflow-y-auto">
+            <MenuGrid
+              selectedCategory={selectedCategory}
+              onAddItem={addToCart}
+            />
+          </div>
+        </div>
+        
+        {/* Cart Section */}
+        <div className="w-1/3 border-l border-gray-700 flex flex-col">
+          <Cart
+            items={cart}
+            onUpdateQuantity={updateQuantity}
+            onRemoveItem={removeFromCart}
+            onClearCart={clearCart}
+            onCheckout={handleCheckout}
+            total={getTotal()}
+          />
+        </div>
+      </div>
+      
+      {/* Modals */}
+      <CheckoutModal
+        open={showCheckout}
+        onClose={() => setShowCheckout(false)}
+        onConfirm={handleProcessPayment}
+        total={getTotal()}
+        isConnected={connectionStatus.connected && isOnline}
+        onCheckConnection={checkConnection}
+        isProcessing={loading}
+      />
+      
+      <ReceiptModal
+        open={showReceipt}
+        onClose={() => {
+          setShowReceipt(false);
+          setCurrentTransaction(null);
+        }}
+        transaction={currentTransaction}
+      />
+    </>
+  );
 
   return (
     <div className="flex h-screen bg-gray-800 text-white">
@@ -108,69 +223,18 @@ export const POSPage: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header title="Point of Sale" />
         
-        <ConnectionStatus 
-          isConnected={connectionStatus.connected}
-          isChecking={connectionStatus.checking}
-          onCheckConnection={checkConnection}
-        />
-        
-        {error && (
-          <Alert variant="destructive" className="mx-4 mt-2">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {error.message}
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <div className="flex-1 flex overflow-hidden">
-          {/* Menu Section */}
-          <div className="w-2/3 flex flex-col overflow-hidden">
-            <CategoryFilter
-              selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
-            />
-            
-            <div className="flex-1 overflow-y-auto">
-              <MenuGrid
-                selectedCategory={selectedCategory}
-                onAddItem={addToCart}
-              />
-            </div>
+        <ErrorBoundary fallback={
+          <div className="p-8 text-center">
+            <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
+            <p className="text-gray-400 mb-6">There was an error loading the POS system.</p>
+            <Button onClick={() => window.location.reload()}>
+              Refresh Application
+            </Button>
           </div>
-          
-          {/* Cart Section */}
-          <div className="w-1/3 border-l border-gray-700 flex flex-col">
-            <Cart
-              items={cart}
-              onUpdateQuantity={updateQuantity}
-              onRemoveItem={removeFromCart}
-              onClearCart={clearCart}
-              onCheckout={handleCheckout}
-              total={getTotal()}
-            />
-          </div>
-        </div>
-        
-        {/* Modals */}
-        <CheckoutModal
-          open={showCheckout}
-          onClose={() => setShowCheckout(false)}
-          onConfirm={handleProcessPayment}
-          total={getTotal()}
-          isConnected={connectionStatus.connected}
-          onCheckConnection={checkConnection}
-          isProcessing={loading}
-        />
-        
-        <ReceiptModal
-          open={showReceipt}
-          onClose={() => {
-            setShowReceipt(false);
-            setCurrentTransaction(null);
-          }}
-          transaction={currentTransaction}
-        />
+        }>
+          {renderContent()}
+        </ErrorBoundary>
       </div>
     </div>
   );

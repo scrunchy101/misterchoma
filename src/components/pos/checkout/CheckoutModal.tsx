@@ -3,9 +3,10 @@ import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { X, Banknote, WifiOff, Wifi } from "lucide-react";
+import { X, Banknote, WifiOff, Wifi, RefreshCw, AlertTriangle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEmployees } from "@/hooks/useEmployees";
+import { useToast } from "@/hooks/use-toast";
 
 interface CheckoutModalProps {
   open: boolean;
@@ -29,7 +30,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [customerName, setCustomerName] = useState("");
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [localError, setLocalError] = useState<string | null>(null);
-  const { employees, loading: loadingEmployees } = useEmployees();
+  const [isRetrying, setIsRetrying] = useState(false);
+  const { employees, loading: loadingEmployees, error: employeeError } = useEmployees();
+  const { toast } = useToast();
   
   // Reset error when modal opens
   useEffect(() => {
@@ -52,6 +55,28 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       verifyConnection();
     }
   }, [open, onCheckConnection]);
+
+  // Clear local error when connection status changes
+  useEffect(() => {
+    if (isConnected && localError?.includes("connection")) {
+      setLocalError(null);
+    }
+  }, [isConnected, localError]);
+  
+  const handleCheckConnection = async () => {
+    try {
+      setIsRetrying(true);
+      await onCheckConnection();
+      if (!isConnected) {
+        setLocalError("Still unable to connect. Please try again later.");
+      }
+    } catch (error) {
+      console.error("Manual connection retry failed:", error);
+      setLocalError("Connection check failed. Please try again.");
+    } finally {
+      setIsRetrying(false);
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,9 +87,21 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
     
+    if (employeeError) {
+      toast({
+        title: "Warning",
+        description: "Employee data couldn't be loaded. You can continue without selecting an employee.",
+        variant: "default"
+      });
+    }
+    
     try {
       // Process payment with employee ID
-      await onConfirm(customerName, selectedEmployeeId || undefined);
+      const success = await onConfirm(customerName, selectedEmployeeId || undefined);
+      
+      if (!success) {
+        setLocalError("Failed to process payment. Please try again.");
+      }
     } catch (error) {
       console.error("Error in transaction processing:", error);
       setLocalError(error instanceof Error ? error.message : "Transaction processing failed");
@@ -93,8 +130,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         </DialogHeader>
         
         {/* Connection Status */}
-        <div className={`flex items-center gap-2 py-2 px-3 rounded text-sm mb-4 ${isConnected ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
-          {isConnected ? (
+        <div className={`flex items-center gap-2 py-2 px-3 rounded text-sm mb-4 ${
+          isRetrying ? 'bg-yellow-900/30 text-yellow-400' :
+          isConnected ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'
+        }`}>
+          {isRetrying ? (
+            <>
+              <RefreshCw size={16} className="text-yellow-400 animate-spin" />
+              <span>Checking connection...</span>
+            </>
+          ) : isConnected ? (
             <>
               <Wifi size={16} className="text-green-400" />
               <span>Connected to Firebase</span>
@@ -106,10 +151,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => onCheckConnection()} 
+                onClick={handleCheckConnection} 
                 className="ml-auto text-xs h-7 bg-gray-700 border-gray-600 hover:bg-gray-600"
+                disabled={isRetrying}
               >
-                Retry
+                {isRetrying ? "Checking..." : "Retry"}
               </Button>
             </>
           )}
@@ -117,8 +163,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         
         {/* Error message */}
         {localError && (
-          <div className="bg-red-900/20 border border-red-900/50 rounded p-3 mb-4 text-sm text-red-400">
-            {localError}
+          <div className="bg-red-900/20 border border-red-900/50 rounded p-3 mb-4 text-sm text-red-400 flex items-start gap-2">
+            <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+            <span>{localError}</span>
+          </div>
+        )}
+        
+        {/* Employee loading/error states */}
+        {employeeError && (
+          <div className="bg-yellow-900/20 border border-yellow-900/50 rounded p-3 mb-4 text-sm text-yellow-400 flex items-start gap-2">
+            <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+            <span>Could not load employee data. You can proceed without selecting an employee.</span>
           </div>
         )}
         
