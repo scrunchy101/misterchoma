@@ -5,9 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { CartItem } from "../cart/CartContext";
 import { MenuItemWithQuantity } from "../types";
 import { TransactionData } from "../../billing/receiptUtils";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 export interface ConnectionStatus {
   connected: boolean;
+  checking?: boolean;
   error?: any;
 }
 
@@ -31,22 +33,30 @@ const PaymentContext = createContext<PaymentContextType | undefined>(undefined);
 export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentTransaction, setCurrentTransaction] = useState<TransactionData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({ connected: false });
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({ 
+    connected: false,
+    checking: false 
+  });
   const { toast } = useToast();
+  const { handleError } = useErrorHandler();
 
   const checkConnection = async (): Promise<ConnectionStatus> => {
     try {
+      setConnectionStatus(prev => ({ ...prev, checking: true }));
+      console.log("Checking Supabase connection...");
+      
       // Simple check to verify Supabase connection
       const { data, error: supabaseError } = await supabase.from('menu_items').select('id').limit(1);
       
       if (supabaseError) throw supabaseError;
       
-      const status = { connected: true };
+      console.log("Connected to Supabase successfully", data);
+      const status = { connected: true, checking: false };
       setConnectionStatus(status);
       return status;
     } catch (error) {
       console.error("Database connection check failed:", error);
-      const status = { connected: false, error };
+      const status = { connected: false, checking: false, error };
       setConnectionStatus(status);
       
       toast({
@@ -56,13 +66,15 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
       
       return status;
+    } finally {
+      setConnectionStatus(prev => ({ ...prev, checking: false }));
     }
   };
 
   const processPayment = async (
     items: MenuItemWithQuantity[], 
     customerName: string, 
-    paymentMethod: string = "Cash", // Default to Cash
+    paymentMethod: string = "Cash",
     employeeId?: string
   ): Promise<TransactionData | null> => {
     try {
@@ -86,7 +98,9 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Calculate total
       const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
-      // Create order in database - Removed the ON CONFLICT statement which was causing the issue
+      // Create order in database - Simpler insert without ON CONFLICT
+      console.log("Creating order with:", { customerName, paymentMethod, employeeId, items: items.length });
+      
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -97,14 +111,19 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           status: 'completed',
           employee_id: employeeId || null
         })
-        .select('id')
-        .single();
+        .select('id');
       
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error("Order creation failed:", orderError);
+        throw orderError;
+      }
       
-      if (!orderData) throw new Error("Failed to create order");
+      if (!orderData || orderData.length === 0) {
+        throw new Error("Failed to create order - no order ID returned");
+      }
       
-      const orderId = orderData.id;
+      const orderId = orderData[0].id;
+      console.log("Order created with ID:", orderId);
       
       // Create order items
       const orderItems = items.map(item => ({
@@ -115,11 +134,15 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         subtotal: item.price * item.quantity
       }));
       
+      console.log("Creating order items:", orderItems.length);
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems);
       
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error("Order items creation failed:", itemsError);
+        throw itemsError;
+      }
       
       // Get employee name if employee ID is provided
       let employeeName = "";
@@ -161,13 +184,13 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       return transaction;
     } catch (err) {
-      const error = err as Error;
-      console.error("Payment processing error:", error);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error("Payment processing error:", err);
       
-      toast({
-        title: "Order Failed",
-        description: error.message || "An error occurred while saving your order.",
-        variant: "destructive"
+      handleError(err, { 
+        showToast: true,
+        context: "Order Processing",
+        severity: "error"
       });
       
       return null;
@@ -179,6 +202,13 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const clearTransaction = () => {
     setCurrentTransaction(null);
   };
+  
+  // Check connection on mount
+  React.useEffect(() => {
+    checkConnection().catch(error => {
+      console.error("Initial connection check failed:", error);
+    });
+  }, []);
 
   return (
     <PaymentContext.Provider value={{ 

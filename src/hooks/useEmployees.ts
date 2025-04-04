@@ -30,7 +30,8 @@ export const useEmployees = () => {
       setEmployees(data || []);
     } catch (err) {
       console.error('Error fetching employees:', err);
-      setError(err instanceof Error ? err : new Error(String(err)));
+      const errorObj = err instanceof Error ? err : new Error(String(err));
+      setError(errorObj);
       toast({
         title: "Error",
         description: "Failed to load employees data",

@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { PaymentProcessor } from "./payment/PaymentProcessor";
+import { usePayment } from "./payment/PaymentContext";
 
 export const POSPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -29,15 +31,17 @@ export const POSPage: React.FC = () => {
     clearCart, 
     getTotal,
     itemCount,
-    
-    processOrder,
-    loading,
-    currentTransaction,
-    setCurrentTransaction,
-    
     connectionStatus,
     checkConnection,
   } = usePOSSystem();
+  
+  const {
+    processPayment,
+    isProcessing: loading,
+    currentTransaction,
+    setCurrentTransaction,
+    connectionStatus: paymentConnectionStatus
+  } = usePayment();
   
   const { toast } = useToast();
   const { error, handleError, clearError } = useErrorHandler();
@@ -69,14 +73,14 @@ export const POSPage: React.FC = () => {
   
   useEffect(() => {
     console.log("POS Page Debug:", { 
-      connectionStatus,
+      connectionStatus: paymentConnectionStatus,
       cartItems: cart.length,
       hasTransaction: !!currentTransaction,
       showingReceipt: showReceipt,
       showingCheckout: showCheckout,
       networkOnline: isOnline
     });
-  }, [connectionStatus, cart.length, currentTransaction, showReceipt, showCheckout, isOnline]);
+  }, [paymentConnectionStatus, cart.length, currentTransaction, showReceipt, showCheckout, isOnline]);
 
   const handleCheckout = () => {
     if (!isOnline) {
@@ -109,7 +113,7 @@ export const POSPage: React.FC = () => {
         throw new Error("Cannot process payments while offline");
       }
       
-      const transaction = await processOrder(customerName, employeeId);
+      const transaction = await processPayment(cart, customerName, "Cash", employeeId);
       
       if (transaction) {
         console.log("Transaction successful:", transaction.id);
@@ -119,7 +123,7 @@ export const POSPage: React.FC = () => {
         return true;
       }
       
-      console.log("Transaction failed - processOrder returned null");
+      console.log("Transaction failed - processPayment returned null");
       return false;
     } catch (error) {
       console.error("Error in handleProcessPayment:", error);
@@ -131,9 +135,9 @@ export const POSPage: React.FC = () => {
   const renderContent = () => (
     <>
       <ConnectionStatus 
-        isConnected={connectionStatus.connected}
-        isChecking={connectionStatus.checking}
-        onCheckConnection={checkConnection}
+        isConnected={paymentConnectionStatus.connected}
+        isChecking={paymentConnectionStatus.checking}
+        onCheckConnection={() => paymentConnectionStatus.connected ? null : checkConnection()}
       />
       
       {error && (
@@ -188,7 +192,7 @@ export const POSPage: React.FC = () => {
         onClose={() => setShowCheckout(false)}
         onConfirm={handleProcessPayment}
         total={getTotal()}
-        isConnected={connectionStatus.connected && isOnline}
+        isConnected={paymentConnectionStatus.connected && isOnline}
         onCheckConnection={checkConnection}
         isProcessing={loading}
       />
@@ -205,25 +209,27 @@ export const POSPage: React.FC = () => {
   );
 
   return (
-    <div className="flex h-screen bg-gray-800 text-white">
-      <Sidebar activeTab="pos" setActiveTab={() => {}} />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title="Point of Sale" />
+    <PaymentProcessor>
+      <div className="flex h-screen bg-gray-800 text-white">
+        <Sidebar activeTab="pos" setActiveTab={() => {}} />
         
-        <ErrorBoundary fallback={
-          <div className="p-8 text-center">
-            <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
-            <p className="text-gray-400 mb-6">There was an error loading the POS system.</p>
-            <Button onClick={() => window.location.reload()}>
-              Refresh Application
-            </Button>
-          </div>
-        }>
-          {renderContent()}
-        </ErrorBoundary>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header title="Point of Sale" />
+          
+          <ErrorBoundary fallback={
+            <div className="p-8 text-center">
+              <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+              <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
+              <p className="text-gray-400 mb-6">There was an error loading the POS system.</p>
+              <Button onClick={() => window.location.reload()}>
+                Refresh Application
+              </Button>
+            </div>
+          }>
+            {renderContent()}
+          </ErrorBoundary>
+        </div>
       </div>
-    </div>
+    </PaymentProcessor>
   );
 };
