@@ -1,9 +1,9 @@
 
 import React from "react";
-import { POSPage } from "@/components/pos/POSPage";
+import { SimplePOSPage } from "@/components/pos/SimplePOSPage";
 
-export const POS: React.FC = () => {
-  return <POSPage />;
+const POS: React.FC = () => {
+  return <SimplePOSPage />;
 };
 
 export default POS;
