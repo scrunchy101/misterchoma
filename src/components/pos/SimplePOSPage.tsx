@@ -7,9 +7,10 @@ import { SimpleCart } from "./SimpleCart";
 import { SimpleCheckout } from "./SimpleCheckout";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { WifiOff, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { WifiOff, AlertCircle, RefreshCw } from "lucide-react";
 import { SimpleReceipt } from "./SimpleReceipt";
+import { processTransaction, checkDatabaseConnections } from "@/utils/transactionUtils";
+import { Button } from "@/components/ui/button";
 
 // Define the menu item type
 export interface MenuItem {
@@ -39,6 +40,8 @@ export const SimplePOSPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [connected, setConnected] = useState<boolean>(false);
+  const [primaryDb, setPrimaryDb] = useState<'firebase' | 'supabase' | null>(null);
+  const [isCheckingConnection, setIsCheckingConnection] = useState<boolean>(false);
   const [showCheckout, setShowCheckout] = useState<boolean>(false);
   const [showReceipt, setShowReceipt] = useState<boolean>(false);
   const [transaction, setTransaction] = useState<Transaction | null>(null);
@@ -64,19 +67,44 @@ export const SimplePOSPage: React.FC = () => {
   // Check database connection
   const checkConnection = async () => {
     try {
-      const { data, error } = await supabase.from('menu_items').select('count').limit(1);
-      if (error) throw error;
-      setConnected(true);
-      return true;
+      setIsCheckingConnection(true);
+      const connections = await checkDatabaseConnections();
+      
+      // Use the available connection, prioritize Firebase
+      if (connections.primaryAvailable) {
+        setPrimaryDb(connections.primaryAvailable);
+        setConnected(true);
+        
+        toast({
+          title: "Connected",
+          description: `Using ${connections.primaryAvailable} as primary database`,
+        });
+      } else {
+        setConnected(false);
+        setPrimaryDb(null);
+        
+        toast({ 
+          title: "Connection Error", 
+          description: "Could not connect to any database", 
+          variant: "destructive" 
+        });
+      }
+      
+      return connections.primaryAvailable !== null;
     } catch (error) {
       console.error("Database connection error:", error);
       setConnected(false);
+      setPrimaryDb(null);
+      
       toast({ 
         title: "Connection Error", 
-        description: "Could not connect to database", 
+        description: "Error checking database connections", 
         variant: "destructive" 
       });
+      
       return false;
+    } finally {
+      setIsCheckingConnection(false);
     }
   };
   
@@ -121,7 +149,7 @@ export const SimplePOSPage: React.FC = () => {
   const calculateTotal = () => cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
   // Process transaction
-  const processTransaction = async (customerName: string) => {
+  const processOrder = async (customerName: string) => {
     if (!connected || !isOnline) {
       toast({
         title: "Cannot Process Transaction",
@@ -141,42 +169,23 @@ export const SimplePOSPage: React.FC = () => {
     }
     
     try {
-      // Insert order into database
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          customer_name: customerName || 'Guest',
-          total_amount: calculateTotal(),
-          payment_method: 'Cash',
-          payment_status: 'completed',
-          status: 'completed'
-        })
-        .select('id')
-        .single();
+      // Use the transaction utility
+      const result = await processTransaction(
+        cart, 
+        customerName, 
+        calculateTotal(),
+        primaryDb || 'firebase'
+      );
       
-      if (orderError) throw orderError;
-      if (!orderData) throw new Error("Failed to create order");
+      if (!result.success) {
+        throw new Error(result.error || "Transaction failed");
+      }
       
-      const orderId = orderData.id;
-      
-      // Insert order items
-      const orderItems = cart.map(item => ({
-        order_id: orderId,
-        menu_item_id: item.id,
-        quantity: item.quantity,
-        unit_price: item.price,
-        subtotal: item.price * item.quantity
-      }));
-      
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-        
-      if (itemsError) throw itemsError;
+      const transactionData = result.data;
       
       // Create transaction record
       const newTransaction = {
-        id: orderId,
+        id: transactionData.id,
         date: new Date(),
         customer: customerName || 'Guest',
         items: [...cart],
@@ -190,7 +199,7 @@ export const SimplePOSPage: React.FC = () => {
       
       toast({
         title: "Order Complete",
-        description: `Order #${orderId.substring(0, 8)} has been processed`
+        description: `Order #${transactionData.id.substring(0, 8)} has been processed`
       });
       
       return true;
@@ -198,7 +207,7 @@ export const SimplePOSPage: React.FC = () => {
       console.error("Transaction error:", error);
       toast({
         title: "Transaction Failed",
-        description: "Could not save transaction to database",
+        description: error instanceof Error ? error.message : "Could not save transaction to database",
         variant: "destructive"
       });
       return false;
@@ -213,17 +222,39 @@ export const SimplePOSPage: React.FC = () => {
         <Header title="Point of Sale" />
         
         {/* Connection Status */}
-        <div className={`px-4 py-2 flex items-center ${
-          connected ? 'bg-green-900/20' : 'bg-red-900/20'
-        }`}>
-          <div className="flex items-center">
-            <span className={`h-3 w-3 rounded-full mr-2 ${
-              connected ? 'bg-green-500' : 'bg-red-500'
-            }`}></span>
-            <span>
-              {connected ? 'Connected to database' : 'Not connected to database'}
-            </span>
+        <div className="px-4 py-2 flex items-center justify-between">
+          <div className={`flex items-center px-3 py-1 rounded-md ${
+            isCheckingConnection ? 'bg-yellow-900/20 text-yellow-400' :
+            connected ? 'bg-green-900/20 text-green-500' : 'bg-red-900/20 text-red-500'
+          }`}>
+            {isCheckingConnection ? (
+              <>
+                <RefreshCw size={16} className="animate-spin mr-2" />
+                <span>Checking connection...</span>
+              </>
+            ) : (
+              <>
+                <span className={`h-3 w-3 rounded-full mr-2 ${
+                  connected ? 'bg-green-500' : 'bg-red-500'
+                }`}></span>
+                <span>
+                  {connected 
+                    ? `Connected (using ${primaryDb})` 
+                    : 'Not connected to database'}
+                </span>
+              </>
+            )}
           </div>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={checkConnection}
+            disabled={isCheckingConnection}
+            className="h-8 bg-gray-800 border-gray-700"
+          >
+            {isCheckingConnection ? "Checking..." : "Check Connection"}
+          </Button>
         </div>
         
         {/* Offline Warning */}
@@ -266,7 +297,7 @@ export const SimplePOSPage: React.FC = () => {
           <SimpleCheckout
             total={calculateTotal()}
             onClose={() => setShowCheckout(false)}
-            onConfirm={processTransaction}
+            onConfirm={processOrder}
             isConnected={connected && isOnline}
           />
         )}

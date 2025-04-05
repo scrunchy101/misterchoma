@@ -28,25 +28,30 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
 }) => {
   const [customerName, setCustomerName] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!isConnected) {
-      return; // Cannot process if not connected
+      setError("Cannot process order while offline");
+      return; 
     }
     
     setIsProcessing(true);
+    setError(null);
     
     try {
       const success = await onConfirm(customerName);
       if (success) {
         // Let the parent component handle success (showing receipt)
       } else {
+        setError("Transaction failed. Please try again.");
         setIsProcessing(false);
       }
-    } catch (error) {
-      console.error("Checkout error:", error);
+    } catch (err) {
+      console.error("Checkout error:", err);
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
       setIsProcessing(false);
     }
   };
@@ -64,6 +69,13 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
             <AlertDescription>
               Cannot complete order while offline. Please check your connection.
             </AlertDescription>
+          </Alert>
+        )}
+        
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
         
