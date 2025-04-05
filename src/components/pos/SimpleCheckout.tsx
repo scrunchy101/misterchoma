@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Wifi, WifiOff, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ConnectionIndicator } from "@/components/ui/connection-indicator";
+import { checkDatabaseConnections } from "@/utils/transactionUtils";
 
 interface SimpleCheckoutProps {
   total: number;
@@ -29,12 +31,40 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   const [customerName, setCustomerName] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
+  
+  // Recheck connection if initially disconnected
+  useEffect(() => {
+    if (!isConnected) {
+      checkConnection();
+    }
+  }, [isConnected]);
+  
+  const checkConnection = async () => {
+    setIsCheckingConnection(true);
+    setError(null);
+    
+    try {
+      const connections = await checkDatabaseConnections();
+      console.log("Connection check results:", connections);
+      
+      if (!connections.primaryAvailable) {
+        setError("Cannot connect to any database. Please check your internet connection.");
+      }
+      
+      setIsCheckingConnection(false);
+    } catch (err) {
+      console.error("Connection check error:", err);
+      setError("Error checking database connection");
+      setIsCheckingConnection(false);
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isConnected) {
-      setError("Cannot process order while offline");
+    if (!isConnected && !isCheckingConnection) {
+      setError("Cannot process order while offline. Please check your connection.");
       return; 
     }
     
@@ -63,14 +93,34 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
           <DialogTitle>Complete Order</DialogTitle>
         </DialogHeader>
         
-        {!isConnected && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Cannot complete order while offline. Please check your connection.
-            </AlertDescription>
-          </Alert>
-        )}
+        <div className="mb-4">
+          {isCheckingConnection ? (
+            <div className="flex items-center gap-2 py-2 px-3 bg-yellow-900/30 text-yellow-400 rounded">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              <span>Checking database connection...</span>
+            </div>
+          ) : isConnected ? (
+            <div className="flex items-center gap-2 py-2 px-3 bg-green-900/30 text-green-400 rounded">
+              <Wifi className="h-4 w-4" />
+              <span>Connected to database</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-2 py-2 px-3 bg-red-900/30 text-red-400 rounded">
+              <div className="flex items-center gap-2">
+                <WifiOff className="h-4 w-4" />
+                <span>Not connected to database</span>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-7 py-0 px-2 bg-gray-700"
+                onClick={checkConnection}
+              >
+                Retry
+              </Button>
+            </div>
+          )}
+        </div>
         
         {error && (
           <Alert variant="destructive" className="mb-4">
@@ -114,7 +164,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
             </Button>
             <Button
               type="submit"
-              disabled={isProcessing || !isConnected}
+              disabled={isProcessing || (!isConnected && !isCheckingConnection)}
               className="bg-green-600 hover:bg-green-700"
             >
               {isProcessing ? "Processing..." : "Complete Order"}

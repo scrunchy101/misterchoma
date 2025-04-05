@@ -7,6 +7,9 @@ import {
   getDoc,
   doc,
   serverTimestamp,
+  getDocs,
+  query,
+  limit
 } from "firebase/firestore";
 import { CartItem } from "@/components/pos/SimplePOSPage";
 
@@ -132,82 +135,142 @@ const processSupabaseTransaction = async (
   customerName: string,
   total: number
 ): Promise<TransactionResult> => {
-  // Create order in database (with simpler insert)
-  const { data: orderData, error: orderError } = await supabase
-    .from('orders')
-    .insert({
-      customer_name: customerName || "Guest",
-      payment_method: "Cash",
-      payment_status: 'completed',
-      total_amount: total,
-      status: 'completed'
-    })
-    .select('id')
-    .single();
-  
-  if (orderError) {
-    console.error("Supabase order creation error:", orderError);
+  // Check Supabase connection first
+  try {
+    // Simple test query to verify connection
+    const { data: testData, error: testError } = await supabase
+      .from('menu_items')
+      .select('id')
+      .limit(1);
     
-    // Try alternative approach if constraint error
-    if (orderError.message.includes("constraint")) {
-      const { data: altOrderData, error: altOrderError } = await supabase
-        .from('orders')
-        .insert({
-          customer_name: customerName || "Guest",
-          payment_method: "Cash",
-          payment_status: 'completed',
-          total_amount: total,
-          status: 'completed'
-        })
-        .select('id');
+    if (testError) {
+      console.error("Supabase connection test failed:", testError);
+      throw new Error(`Supabase connection error: ${testError.message}`);
+    }
+    
+    if (!testData || testData.length === 0) {
+      console.warn("Supabase connection test returned no data");
+    } else {
+      console.log("Supabase connection verified successfully");
+    }
+  } catch (connectionError) {
+    console.error("Failed to connect to Supabase:", connectionError);
+    throw new Error("Cannot connect to Supabase database");
+  }
+  
+  // Create order in database (with simpler insert)
+  try {
+    const { data: orderData, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        customer_name: customerName || "Guest",
+        payment_method: "Cash",
+        payment_status: 'completed',
+        total_amount: total,
+        status: 'completed'
+      })
+      .select('id')
+      .single();
+    
+    if (orderError) {
+      console.error("Supabase order creation error:", orderError);
       
-      if (altOrderError || !altOrderData || altOrderData.length === 0) {
-        throw new Error(altOrderError?.message || "Failed to create order");
+      // Try alternative approach if constraint error
+      if (orderError.message.includes("constraint")) {
+        const { data: altOrderData, error: altOrderError } = await supabase
+          .from('orders')
+          .insert({
+            customer_name: customerName || "Guest",
+            payment_method: "Cash",
+            payment_status: 'completed',
+            total_amount: total,
+            status: 'completed'
+          })
+          .select('id');
+        
+        if (altOrderError || !altOrderData || altOrderData.length === 0) {
+          throw new Error(altOrderError?.message || "Failed to create order");
+        }
+        
+        const orderId = altOrderData[0].id;
+        console.log("Order created with alternative method, ID:", orderId);
+        
+        // Create order items
+        const orderItems = items.map(item => ({
+          order_id: orderId,
+          menu_item_id: item.id,
+          quantity: item.quantity,
+          unit_price: item.price,
+          subtotal: item.price * item.quantity
+        }));
+        
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems);
+        
+        if (itemsError) {
+          console.error("Supabase order items error:", itemsError);
+          throw itemsError;
+        }
+        
+        return {
+          success: true,
+          transactionId: orderId,
+          data: {
+            id: orderId,
+            date: new Date(),
+            customer: customerName || "Guest",
+            items: [...items],
+            total,
+            paymentMethod: "Cash"
+          }
+        };
       }
       
-      orderData.id = altOrderData[0].id;
-    } else {
       throw orderError;
     }
-  }
-  
-  if (!orderData) {
-    throw new Error("No order ID returned from database");
-  }
-  
-  const orderId = orderData.id;
-  console.log("Supabase order created with ID:", orderId);
-  
-  // Create order items
-  const orderItems = items.map(item => ({
-    order_id: orderId,
-    menu_item_id: item.id,
-    quantity: item.quantity,
-    unit_price: item.price,
-    subtotal: item.price * item.quantity
-  }));
-  
-  const { error: itemsError } = await supabase
-    .from('order_items')
-    .insert(orderItems);
-  
-  if (itemsError) {
-    console.error("Supabase order items error:", itemsError);
-    throw itemsError;
-  }
-  
-  return {
-    success: true,
-    transactionId: orderId,
-    data: {
-      id: orderId,
-      date: new Date(),
-      customer: customerName || "Guest",
-      items: [...items],
-      total,
-      paymentMethod: "Cash"
+    
+    if (!orderData) {
+      throw new Error("No order ID returned from database");
     }
-  };
+    
+    const orderId = orderData.id;
+    console.log("Supabase order created with ID:", orderId);
+    
+    // Create order items
+    const orderItems = items.map(item => ({
+      order_id: orderId,
+      menu_item_id: item.id,
+      quantity: item.quantity,
+      unit_price: item.price,
+      subtotal: item.price * item.quantity
+    }));
+    
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
+    
+    if (itemsError) {
+      console.error("Supabase order items error:", itemsError);
+      throw itemsError;
+    }
+    
+    return {
+      success: true,
+      transactionId: orderId,
+      data: {
+        id: orderId,
+        date: new Date(),
+        customer: customerName || "Guest",
+        items: [...items],
+        total,
+        paymentMethod: "Cash"
+      }
+    };
+  } catch (error) {
+    console.error("Supabase transaction error:", error);
+    throw error;
+  }
 };
 
 // Check connection status for both databases
@@ -221,28 +284,42 @@ export const checkDatabaseConnections = async (): Promise<{
   
   // Check Firebase connection
   try {
+    console.log("Checking Firebase connection...");
     if (db) {
-      const testRef = collection(db, "test_connection");
-      await addDoc(testRef, { 
-        timestamp: serverTimestamp(),
-        test: true
-      });
-      firebaseConnected = true;
-      console.log("Firebase connection successful");
+      try {
+        // Create a simple query test
+        const testRef = collection(db, "test_connection");
+        const testQuery = query(testRef, limit(1));
+        await getDocs(testQuery);
+        firebaseConnected = true;
+        console.log("Firebase connection successful");
+      } catch (queryError) {
+        console.error("Firebase query failed:", queryError);
+        // Even if the test collection doesn't exist, if we didn't get a connection error
+        // we can still consider Firebase connected
+        firebaseConnected = !queryError.toString().includes("failed to connect");
+      }
+    } else {
+      console.error("Firebase db object is not initialized");
     }
   } catch (error) {
-    console.error("Firebase connection failed:", error);
+    console.error("Firebase connection check failed:", error);
   }
   
   // Check Supabase connection
   try {
+    console.log("Checking Supabase connection...");
     const { data, error } = await supabase
       .from('menu_items')
-      .select('count')
+      .select('id')
       .limit(1);
     
     supabaseConnected = !error;
     console.log("Supabase connection:", supabaseConnected ? "successful" : "failed");
+    
+    if (error) {
+      console.error("Supabase connection error:", error);
+    }
   } catch (error) {
     console.error("Supabase connection check failed:", error);
   }

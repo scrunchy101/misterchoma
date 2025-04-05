@@ -45,17 +45,35 @@ export const SimplePOSPage: React.FC = () => {
   const [showCheckout, setShowCheckout] = useState<boolean>(false);
   const [showReceipt, setShowReceipt] = useState<boolean>(false);
   const [transaction, setTransaction] = useState<Transaction | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const { toast } = useToast();
   
   // Monitor connection status
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast({
+        title: "Online",
+        description: "Internet connection restored."
+      });
+      // Automatically check database connection when coming back online
+      checkConnection();
+    };
+    
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast({
+        title: "You're offline",
+        description: "Internet connection lost. Orders cannot be processed.",
+        variant: "destructive"
+      });
+      setConnected(false);
+    };
     
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     
-    // Check database connection
+    // Check database connection on initial load
     checkConnection();
     
     return () => {
@@ -66,9 +84,19 @@ export const SimplePOSPage: React.FC = () => {
   
   // Check database connection
   const checkConnection = async () => {
+    if (!isOnline) {
+      setConnected(false);
+      setPrimaryDb(null);
+      setConnectionError("No internet connection");
+      return false;
+    }
+    
     try {
       setIsCheckingConnection(true);
+      setConnectionError(null);
+      
       const connections = await checkDatabaseConnections();
+      console.log("Database connections:", connections);
       
       // Use the available connection, prioritize Firebase
       if (connections.primaryAvailable) {
@@ -82,6 +110,7 @@ export const SimplePOSPage: React.FC = () => {
       } else {
         setConnected(false);
         setPrimaryDb(null);
+        setConnectionError("Could not connect to any database");
         
         toast({ 
           title: "Connection Error", 
@@ -95,6 +124,7 @@ export const SimplePOSPage: React.FC = () => {
       console.error("Database connection error:", error);
       setConnected(false);
       setPrimaryDb(null);
+      setConnectionError(error instanceof Error ? error.message : "Unknown connection error");
       
       toast({ 
         title: "Connection Error", 
@@ -240,7 +270,7 @@ export const SimplePOSPage: React.FC = () => {
                 <span>
                   {connected 
                     ? `Connected (using ${primaryDb})` 
-                    : 'Not connected to database'}
+                    : connectionError || 'Not connected to database'}
                 </span>
               </>
             )}
@@ -264,6 +294,17 @@ export const SimplePOSPage: React.FC = () => {
             <AlertTitle>You're offline</AlertTitle>
             <AlertDescription>
               Your internet connection appears to be offline. Orders cannot be processed.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {/* Connection Error */}
+        {isOnline && !connected && !isCheckingConnection && connectionError && (
+          <Alert variant="destructive" className="mx-4 mt-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Connection Error</AlertTitle>
+            <AlertDescription>
+              {connectionError}. Please check your database configuration.
             </AlertDescription>
           </Alert>
         )}
