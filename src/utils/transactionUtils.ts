@@ -80,53 +80,58 @@ const processFirebaseTransaction = async (
     throw new Error("Firebase database is not initialized");
   }
   
-  // Create order document
-  const ordersRef = collection(db, "orders");
-  const newOrder = {
-    customer_name: customerName || "Guest",
-    payment_method: "Cash",
-    payment_status: 'completed',
-    total_amount: total,
-    status: 'completed',
-    created_at: serverTimestamp(),
-    updated_at: serverTimestamp()
-  };
-  
-  // Create the order
-  const orderDocRef = await addDoc(ordersRef, newOrder);
-  const orderId = orderDocRef.id;
-  
-  console.log("Firebase order created with ID:", orderId);
-  
-  // Create order items
-  const orderItemsPromises = items.map(async (item) => {
-    const orderItemRef = collection(db, "order_items");
-    const orderItem = {
-      order_id: orderId,
-      menu_item_id: item.id,
-      quantity: item.quantity,
-      unit_price: item.price,
-      subtotal: item.price * item.quantity,
-      created_at: serverTimestamp()
+  try {
+    // Create order document
+    const ordersRef = collection(db, "orders");
+    const newOrder = {
+      customer_name: customerName || "Guest",
+      payment_method: "Cash",
+      payment_status: 'completed',
+      total_amount: total,
+      status: 'completed',
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp()
     };
     
-    return addDoc(orderItemRef, orderItem);
-  });
-  
-  await Promise.all(orderItemsPromises);
-  
-  return {
-    success: true,
-    transactionId: orderId,
-    data: {
-      id: orderId,
-      date: new Date(),
-      customer: customerName || "Guest",
-      items: [...items],
-      total,
-      paymentMethod: "Cash"
-    }
-  };
+    // Create the order
+    const orderDocRef = await addDoc(ordersRef, newOrder);
+    const orderId = orderDocRef.id;
+    
+    console.log("Firebase order created with ID:", orderId);
+    
+    // Create order items
+    const orderItemsPromises = items.map(async (item) => {
+      const orderItemRef = collection(db, "order_items");
+      const orderItem = {
+        order_id: orderId,
+        menu_item_id: item.id,
+        quantity: item.quantity,
+        unit_price: item.price,
+        subtotal: item.price * item.quantity,
+        created_at: serverTimestamp()
+      };
+      
+      return addDoc(orderItemRef, orderItem);
+    });
+    
+    await Promise.all(orderItemsPromises);
+    
+    return {
+      success: true,
+      transactionId: orderId,
+      data: {
+        id: orderId,
+        date: new Date(),
+        customer: customerName || "Guest",
+        items: [...items],
+        total,
+        paymentMethod: "Cash"
+      }
+    };
+  } catch (error) {
+    console.error("Firebase transaction error:", error);
+    throw error;
+  }
 };
 
 // Process transaction with Supabase
@@ -158,8 +163,9 @@ const processSupabaseTransaction = async (
     throw new Error("Cannot connect to Supabase database");
   }
   
-  // Create order in database (with simpler insert)
+  // Create order in database
   try {
+    // Simpler insert without ON CONFLICT
     const { data: orderData, error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -169,72 +175,18 @@ const processSupabaseTransaction = async (
         total_amount: total,
         status: 'completed'
       })
-      .select('id')
-      .single();
+      .select('id');
     
     if (orderError) {
       console.error("Supabase order creation error:", orderError);
-      
-      // Try alternative approach if constraint error
-      if (orderError.message.includes("constraint")) {
-        const { data: altOrderData, error: altOrderError } = await supabase
-          .from('orders')
-          .insert({
-            customer_name: customerName || "Guest",
-            payment_method: "Cash",
-            payment_status: 'completed',
-            total_amount: total,
-            status: 'completed'
-          })
-          .select('id');
-        
-        if (altOrderError || !altOrderData || altOrderData.length === 0) {
-          throw new Error(altOrderError?.message || "Failed to create order");
-        }
-        
-        const orderId = altOrderData[0].id;
-        console.log("Order created with alternative method, ID:", orderId);
-        
-        // Create order items
-        const orderItems = items.map(item => ({
-          order_id: orderId,
-          menu_item_id: item.id,
-          quantity: item.quantity,
-          unit_price: item.price,
-          subtotal: item.price * item.quantity
-        }));
-        
-        const { error: itemsError } = await supabase
-          .from('order_items')
-          .insert(orderItems);
-        
-        if (itemsError) {
-          console.error("Supabase order items error:", itemsError);
-          throw itemsError;
-        }
-        
-        return {
-          success: true,
-          transactionId: orderId,
-          data: {
-            id: orderId,
-            date: new Date(),
-            customer: customerName || "Guest",
-            items: [...items],
-            total,
-            paymentMethod: "Cash"
-          }
-        };
-      }
-      
       throw orderError;
     }
     
-    if (!orderData) {
-      throw new Error("No order ID returned from database");
+    if (!orderData || orderData.length === 0) {
+      throw new Error("Failed to create order - no order ID returned");
     }
     
-    const orderId = orderData.id;
+    const orderId = orderData[0].id;
     console.log("Supabase order created with ID:", orderId);
     
     // Create order items

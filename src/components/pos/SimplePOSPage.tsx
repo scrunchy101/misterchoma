@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -121,7 +120,7 @@ export const SimplePOSPage: React.FC = () => {
       
       return connections.primaryAvailable !== null;
     } catch (error) {
-      console.error("Database connection error:", error);
+      console.error("Database connection check failed:", error);
       setConnected(false);
       setPrimaryDb(null);
       setConnectionError(error instanceof Error ? error.message : "Unknown connection error");
@@ -199,7 +198,25 @@ export const SimplePOSPage: React.FC = () => {
     }
     
     try {
-      // Use the transaction utility
+      // Double check connection before processing
+      const isConnected = await checkConnection();
+      if (!isConnected) {
+        toast({
+          title: "Connection Lost",
+          description: "Database connection was lost. Please try again.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      console.log("Processing transaction with:", { 
+        items: cart.length,
+        customerName,
+        total: calculateTotal(),
+        primaryDb
+      });
+      
+      // Use the transaction utility with the current primary database
       const result = await processTransaction(
         cart, 
         customerName, 
@@ -221,6 +238,8 @@ export const SimplePOSPage: React.FC = () => {
         items: [...cart],
         total: calculateTotal()
       };
+      
+      console.log("Transaction completed successfully:", newTransaction);
       
       setTransaction(newTransaction);
       setShowCheckout(false);

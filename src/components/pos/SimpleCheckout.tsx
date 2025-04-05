@@ -73,8 +73,12 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
     
     try {
       const success = await onConfirm(customerName);
+      
+      // Important: We need to check if the component is still mounted before continuing
+      // This is a common issue with async operations
       if (success) {
         // Let the parent component handle success (showing receipt)
+        console.log("Transaction processed successfully");
       } else {
         setError("Transaction failed. Please try again.");
         setIsProcessing(false);
@@ -139,6 +143,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="Guest"
                 className="bg-gray-700 border-gray-600 text-white"
+                disabled={isProcessing}
               />
             </div>
             
@@ -158,6 +163,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
               type="button"
               variant="outline"
               onClick={onClose}
+              disabled={isProcessing}
               className="border-gray-600"
             >
               Cancel
