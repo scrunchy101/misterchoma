@@ -1,22 +1,19 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Edit, MoreHorizontal, Phone, Star, User } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Calendar, Edit, MoreHorizontal, Phone, Star, User, DollarSign, ShoppingBag } from "lucide-react";
+import { useCustomers, Customer } from "@/hooks/useCustomers";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  address: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 interface CustomersListProps {
   searchTerm: string;
@@ -24,44 +21,18 @@ interface CustomersListProps {
 }
 
 export const CustomersList = ({ searchTerm, refreshTrigger = 0 }: CustomersListProps) => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: customers = [], isLoading, isError } = useCustomers(searchTerm);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("customers")
-          .select("*")
-          .order("created_at", { ascending: false });
+  const handleDelete = async (customer: Customer) => {
+    // This would be implemented with an actual deletion function
+    toast({
+      title: "Not implemented",
+      description: `Delete functionality for ${customer.name} would go here`,
+    });
+  };
 
-        if (error) throw error;
-        setCustomers(data || []);
-      } catch (error) {
-        console.error("Error fetching customers:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load customers. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCustomers();
-  }, [refreshTrigger, toast]);
-
-  // Filter customers based on search term
-  const filteredCustomers = customers.filter(customer => 
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (customer.phone && customer.phone.includes(searchTerm))
-  );
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8">
         <div className="flex justify-center">
@@ -82,6 +53,20 @@ export const CustomersList = ({ searchTerm, refreshTrigger = 0 }: CustomersListP
     );
   }
 
+  if (isError) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-8">
+        <div className="text-center text-red-500">
+          <p className="font-semibold">Error loading customers</p>
+          <p className="text-sm mt-1">Please try refreshing the page</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Filter customers based on search term
+  const filteredCustomers = customers;
+
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <div className="p-4 border-b border-gray-100 flex justify-between items-center">
@@ -95,7 +80,8 @@ export const CustomersList = ({ searchTerm, refreshTrigger = 0 }: CustomersListP
             <tr className="text-left bg-gray-50">
               <th className="px-4 py-3 font-medium">Customer</th>
               <th className="px-4 py-3 font-medium">Contact Info</th>
-              <th className="px-4 py-3 font-medium">Details</th>
+              <th className="px-4 py-3 font-medium">Orders</th>
+              <th className="px-4 py-3 font-medium">Total Spent</th>
               <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
@@ -109,7 +95,7 @@ export const CustomersList = ({ searchTerm, refreshTrigger = 0 }: CustomersListP
                     </div>
                     <div>
                       <p className="font-medium">{customer.name}</p>
-                      <div className="flex items-center text-xs text-gray-500">
+                      <div className="flex items-center text-xs text-gray-500 mt-1">
                         <Calendar size={12} className="mr-1" />
                         <span>Joined {format(new Date(customer.created_at), "MMM yyyy")}</span>
                       </div>
@@ -126,25 +112,40 @@ export const CustomersList = ({ searchTerm, refreshTrigger = 0 }: CustomersListP
                   )}
                 </td>
                 <td className="px-4 py-4">
-                  {customer.address && (
-                    <div className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium">Address:</span> {customer.address}
-                    </div>
-                  )}
-                  {customer.notes && (
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Notes:</span> {customer.notes}
-                    </div>
-                  )}
+                  <div className="flex items-center">
+                    <ShoppingBag size={16} className="mr-2 text-green-500" />
+                    <span className="font-medium">{customer.order_count || 0}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-4">
+                  <div className="flex items-center">
+                    <DollarSign size={16} className="mr-1 text-green-600" />
+                    <span className="font-medium">{customer.total_spent ? customer.total_spent.toLocaleString() : 0}</span>
+                  </div>
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex space-x-2">
                     <Button variant="outline" size="sm" className="h-8 px-2">
                       <Edit size={14} />
                     </Button>
-                    <Button variant="outline" size="sm" className="h-8 px-2">
-                      <MoreHorizontal size={14} />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 px-2">
+                          <MoreHorizontal size={14} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-56">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>View Details</DropdownMenuItem>
+                        <DropdownMenuItem>Send Email</DropdownMenuItem>
+                        <DropdownMenuItem>Order History</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(customer)}>
+                          Delete Customer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </td>
               </tr>
