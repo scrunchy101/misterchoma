@@ -1,4 +1,3 @@
-
 import { db } from "@/integrations/firebase/config";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -25,7 +24,7 @@ export const processTransaction = async (
   items: CartItem[],
   customerName: string,
   total: number,
-  usePrimaryDb: 'firebase' | 'supabase' = 'firebase'
+  usePrimaryDb: 'firebase' | 'supabase' = 'supabase'
 ): Promise<TransactionResult> => {
   try {
     console.log(`Processing transaction with ${usePrimaryDb} as primary database`);
@@ -64,29 +63,28 @@ export const processTransaction = async (
       throw new Error("Cannot connect to any database");
     }
     
-    // Try primary database first
-    try {
-      if (usePrimaryDb === 'firebase') {
-        return await processFirebaseTransaction(items, customerName, total);
-      } else {
-        return await processSupabaseTransaction(items, customerName, total);
-      }
-    } catch (primaryError) {
-      console.error(`Error with ${usePrimaryDb}:`, primaryError);
-      
-      // Try fallback database
+    // Process with chosen database
+    let result: TransactionResult;
+    
+    if (usePrimaryDb === 'firebase') {
+      result = await processFirebaseTransaction(items, customerName, total);
+    } else {
+      result = await processSupabaseTransaction(items, customerName, total);
+    }
+    
+    // If we used Firebase, also save to Supabase if available for consistency
+    if (usePrimaryDb === 'firebase' && connections.supabase) {
       try {
-        console.log(`Attempting fallback to ${usePrimaryDb === 'firebase' ? 'supabase' : 'firebase'}`);
-        if (usePrimaryDb === 'firebase') {
-          return await processSupabaseTransaction(items, customerName, total);
-        } else {
-          return await processFirebaseTransaction(items, customerName, total);
-        }
-      } catch (fallbackError) {
-        console.error("Fallback database also failed:", fallbackError);
-        throw new Error(`Both databases failed. Primary error: ${primaryError}. Fallback error: ${fallbackError}`);
+        console.log("Also saving transaction to Supabase for consistency...");
+        await processSupabaseTransaction(items, customerName, total);
+      } catch (error) {
+        console.error("Failed to save transaction to Supabase:", error);
+        // Don't throw error here, since Firebase transaction was successful
       }
     }
+
+    return result;
+
   } catch (error) {
     console.error("Transaction processing error:", error);
     return {

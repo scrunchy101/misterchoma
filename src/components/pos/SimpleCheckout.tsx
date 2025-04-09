@@ -54,11 +54,12 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
       const connections = await checkDatabaseConnections();
       console.log("Connection check results:", connections);
       
-      const isAvailable = !!connections.primaryAvailable;
+      // Check for Supabase specifically since we're focusing on that for Orders
+      const isAvailable = !!connections.supabase;
       setLocalConnectionStatus(isAvailable);
       
       if (!isAvailable) {
-        setError("Cannot connect to any database. Please check your internet connection.");
+        setError("Cannot connect to Supabase database. Orders may not appear in the Orders page.");
       }
       
       return isAvailable;
