@@ -30,12 +30,38 @@ export const processTransaction = async (
   try {
     console.log(`Processing transaction with ${usePrimaryDb} as primary database`);
     
-    // Validate cart
+    // Validate cart first
     if (!items.length) {
       return { 
         success: false, 
         error: "Cannot process an empty order" 
       };
+    }
+    
+    // Check connection status before attempting transaction
+    const connections = await checkDatabaseConnections();
+    
+    // If requested database isn't available, try the other one
+    if (usePrimaryDb === 'firebase' && !connections.firebase) {
+      console.log("Firebase not available, checking Supabase...");
+      if (connections.supabase) {
+        console.log("Using Supabase as fallback");
+        usePrimaryDb = 'supabase';
+      } else {
+        throw new Error("No database connection available");
+      }
+    } else if (usePrimaryDb === 'supabase' && !connections.supabase) {
+      console.log("Supabase not available, checking Firebase...");
+      if (connections.firebase) {
+        console.log("Using Firebase as fallback");
+        usePrimaryDb = 'firebase';
+      } else {
+        throw new Error("No database connection available");
+      }
+    }
+    
+    if (!connections.firebase && !connections.supabase) {
+      throw new Error("Cannot connect to any database");
     }
     
     // Try primary database first
@@ -234,23 +260,32 @@ export const checkDatabaseConnections = async (): Promise<{
   let firebaseConnected = false;
   let supabaseConnected = false;
   
-  // Check Firebase connection
+  // Check Firebase connection with timeout
   try {
     console.log("Checking Firebase connection...");
     if (db) {
-      try {
-        // Create a simple query test
-        const testRef = collection(db, "test_connection");
-        const testQuery = query(testRef, limit(1));
-        await getDocs(testQuery);
-        firebaseConnected = true;
-        console.log("Firebase connection successful");
-      } catch (queryError) {
-        console.error("Firebase query failed:", queryError);
-        // Even if the test collection doesn't exist, if we didn't get a connection error
-        // we can still consider Firebase connected
-        firebaseConnected = !queryError.toString().includes("failed to connect");
-      }
+      const firebasePromise = new Promise(async (resolve, reject) => {
+        try {
+          // Create a simple query test
+          const testRef = collection(db, "test_connection");
+          const testQuery = query(testRef, limit(1));
+          await getDocs(testQuery);
+          resolve(true);
+        } catch (queryError) {
+          console.error("Firebase query failed:", queryError);
+          // Even if the test collection doesn't exist, if we didn't get a connection error
+          // we can still consider Firebase connected
+          resolve(!queryError.toString().includes("failed to connect"));
+        }
+      });
+      
+      // Add timeout to Firebase check
+      const timeoutPromise = new Promise(resolve => {
+        setTimeout(() => resolve(false), 5000);
+      });
+      
+      firebaseConnected = await Promise.race([firebasePromise, timeoutPromise]) as boolean;
+      console.log("Firebase connection:", firebaseConnected ? "successful" : "failed or timed out");
     } else {
       console.error("Firebase db object is not initialized");
     }
@@ -258,20 +293,30 @@ export const checkDatabaseConnections = async (): Promise<{
     console.error("Firebase connection check failed:", error);
   }
   
-  // Check Supabase connection
+  // Check Supabase connection with timeout
   try {
     console.log("Checking Supabase connection...");
-    const { data, error } = await supabase
-      .from('menu_items')
-      .select('id')
-      .limit(1);
+    const supabasePromise = new Promise(async (resolve, reject) => {
+      try {
+        const { data, error } = await supabase
+          .from('menu_items')
+          .select('id')
+          .limit(1);
+        
+        resolve(!error);
+      } catch (error) {
+        console.error("Supabase check error:", error);
+        resolve(false);
+      }
+    });
     
-    supabaseConnected = !error;
-    console.log("Supabase connection:", supabaseConnected ? "successful" : "failed");
+    // Add timeout to Supabase check
+    const timeoutPromise = new Promise(resolve => {
+      setTimeout(() => resolve(false), 5000);
+    });
     
-    if (error) {
-      console.error("Supabase connection error:", error);
-    }
+    supabaseConnected = await Promise.race([supabasePromise, timeoutPromise]) as boolean;
+    console.log("Supabase connection:", supabaseConnected ? "successful" : "failed or timed out");
   } catch (error) {
     console.error("Supabase connection check failed:", error);
   }
@@ -289,4 +334,31 @@ export const checkDatabaseConnections = async (): Promise<{
     supabase: supabaseConnected,
     primaryAvailable
   };
+};
+
+// Function to retry an operation with exponential backoff
+export const retryOperation = async <T>(
+  operation: () => Promise<T>, 
+  maxRetries = 3,
+  initialDelay = 1000
+): Promise<T> => {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      console.error(`Attempt ${attempt + 1} failed:`, error);
+      lastError = error;
+      
+      // Only retry if we have attempts left
+      if (attempt < maxRetries - 1) {
+        const delay = initialDelay * Math.pow(2, attempt);
+        console.log(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError;
 };

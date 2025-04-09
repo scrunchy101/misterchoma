@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -45,6 +46,7 @@ export const SimplePOSPage: React.FC = () => {
   const [showReceipt, setShowReceipt] = useState<boolean>(false);
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [isProcessingOrder, setIsProcessingOrder] = useState<boolean>(false);
   const { toast } = useToast();
   
   // Monitor connection status
@@ -106,6 +108,7 @@ export const SimplePOSPage: React.FC = () => {
           title: "Connected",
           description: `Using ${connections.primaryAvailable} as primary database`,
         });
+        return true;
       } else {
         setConnected(false);
         setPrimaryDb(null);
@@ -116,9 +119,8 @@ export const SimplePOSPage: React.FC = () => {
           description: "Could not connect to any database", 
           variant: "destructive" 
         });
+        return false;
       }
-      
-      return connections.primaryAvailable !== null;
     } catch (error) {
       console.error("Database connection check failed:", error);
       setConnected(false);
@@ -179,10 +181,20 @@ export const SimplePOSPage: React.FC = () => {
   
   // Process transaction
   const processOrder = async (customerName: string) => {
-    if (!connected || !isOnline) {
+    // Early validation checks - prevent processing if conditions aren't met
+    if (!isOnline) {
       toast({
         title: "Cannot Process Transaction",
-        description: "No database connection available",
+        description: "No internet connection available",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!connected || !primaryDb) {
+      toast({
+        title: "Cannot Process Transaction",
+        description: "No database connection available. Please check connection and try again.",
         variant: "destructive"
       });
       return false;
@@ -198,7 +210,11 @@ export const SimplePOSPage: React.FC = () => {
     }
     
     try {
+      // Set processing state
+      setIsProcessingOrder(true);
+      
       // Double check connection before processing
+      console.log("Verifying connection before processing transaction...");
       const isConnected = await checkConnection();
       if (!isConnected) {
         toast({
@@ -260,6 +276,9 @@ export const SimplePOSPage: React.FC = () => {
         variant: "destructive"
       });
       return false;
+    } finally {
+      // Always reset processing state when done
+      setIsProcessingOrder(false);
     }
   };
 

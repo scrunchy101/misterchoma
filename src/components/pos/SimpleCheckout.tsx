@@ -11,8 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Wifi, WifiOff, RefreshCw } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ConnectionIndicator } from "@/components/ui/connection-indicator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { checkDatabaseConnections } from "@/utils/transactionUtils";
 
 interface SimpleCheckoutProps {
@@ -32,8 +31,14 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
+  const [localConnectionStatus, setLocalConnectionStatus] = useState<boolean>(isConnected);
   
-  // Recheck connection if initially disconnected
+  // Sync connection status with prop
+  useEffect(() => {
+    setLocalConnectionStatus(isConnected);
+  }, [isConnected]);
+  
+  // Recheck connection if initially disconnected or status changes
   useEffect(() => {
     if (!isConnected) {
       checkConnection();
@@ -45,17 +50,24 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
     setError(null);
     
     try {
+      console.log("Checking database connections from checkout modal...");
       const connections = await checkDatabaseConnections();
       console.log("Connection check results:", connections);
       
-      if (!connections.primaryAvailable) {
+      const isAvailable = !!connections.primaryAvailable;
+      setLocalConnectionStatus(isAvailable);
+      
+      if (!isAvailable) {
         setError("Cannot connect to any database. Please check your internet connection.");
       }
       
-      setIsCheckingConnection(false);
+      return isAvailable;
     } catch (err) {
       console.error("Connection check error:", err);
       setError("Error checking database connection");
+      setLocalConnectionStatus(false);
+      return false;
+    } finally {
       setIsCheckingConnection(false);
     }
   };
@@ -63,26 +75,41 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isConnected && !isCheckingConnection) {
-      setError("Cannot process order while offline. Please check your connection.");
-      return; 
-    }
-    
-    setIsProcessing(true);
+    // Clear previous errors
     setError(null);
     
+    // Connection checks first
+    if (!navigator.onLine) {
+      setError("Cannot process order while offline. Please check your internet connection.");
+      return;
+    }
+    
+    if (!localConnectionStatus && !isCheckingConnection) {
+      try {
+        // Try a last attempt to connect
+        const connected = await checkConnection();
+        if (!connected) {
+          setError("Cannot process order without database connection. Please check your connection.");
+          return;
+        }
+      } catch (error) {
+        setError("Connection error. Please try again later.");
+        return;
+      }
+    }
+    
+    // Set processing state and begin transaction
+    setIsProcessing(true);
+    
     try {
+      console.log("Starting order processing with customer:", customerName);
       const success = await onConfirm(customerName);
       
-      // Important: We need to check if the component is still mounted before continuing
-      // This is a common issue with async operations
-      if (success) {
-        // Let the parent component handle success (showing receipt)
-        console.log("Transaction processed successfully");
-      } else {
+      if (!success) {
         setError("Transaction failed. Please try again.");
         setIsProcessing(false);
       }
+      // Note: On success, the parent component will close this modal
     } catch (err) {
       console.error("Checkout error:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -91,7 +118,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   };
 
   return (
-    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={true} onOpenChange={(open) => !open && !isProcessing && onClose()}>
       <DialogContent className="sm:max-w-md bg-gray-800 border-gray-700 text-white">
         <DialogHeader>
           <DialogTitle>Complete Order</DialogTitle>
@@ -103,7 +130,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
               <RefreshCw className="h-4 w-4 animate-spin" />
               <span>Checking database connection...</span>
             </div>
-          ) : isConnected ? (
+          ) : localConnectionStatus ? (
             <div className="flex items-center gap-2 py-2 px-3 bg-green-900/30 text-green-400 rounded">
               <Wifi className="h-4 w-4" />
               <span>Connected to database</span>
@@ -119,8 +146,9 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
                 variant="outline" 
                 className="h-7 py-0 px-2 bg-gray-700"
                 onClick={checkConnection}
+                disabled={isCheckingConnection || isProcessing}
               >
-                Retry
+                {isCheckingConnection ? "Checking..." : "Retry"}
               </Button>
             </div>
           )}
@@ -170,10 +198,15 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
             </Button>
             <Button
               type="submit"
-              disabled={isProcessing || (!isConnected && !isCheckingConnection)}
-              className="bg-green-600 hover:bg-green-700"
+              disabled={isProcessing || (!localConnectionStatus && !isCheckingConnection)}
+              className={`bg-green-600 hover:bg-green-700 ${isProcessing ? 'opacity-70' : ''}`}
             >
-              {isProcessing ? "Processing..." : "Complete Order"}
+              {isProcessing ? (
+                <span className="flex items-center">
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </span>
+              ) : "Complete Order"}
             </Button>
           </DialogFooter>
         </form>
