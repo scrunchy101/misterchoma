@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -8,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { WifiOff, AlertCircle, RefreshCw } from "lucide-react";
 import { SimpleReceipt } from "./SimpleReceipt";
-import { processTransaction, checkDatabaseConnections } from "@/utils/transactionUtils";
+import { processTransaction, checkDatabaseConnections } from "@/utils/transactions";
 import { Button } from "@/components/ui/button";
 
 export interface MenuItem {

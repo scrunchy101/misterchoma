@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -12,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { checkDatabaseConnections } from "@/utils/transactionUtils";
+import { checkDatabaseConnections } from "@/utils/transactions/connectionUtils";
 
 interface SimpleCheckoutProps {
   total: number;
@@ -33,12 +32,10 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const [localConnectionStatus, setLocalConnectionStatus] = useState<boolean>(isConnected);
   
-  // Sync connection status with prop
   useEffect(() => {
     setLocalConnectionStatus(isConnected);
   }, [isConnected]);
   
-  // Recheck connection if initially disconnected or status changes
   useEffect(() => {
     if (!isConnected) {
       checkConnection();
@@ -54,7 +51,6 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
       const connections = await checkDatabaseConnections();
       console.log("Connection check results:", connections);
       
-      // Check for Supabase specifically since we're focusing on that for Orders
       const isAvailable = !!connections.supabase;
       setLocalConnectionStatus(isAvailable);
       
@@ -76,10 +72,8 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Clear previous errors
     setError(null);
     
-    // Connection checks first
     if (!navigator.onLine) {
       setError("Cannot process order while offline. Please check your internet connection.");
       return;
@@ -87,7 +81,6 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
     
     if (!localConnectionStatus && !isCheckingConnection) {
       try {
-        // Try a last attempt to connect
         const connected = await checkConnection();
         if (!connected) {
           setError("Cannot process order without database connection. Please check your connection.");
@@ -99,7 +92,6 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
       }
     }
     
-    // Set processing state and begin transaction
     setIsProcessing(true);
     
     try {
@@ -110,7 +102,6 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
         setError("Transaction failed. Please try again.");
         setIsProcessing(false);
       }
-      // Note: On success, the parent component will close this modal
     } catch (err) {
       console.error("Checkout error:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
