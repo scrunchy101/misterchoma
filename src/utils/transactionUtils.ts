@@ -1,3 +1,4 @@
+
 import { db } from "@/integrations/firebase/config";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -189,7 +190,7 @@ const processSupabaseTransaction = async (
   
   // Create order in database
   try {
-    // Simpler insert without ON CONFLICT
+    // Create the order - removed ON CONFLICT clause that was causing the error
     const { data: orderData, error: orderError } = await supabase
       .from('orders')
       .insert({
