@@ -13,12 +13,16 @@ export const processSupabaseTransaction = async (
     console.log("[Supabase Transaction] Starting transaction processing...");
     console.log("[Supabase Transaction] Cart items:", items.length, "Total:", total);
 
-    // Validate connection first
+    // Validate connection first with timeout
     console.log("[Supabase Transaction] Validating Supabase connection...");
-    const { data: connectionTest, error: connectionError } = await supabase
-      .from('menu_items')
-      .select('count')
-      .limit(1);
+    const connectionTest = await Promise.race([
+      supabase.from('menu_items').select('count').limit(1),
+      new Promise<any>((_, reject) => 
+        setTimeout(() => reject(new Error("Connection validation timed out after 5s")), 5000)
+      )
+    ]);
+    
+    const { error: connectionError } = connectionTest;
       
     if (connectionError) {
       console.error("[Supabase Transaction] Pre-check connection failed:", connectionError);
@@ -26,9 +30,10 @@ export const processSupabaseTransaction = async (
         message: connectionError.message,
         code: connectionError.code,
         details: connectionError.details,
-        hint: connectionError.hint
+        hint: connectionError.hint,
+        status: connectionError.status
       });
-      throw new Error(`Database connection failed: ${connectionError.message}`);
+      throw new Error(`Database connection failed: ${connectionError.message} (Code: ${connectionError.code || 'unknown'})`);
     }
     
     console.log("[Supabase Transaction] Connection validated successfully");
@@ -45,12 +50,15 @@ export const processSupabaseTransaction = async (
     
     console.log("[Supabase Transaction] Creating order with:", orderData);
     
-    // Insert the order and return the ID
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert(orderData)
-      .select('id')
-      .single();
+    // Insert the order and return the ID with timeout
+    const orderResult = await Promise.race([
+      supabase.from('orders').insert(orderData).select('id').single(),
+      new Promise<any>((_, reject) => 
+        setTimeout(() => reject(new Error("Order creation timed out after 10s")), 10000)
+      )
+    ]);
+    
+    const { data: order, error: orderError } = orderResult;
     
     if (orderError) {
       console.error("[Supabase Transaction] Order creation error:", orderError);
@@ -58,10 +66,22 @@ export const processSupabaseTransaction = async (
         message: orderError.message,
         code: orderError.code,
         details: orderError.details,
-        hint: orderError.hint
+        hint: orderError.hint,
+        status: orderError.status || 'unknown'
       });
       console.error("[Supabase Transaction] Order data attempted:", orderData);
-      throw new Error(`Failed to create order: ${orderError.message}`);
+      
+      if (orderError.code === '23505') {
+        throw new Error("Order creation failed: Duplicate order detected");
+      } else if (orderError.code === '42P01') {
+        throw new Error("Order creation failed: Table 'orders' does not exist");
+      } else if (orderError.code === '42501') {
+        throw new Error("Order creation failed: Insufficient database permissions");
+      } else if (orderError.message.includes('JWT')) {
+        throw new Error("Order creation failed: Authentication error");
+      } else {
+        throw new Error(`Failed to create order: ${orderError.message} (Code: ${orderError.code || 'unknown'})`);
+      }
     }
     
     if (!order || !order.id) {
@@ -84,9 +104,15 @@ export const processSupabaseTransaction = async (
     console.log("[Supabase Transaction] Creating order items:", orderItems.length);
     console.log("[Supabase Transaction] First order item:", orderItems[0]);
     
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems);
+    // Insert order items with timeout
+    const itemsResult = await Promise.race([
+      supabase.from('order_items').insert(orderItems),
+      new Promise<any>((_, reject) => 
+        setTimeout(() => reject(new Error("Order items creation timed out after 10s")), 10000)
+      )
+    ]);
+    
+    const { error: itemsError } = itemsResult;
     
     if (itemsError) {
       console.error("[Supabase Transaction] Order items creation error:", itemsError);
@@ -94,10 +120,18 @@ export const processSupabaseTransaction = async (
         message: itemsError.message,
         code: itemsError.code,
         details: itemsError.details,
-        hint: itemsError.hint
+        hint: itemsError.hint,
+        status: itemsError.status || 'unknown'
       });
       console.error("[Supabase Transaction] First item attempted:", orderItems[0]);
-      throw new Error(`Failed to create order items: ${itemsError.message}`);
+      
+      if (itemsError.code === '23503') {
+        throw new Error("Failed to create order items: Foreign key violation");
+      } else if (itemsError.code === '42P01') {
+        throw new Error("Failed to create order items: Table 'order_items' does not exist");
+      } else {
+        throw new Error(`Failed to create order items: ${itemsError.message} (Code: ${itemsError.code || 'unknown'})`);
+      }
     }
     
     console.log("[Supabase Transaction] Order items created successfully");

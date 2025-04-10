@@ -5,7 +5,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { AlertCircle, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { checkDatabaseConnections, DatabaseConnections } from "@/utils/transactions/connectionUtils";
+import { useToast } from "@/hooks/use-toast";
 
 interface SimpleCheckoutProps {
   total: number;
@@ -33,12 +35,12 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const [localConnectionStatus, setLocalConnectionStatus] = useState<boolean>(isConnected);
   const [connectionDetails, setConnectionDetails] = useState<DatabaseConnections | null>(null);
+  const { toast } = useToast();
   
   useEffect(() => {
     setLocalConnectionStatus(isConnected);
-  }, [isConnected]);
-  
-  useEffect(() => {
+    
+    // Initial connection check when component mounts
     if (!isConnected) {
       checkConnection();
     }
@@ -58,11 +60,27 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
       setLocalConnectionStatus(isAvailable);
       
       if (!isAvailable) {
-        if (!connections.supabase && !connections.firebase) {
-          setError("Cannot connect to any database. Please check your network connection.");
-        } else if (!connections.supabase) {
-          setError("Cannot connect to Supabase database. Please check your Supabase configuration.");
+        let errorMsg = "Cannot connect to any database.";
+        if (connections.errors.supabase) {
+          errorMsg += ` Supabase: ${connections.errors.supabase}`;
         }
+        if (connections.errors.firebase) {
+          errorMsg += ` Firebase: ${connections.errors.firebase}`;
+        }
+        setError(errorMsg);
+        
+        // Show toast with more technical details
+        toast({
+          title: "Connection Failed",
+          description: "Database connection issues detected. See console for details.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Connection Established",
+          description: `Successfully connected to ${connections.primaryAvailable}`,
+          variant: "default"
+        });
       }
       
       return isAvailable;
@@ -70,11 +88,20 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
       console.error("[SimpleCheckout] Connection check error:", err);
       console.error("[SimpleCheckout] Error details:", {
         message: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : undefined
+        stack: err instanceof Error ? err.stack : undefined,
+        name: err instanceof Error ? err.name : 'Unknown'
       });
       
-      setError(`Error checking database connection: ${err instanceof Error ? err.message : "Unknown error"}`);
+      const errorMessage = err instanceof Error ? err.message : "Unknown connection error";
+      setError(`Error checking database connection: ${errorMessage}`);
       setLocalConnectionStatus(false);
+      
+      toast({
+        title: "Connection Check Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      
       return false;
     } finally {
       setIsCheckingConnection(false);
@@ -87,27 +114,28 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
     console.log("[SimpleCheckout] Form submitted with customer:", customerName);
     setError(null);
     
+    // Check if browser is online
     if (!navigator.onLine) {
       console.error("[SimpleCheckout] Cannot process order while offline");
       setError("Cannot process order while offline. Please check your internet connection.");
       return;
     }
     
+    // Double check connection status
     if (!localConnectionStatus && !isCheckingConnection) {
       try {
         console.log("[SimpleCheckout] No connection detected, checking again...");
         const connected = await checkConnection();
         if (!connected) {
           console.error("[SimpleCheckout] Still no connection after retry", connectionDetails);
-          let errorMessage = "Cannot process order without database connection.";
           
+          let errorMessage = "Cannot process order without database connection.";
           if (connectionDetails) {
-            if (!connectionDetails.supabase && !connectionDetails.firebase) {
-              errorMessage += " Both Supabase and Firebase are unavailable.";
-            } else if (!connectionDetails.supabase) {
-              errorMessage += " Supabase is unavailable.";
-            } else if (!connectionDetails.firebase) {
-              errorMessage += " Firebase is unavailable.";
+            if (connectionDetails.errors.supabase) {
+              errorMessage += ` Supabase issue: ${connectionDetails.errors.supabase}`;
+            }
+            if (connectionDetails.errors.firebase) {
+              errorMessage += ` Firebase issue: ${connectionDetails.errors.firebase}`;
             }
           }
           
@@ -145,6 +173,9 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
       <DialogContent className="sm:max-w-md bg-gray-800 border-gray-700 text-white">
         <DialogHeader>
           <DialogTitle>Complete Order</DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Enter customer details and complete your transaction.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="mb-4">
@@ -180,7 +211,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="break-words">{error}</AlertDescription>
           </Alert>
         )}
         

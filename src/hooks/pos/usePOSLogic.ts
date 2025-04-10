@@ -16,6 +16,10 @@ export const usePOSLogic = () => {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isProcessingOrder, setIsProcessingOrder] = useState<boolean>(false);
+  const [connectionErrorDetails, setConnectionErrorDetails] = useState<{ 
+    firebase: string | null, 
+    supabase: string | null 
+  }>({ firebase: null, supabase: null });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,6 +68,12 @@ export const usePOSLogic = () => {
       console.log("[POS Logic] Checking database connections...");
       const connections = await checkDatabaseConnections();
       console.log("[POS Logic] Database connections result:", connections);
+      
+      // Save error details for better diagnostics
+      setConnectionErrorDetails({
+        firebase: connections.errors.firebase,
+        supabase: connections.errors.supabase
+      });
 
       if (connections.primaryAvailable) {
         setPrimaryDb(connections.primaryAvailable);
@@ -77,17 +87,33 @@ export const usePOSLogic = () => {
       } else {
         setConnected(false);
         setPrimaryDb(null);
-        setConnectionError("Could not connect to any database");
+        
+        // Build detailed error message
+        let errorMessage = "Could not connect to any database";
+        if (connections.errors.firebase) {
+          errorMessage += `. Firebase: ${connections.errors.firebase}`;
+        }
+        if (connections.errors.supabase) {
+          errorMessage += `. Supabase: ${connections.errors.supabase}`;
+        }
+        
+        setConnectionError(errorMessage);
 
         toast({ 
           title: "Connection Error", 
-          description: "Could not connect to any database", 
+          description: "Could not connect to any database. Check console for details.", 
           variant: "destructive" 
         });
         return false;
       }
     } catch (error) {
       console.error("[POS Logic] Database connection check failed:", error);
+      console.error("[POS Logic] Error details:", {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : 'Unknown'
+      });
+      
       setConnected(false);
       setPrimaryDb(null);
       setConnectionError(error instanceof Error ? error.message : "Unknown connection error");
@@ -154,9 +180,19 @@ export const usePOSLogic = () => {
     }
 
     if (!connected || !primaryDb) {
+      // Show more specific error message based on the error details
+      let errorMsg = "No database connection available.";
+      if (connectionErrorDetails.firebase && connectionErrorDetails.supabase) {
+        errorMsg += " Both Firebase and Supabase connections failed. Check browser console for details.";
+      } else if (connectionErrorDetails.firebase) {
+        errorMsg += ` Firebase error: ${connectionErrorDetails.firebase}`;
+      } else if (connectionErrorDetails.supabase) {
+        errorMsg += ` Supabase error: ${connectionErrorDetails.supabase}`;
+      }
+      
       toast({
         title: "Cannot Process Transaction",
-        description: "No database connection available. Please check connection and try again.",
+        description: errorMsg,
         variant: "destructive"
       });
       return false;
@@ -197,7 +233,7 @@ export const usePOSLogic = () => {
         cart, 
         customerName, 
         calculateTotal(),
-        'supabase'
+        'supabase'  // Try Supabase first
       );
 
       if (!result.success) {
@@ -239,7 +275,8 @@ export const usePOSLogic = () => {
       console.error("[POS Logic] Transaction error:", error);
       console.error("[POS Logic] Error details:", {
         message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : 'Unknown'
       });
       
       toast({
@@ -267,6 +304,7 @@ export const usePOSLogic = () => {
     setShowReceipt,
     transaction,
     connectionError,
+    connectionErrorDetails,
     isProcessingOrder,
     addToCart,
     updateQuantity,

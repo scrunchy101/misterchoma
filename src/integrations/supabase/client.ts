@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
@@ -19,14 +18,36 @@ const initSupabaseClient = () => {
       });
     }
     
-    const client = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Create client with options
+    const client = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        storageKey: 'supabase-auth',
+        storage: window.localStorage,  // Use localStorage instead of indexedDB
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+      global: {
+        fetch: (url, options) => {
+          // Set a timeout for fetch requests
+          return Promise.race([
+            fetch(url, options),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error("Fetch timeout after 10s")), 10000)
+            )
+          ]) as Promise<Response>;
+        }
+      }
+    });
+    
     console.log("[Supabase] Client created successfully");
     return client;
   } catch (error) {
     console.error("[Supabase] Failed to initialize client:", error);
     console.error("[Supabase] Error details:", {
       message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'Unknown'
     });
     
     // Return a minimal client that will show proper error messages in the UI
@@ -46,8 +67,17 @@ export const checkSupabaseConnection = async () => {
   try {
     console.log("[Supabase] Testing connection...");
     const start = Date.now();
-    const { data, error } = await supabase.from('inventory').select('count').limit(1);
+    
+    // Set a timeout to avoid hanging indefinitely
+    const response = await Promise.race([
+      supabase.from('menu_items').select('count').limit(1),
+      new Promise<any>((_, reject) => 
+        setTimeout(() => reject(new Error("Supabase connection timed out after 5s")), 5000)
+      )
+    ]);
+    
     const elapsed = Date.now() - start;
+    const { data, error } = response;
     
     if (error) {
       console.error(`[Supabase] Connection test failed after ${elapsed}ms:`, error);
@@ -55,7 +85,8 @@ export const checkSupabaseConnection = async () => {
         message: error.message,
         code: error.code,
         details: error.details,
-        hint: error.hint
+        hint: error.hint,
+        status: error.status || 'unknown'
       });
       throw error;
     }
@@ -66,7 +97,9 @@ export const checkSupabaseConnection = async () => {
     console.error("[Supabase] Connection check error:", error);
     console.error("[Supabase] Error details:", {
       message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'Unknown',
+      code: error.code
     });
     return { connected: false, error };
   }

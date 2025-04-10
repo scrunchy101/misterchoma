@@ -31,8 +31,19 @@ export const processTransaction = async (
     console.log("[Transaction] Connection status details:", {
       firebase: connections.firebase,
       supabase: connections.supabase,
-      primaryAvailable: connections.primaryAvailable
+      primaryAvailable: connections.primaryAvailable,
+      errors: connections.errors
     });
+    
+    // If neither database is available, throw a detailed error
+    if (!connections.firebase && !connections.supabase) {
+      const errorMessage = `Cannot connect to any database. Firebase: ${connections.errors.firebase || 'Unknown error'}, Supabase: ${connections.errors.supabase || 'Unknown error'}`;
+      console.error(`[Transaction] Error: ${errorMessage}`);
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
     
     // If requested database isn't available, try the other one
     if (usePrimaryDb === 'firebase' && !connections.firebase) {
@@ -41,8 +52,12 @@ export const processTransaction = async (
         console.log("[Transaction] Using Supabase as fallback");
         usePrimaryDb = 'supabase';
       } else {
-        console.error("[Transaction] Error: No database connection available");
-        throw new Error("No database connection available");
+        const errorMessage = `Firebase error: ${connections.errors.firebase || 'Unknown error'}`;
+        console.error(`[Transaction] Error: ${errorMessage}`);
+        return {
+          success: false,
+          error: errorMessage
+        };
       }
     } else if (usePrimaryDb === 'supabase' && !connections.supabase) {
       console.log("[Transaction] Supabase not available, checking Firebase...");
@@ -50,14 +65,13 @@ export const processTransaction = async (
         console.log("[Transaction] Using Firebase as fallback");
         usePrimaryDb = 'firebase';
       } else {
-        console.error("[Transaction] Error: No database connection available");
-        throw new Error("No database connection available");
+        const errorMessage = `Supabase error: ${connections.errors.supabase || 'Unknown error'}`;
+        console.error(`[Transaction] Error: ${errorMessage}`);
+        return {
+          success: false,
+          error: errorMessage
+        };
       }
-    }
-    
-    if (!connections.firebase && !connections.supabase) {
-      console.error("[Transaction] Error: Cannot connect to any database");
-      throw new Error("Cannot connect to any database");
     }
     
     // Process with chosen database
