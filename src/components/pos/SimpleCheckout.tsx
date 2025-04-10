@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { checkDatabaseConnections } from "@/utils/transactions/connectionUtils";
+import { checkDatabaseConnections, DatabaseConnections } from "@/utils/transactions/connectionUtils";
 
 interface SimpleCheckoutProps {
   total: number;
@@ -32,6 +32,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const [localConnectionStatus, setLocalConnectionStatus] = useState<boolean>(isConnected);
+  const [connectionDetails, setConnectionDetails] = useState<DatabaseConnections | null>(null);
   
   useEffect(() => {
     setLocalConnectionStatus(isConnected);
@@ -51,18 +52,28 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
       console.log("[SimpleCheckout] Checking database connections...");
       const connections = await checkDatabaseConnections();
       console.log("[SimpleCheckout] Connection check results:", connections);
+      setConnectionDetails(connections);
       
-      const isAvailable = !!connections.supabase;
+      const isAvailable = !!connections.primaryAvailable;
       setLocalConnectionStatus(isAvailable);
       
       if (!isAvailable) {
-        setError("Cannot connect to Supabase database. Orders may not appear in the Orders page.");
+        if (!connections.supabase && !connections.firebase) {
+          setError("Cannot connect to any database. Please check your network connection.");
+        } else if (!connections.supabase) {
+          setError("Cannot connect to Supabase database. Please check your Supabase configuration.");
+        }
       }
       
       return isAvailable;
     } catch (err) {
       console.error("[SimpleCheckout] Connection check error:", err);
-      setError("Error checking database connection");
+      console.error("[SimpleCheckout] Error details:", {
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined
+      });
+      
+      setError(`Error checking database connection: ${err instanceof Error ? err.message : "Unknown error"}`);
       setLocalConnectionStatus(false);
       return false;
     } finally {
@@ -87,14 +98,26 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
         console.log("[SimpleCheckout] No connection detected, checking again...");
         const connected = await checkConnection();
         if (!connected) {
-          console.error("[SimpleCheckout] Still no connection after retry");
-          setError("Cannot process order without database connection. Please check your connection.");
+          console.error("[SimpleCheckout] Still no connection after retry", connectionDetails);
+          let errorMessage = "Cannot process order without database connection.";
+          
+          if (connectionDetails) {
+            if (!connectionDetails.supabase && !connectionDetails.firebase) {
+              errorMessage += " Both Supabase and Firebase are unavailable.";
+            } else if (!connectionDetails.supabase) {
+              errorMessage += " Supabase is unavailable.";
+            } else if (!connectionDetails.firebase) {
+              errorMessage += " Firebase is unavailable.";
+            }
+          }
+          
+          setError(errorMessage);
           return;
         }
         console.log("[SimpleCheckout] Connection reestablished");
       } catch (error) {
         console.error("[SimpleCheckout] Connection retry error:", error);
-        setError("Connection error. Please try again later.");
+        setError(`Connection error: ${error instanceof Error ? error.message : "Unknown error"}`);
         return;
       }
     }
@@ -133,7 +156,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
           ) : localConnectionStatus ? (
             <div className="flex items-center gap-2 py-2 px-3 bg-green-900/30 text-green-400 rounded">
               <Wifi className="h-4 w-4" />
-              <span>Connected to database</span>
+              <span>Connected to database {connectionDetails?.primaryAvailable ? `(${connectionDetails.primaryAvailable})` : ''}</span>
             </div>
           ) : (
             <div className="flex items-center justify-between gap-2 py-2 px-3 bg-red-900/30 text-red-400 rounded">

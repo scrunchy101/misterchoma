@@ -10,15 +10,25 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJ
 const initSupabaseClient = () => {
   try {
     console.log("[Supabase] Initializing client with URL:", SUPABASE_URL);
+    console.log("[Supabase] Key length:", SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.length : 0);
+    
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       console.error("[Supabase] Missing URL or key:", { 
         url: SUPABASE_URL ? "provided" : "missing", 
         key: SUPABASE_ANON_KEY ? "provided" : "missing" 
       });
     }
-    return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const client = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log("[Supabase] Client created successfully");
+    return client;
   } catch (error) {
     console.error("[Supabase] Failed to initialize client:", error);
+    console.error("[Supabase] Error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
     // Return a minimal client that will show proper error messages in the UI
     // rather than crashing the application
     return createClient<Database>(
@@ -35,17 +45,29 @@ export const supabase = initSupabaseClient();
 export const checkSupabaseConnection = async () => {
   try {
     console.log("[Supabase] Testing connection...");
+    const start = Date.now();
     const { data, error } = await supabase.from('inventory').select('count').limit(1);
+    const elapsed = Date.now() - start;
     
     if (error) {
-      console.error("[Supabase] Connection test failed:", error);
+      console.error(`[Supabase] Connection test failed after ${elapsed}ms:`, error);
+      console.error("[Supabase] Error details:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       throw error;
     }
     
-    console.log("[Supabase] Connection successful", data);
+    console.log(`[Supabase] Connection successful in ${elapsed}ms:`, data);
     return { connected: true };
   } catch (error) {
     console.error("[Supabase] Connection check error:", error);
+    console.error("[Supabase] Error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return { connected: false, error };
   }
 };

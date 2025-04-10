@@ -27,13 +27,24 @@ export const checkDatabaseConnections = async (): Promise<DatabaseConnections> =
     
     if (error) {
       console.error(`[Connection] Supabase check failed after ${elapsed}ms:`, error);
+      console.error(`[Connection] Supabase error details:`, {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       result.supabase = false;
     } else {
       console.log(`[Connection] Supabase connected successfully in ${elapsed}ms!`);
+      console.log(`[Connection] Supabase data response:`, data);
       result.supabase = true;
     }
   } catch (error) {
     console.error("[Connection] Supabase check threw exception:", error);
+    console.error("[Connection] Error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     result.supabase = false;
   }
   
@@ -55,6 +66,10 @@ export const checkDatabaseConnections = async (): Promise<DatabaseConnections> =
     }
   } catch (error) {
     console.error("[Connection] Firebase check threw exception:", error);
+    console.error("[Connection] Firebase error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     result.firebase = false;
   }
   

@@ -28,7 +28,11 @@ export const processTransaction = async (
     // Check connection status before attempting transaction
     console.log("[Transaction] Checking database connections...");
     const connections = await checkDatabaseConnections();
-    console.log("[Transaction] Connection status:", connections);
+    console.log("[Transaction] Connection status details:", {
+      firebase: connections.firebase,
+      supabase: connections.supabase,
+      primaryAvailable: connections.primaryAvailable
+    });
     
     // If requested database isn't available, try the other one
     if (usePrimaryDb === 'firebase' && !connections.firebase) {

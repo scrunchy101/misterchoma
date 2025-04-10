@@ -13,6 +13,26 @@ export const processSupabaseTransaction = async (
     console.log("[Supabase Transaction] Starting transaction processing...");
     console.log("[Supabase Transaction] Cart items:", items.length, "Total:", total);
 
+    // Validate connection first
+    console.log("[Supabase Transaction] Validating Supabase connection...");
+    const { data: connectionTest, error: connectionError } = await supabase
+      .from('menu_items')
+      .select('count')
+      .limit(1);
+      
+    if (connectionError) {
+      console.error("[Supabase Transaction] Pre-check connection failed:", connectionError);
+      console.error("[Supabase Transaction] Connection error details:", {
+        message: connectionError.message,
+        code: connectionError.code,
+        details: connectionError.details,
+        hint: connectionError.hint
+      });
+      throw new Error(`Database connection failed: ${connectionError.message}`);
+    }
+    
+    console.log("[Supabase Transaction] Connection validated successfully");
+
     // Create order first
     const orderData = {
       customer_name: customerName || 'Guest',
@@ -34,8 +54,14 @@ export const processSupabaseTransaction = async (
     
     if (orderError) {
       console.error("[Supabase Transaction] Order creation error:", orderError);
+      console.error("[Supabase Transaction] Order error details:", {
+        message: orderError.message,
+        code: orderError.code,
+        details: orderError.details,
+        hint: orderError.hint
+      });
       console.error("[Supabase Transaction] Order data attempted:", orderData);
-      throw orderError;
+      throw new Error(`Failed to create order: ${orderError.message}`);
     }
     
     if (!order || !order.id) {
@@ -56,6 +82,7 @@ export const processSupabaseTransaction = async (
     }));
     
     console.log("[Supabase Transaction] Creating order items:", orderItems.length);
+    console.log("[Supabase Transaction] First order item:", orderItems[0]);
     
     const { error: itemsError } = await supabase
       .from('order_items')
@@ -63,8 +90,14 @@ export const processSupabaseTransaction = async (
     
     if (itemsError) {
       console.error("[Supabase Transaction] Order items creation error:", itemsError);
+      console.error("[Supabase Transaction] Items error details:", {
+        message: itemsError.message,
+        code: itemsError.code,
+        details: itemsError.details,
+        hint: itemsError.hint
+      });
       console.error("[Supabase Transaction] First item attempted:", orderItems[0]);
-      throw itemsError;
+      throw new Error(`Failed to create order items: ${itemsError.message}`);
     }
     
     console.log("[Supabase Transaction] Order items created successfully");
