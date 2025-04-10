@@ -9,9 +9,16 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJ
 // Add error handling for connection issues
 const initSupabaseClient = () => {
   try {
+    console.log("[Supabase] Initializing client with URL:", SUPABASE_URL);
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      console.error("[Supabase] Missing URL or key:", { 
+        url: SUPABASE_URL ? "provided" : "missing", 
+        key: SUPABASE_ANON_KEY ? "provided" : "missing" 
+      });
+    }
     return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
   } catch (error) {
-    console.error("Failed to initialize Supabase client:", error);
+    console.error("[Supabase] Failed to initialize client:", error);
     // Return a minimal client that will show proper error messages in the UI
     // rather than crashing the application
     return createClient<Database>(
@@ -21,16 +28,24 @@ const initSupabaseClient = () => {
   }
 };
 
+console.log("[Supabase] Setting up Supabase client");
 export const supabase = initSupabaseClient();
 
 // Helper to check if Supabase connection is working
 export const checkSupabaseConnection = async () => {
   try {
+    console.log("[Supabase] Testing connection...");
     const { data, error } = await supabase.from('inventory').select('count').limit(1);
-    if (error) throw error;
+    
+    if (error) {
+      console.error("[Supabase] Connection test failed:", error);
+      throw error;
+    }
+    
+    console.log("[Supabase] Connection successful", data);
     return { connected: true };
   } catch (error) {
-    console.error("Supabase connection check failed:", error);
+    console.error("[Supabase] Connection check error:", error);
     return { connected: false, error };
   }
 };
@@ -38,7 +53,7 @@ export const checkSupabaseConnection = async () => {
 // Helper to fetch order details including items
 export const fetchOrderDetails = async (orderId: string) => {
   try {
-    console.log("Fetching order details for ID:", orderId);
+    console.log("[Supabase] Fetching order details for ID:", orderId);
     
     // Get order information
     const { data: order, error: orderError } = await supabase
@@ -48,15 +63,16 @@ export const fetchOrderDetails = async (orderId: string) => {
       .maybeSingle();
     
     if (orderError) {
-      console.error("Error fetching order:", orderError);
+      console.error("[Supabase] Error fetching order:", orderError);
       throw orderError;
     }
     
     if (!order) {
+      console.error("[Supabase] Order not found:", orderId);
       throw new Error(`Order with ID ${orderId} not found`);
     }
     
-    console.log("Order data fetched:", order);
+    console.log("[Supabase] Order data fetched:", order);
     
     // Get order items
     const { data: orderItems, error: itemsError } = await supabase
@@ -75,11 +91,11 @@ export const fetchOrderDetails = async (orderId: string) => {
       .eq('order_id', orderId);
     
     if (itemsError) {
-      console.error("Error fetching order items:", itemsError);
+      console.error("[Supabase] Error fetching order items:", itemsError);
       throw itemsError;
     }
     
-    console.log("Order items fetched:", orderItems);
+    console.log("[Supabase] Order items fetched:", orderItems);
     
     return {
       order,
@@ -92,7 +108,7 @@ export const fetchOrderDetails = async (orderId: string) => {
       }))
     };
   } catch (error) {
-    console.error("Error fetching order details:", error);
+    console.error("[Supabase] Error fetching order details:", error);
     throw error;
   }
 };

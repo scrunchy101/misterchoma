@@ -13,10 +13,12 @@ export const processTransaction = async (
   usePrimaryDb: 'firebase' | 'supabase' = 'supabase'
 ): Promise<TransactionResult> => {
   try {
-    console.log(`Processing transaction with ${usePrimaryDb} as primary database`);
+    console.log(`[Transaction] Starting transaction processing with ${usePrimaryDb} as primary database`);
+    console.log(`[Transaction] Cart items:`, items.length, `Customer: "${customerName}", Total: ${total}`);
     
     // Validate cart first
     if (!items.length) {
+      console.error("[Transaction] Error: Cannot process an empty order");
       return { 
         success: false, 
         error: "Cannot process an empty order" 
@@ -24,47 +26,55 @@ export const processTransaction = async (
     }
     
     // Check connection status before attempting transaction
+    console.log("[Transaction] Checking database connections...");
     const connections = await checkDatabaseConnections();
+    console.log("[Transaction] Connection status:", connections);
     
     // If requested database isn't available, try the other one
     if (usePrimaryDb === 'firebase' && !connections.firebase) {
-      console.log("Firebase not available, checking Supabase...");
+      console.log("[Transaction] Firebase not available, checking Supabase...");
       if (connections.supabase) {
-        console.log("Using Supabase as fallback");
+        console.log("[Transaction] Using Supabase as fallback");
         usePrimaryDb = 'supabase';
       } else {
+        console.error("[Transaction] Error: No database connection available");
         throw new Error("No database connection available");
       }
     } else if (usePrimaryDb === 'supabase' && !connections.supabase) {
-      console.log("Supabase not available, checking Firebase...");
+      console.log("[Transaction] Supabase not available, checking Firebase...");
       if (connections.firebase) {
-        console.log("Using Firebase as fallback");
+        console.log("[Transaction] Using Firebase as fallback");
         usePrimaryDb = 'firebase';
       } else {
+        console.error("[Transaction] Error: No database connection available");
         throw new Error("No database connection available");
       }
     }
     
     if (!connections.firebase && !connections.supabase) {
+      console.error("[Transaction] Error: Cannot connect to any database");
       throw new Error("Cannot connect to any database");
     }
     
     // Process with chosen database
     let result: TransactionResult;
     
+    console.log(`[Transaction] Processing with ${usePrimaryDb}...`);
     if (usePrimaryDb === 'firebase') {
       result = await processFirebaseTransaction(items, customerName, total);
     } else {
       result = await processSupabaseTransaction(items, customerName, total);
     }
     
+    console.log(`[Transaction] Result:`, result);
+    
     // If we used Firebase, also save to Supabase if available for consistency
     if (usePrimaryDb === 'firebase' && connections.supabase) {
       try {
-        console.log("Also saving transaction to Supabase for consistency...");
+        console.log("[Transaction] Also saving transaction to Supabase for consistency...");
         await processSupabaseTransaction(items, customerName, total);
       } catch (error) {
-        console.error("Failed to save transaction to Supabase:", error);
+        console.error("[Transaction] Failed to save transaction to Supabase:", error);
         // Don't throw error here, since Firebase transaction was successful
       }
     }
@@ -72,7 +82,11 @@ export const processTransaction = async (
     return result;
 
   } catch (error) {
-    console.error("Transaction processing error:", error);
+    console.error("[Transaction] Processing error:", error);
+    console.error("[Transaction] Error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error occurred"

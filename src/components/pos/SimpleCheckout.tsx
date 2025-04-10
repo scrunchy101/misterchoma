@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -47,9 +48,9 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
     setError(null);
     
     try {
-      console.log("Checking database connections from checkout modal...");
+      console.log("[SimpleCheckout] Checking database connections...");
       const connections = await checkDatabaseConnections();
-      console.log("Connection check results:", connections);
+      console.log("[SimpleCheckout] Connection check results:", connections);
       
       const isAvailable = !!connections.supabase;
       setLocalConnectionStatus(isAvailable);
@@ -60,7 +61,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
       
       return isAvailable;
     } catch (err) {
-      console.error("Connection check error:", err);
+      console.error("[SimpleCheckout] Connection check error:", err);
       setError("Error checking database connection");
       setLocalConnectionStatus(false);
       return false;
@@ -72,21 +73,27 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log("[SimpleCheckout] Form submitted with customer:", customerName);
     setError(null);
     
     if (!navigator.onLine) {
+      console.error("[SimpleCheckout] Cannot process order while offline");
       setError("Cannot process order while offline. Please check your internet connection.");
       return;
     }
     
     if (!localConnectionStatus && !isCheckingConnection) {
       try {
+        console.log("[SimpleCheckout] No connection detected, checking again...");
         const connected = await checkConnection();
         if (!connected) {
+          console.error("[SimpleCheckout] Still no connection after retry");
           setError("Cannot process order without database connection. Please check your connection.");
           return;
         }
+        console.log("[SimpleCheckout] Connection reestablished");
       } catch (error) {
+        console.error("[SimpleCheckout] Connection retry error:", error);
         setError("Connection error. Please try again later.");
         return;
       }
@@ -95,15 +102,16 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
     setIsProcessing(true);
     
     try {
-      console.log("Starting order processing with customer:", customerName);
+      console.log("[SimpleCheckout] Starting order processing with customer:", customerName);
       const success = await onConfirm(customerName);
       
       if (!success) {
+        console.error("[SimpleCheckout] Order processing returned failure status");
         setError("Transaction failed. Please try again.");
         setIsProcessing(false);
       }
     } catch (err) {
-      console.error("Checkout error:", err);
+      console.error("[SimpleCheckout] Checkout error:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
       setIsProcessing(false);
     }

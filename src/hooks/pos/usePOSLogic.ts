@@ -61,8 +61,9 @@ export const usePOSLogic = () => {
       setIsCheckingConnection(true);
       setConnectionError(null);
 
+      console.log("[POS Logic] Checking database connections...");
       const connections = await checkDatabaseConnections();
-      console.log("Database connections:", connections);
+      console.log("[POS Logic] Database connections result:", connections);
 
       if (connections.primaryAvailable) {
         setPrimaryDb(connections.primaryAvailable);
@@ -86,7 +87,7 @@ export const usePOSLogic = () => {
         return false;
       }
     } catch (error) {
-      console.error("Database connection check failed:", error);
+      console.error("[POS Logic] Database connection check failed:", error);
       setConnected(false);
       setPrimaryDb(null);
       setConnectionError(error instanceof Error ? error.message : "Unknown connection error");
@@ -173,9 +174,10 @@ export const usePOSLogic = () => {
     try {
       setIsProcessingOrder(true);
 
-      console.log("Verifying connection before processing transaction...");
+      console.log("[POS Logic] Verifying connection before processing transaction...");
       const isConnected = await checkConnection();
       if (!isConnected) {
+        console.log("[POS Logic] Connection check failed before transaction");
         toast({
           title: "Connection Lost",
           description: "Database connection was lost. Please try again.",
@@ -184,7 +186,7 @@ export const usePOSLogic = () => {
         return false;
       }
 
-      console.log("Processing transaction with:", { 
+      console.log("[POS Logic] Processing transaction with:", { 
         items: cart.length,
         customerName,
         total: calculateTotal(),
@@ -199,10 +201,18 @@ export const usePOSLogic = () => {
       );
 
       if (!result.success) {
+        console.error("[POS Logic] Transaction failed:", result.error);
         throw new Error(result.error || "Transaction failed");
       }
 
       const transactionData = result.data;
+
+      console.log("[POS Logic] Transaction data received:", transactionData);
+      
+      if (!transactionData || !transactionData.id) {
+        console.error("[POS Logic] Invalid transaction data received");
+        throw new Error("Invalid transaction data received");
+      }
 
       const newTransaction = {
         id: transactionData.id,
@@ -212,7 +222,7 @@ export const usePOSLogic = () => {
         total: calculateTotal()
       };
 
-      console.log("Transaction completed successfully:", newTransaction);
+      console.log("[POS Logic] Transaction completed successfully:", newTransaction);
 
       setTransaction(newTransaction);
       setShowCheckout(false);
@@ -226,7 +236,12 @@ export const usePOSLogic = () => {
 
       return true;
     } catch (error) {
-      console.error("Transaction error:", error);
+      console.error("[POS Logic] Transaction error:", error);
+      console.error("[POS Logic] Error details:", {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
       toast({
         title: "Transaction Failed",
         description: error instanceof Error ? error.message : "Could not save transaction to database",

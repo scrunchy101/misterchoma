@@ -1,7 +1,7 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { CartItem } from "@/components/pos/SimplePOSPage";
 import { TransactionResult } from "./types";
+import { supabase } from "@/integrations/supabase/client";
 
 // Process transaction with Supabase
 export const processSupabaseTransaction = async (
@@ -9,54 +9,42 @@ export const processSupabaseTransaction = async (
   customerName: string,
   total: number
 ): Promise<TransactionResult> => {
-  // Check Supabase connection first
   try {
-    // Simple test query to verify connection
-    const { data: testData, error: testError } = await supabase
-      .from('menu_items')
-      .select('id')
-      .limit(1);
+    console.log("[Supabase Transaction] Starting transaction processing...");
+    console.log("[Supabase Transaction] Cart items:", items.length, "Total:", total);
+
+    // Create order first
+    const orderData = {
+      customer_name: customerName || 'Guest',
+      payment_method: 'Cash',
+      payment_status: 'completed',
+      total_amount: total,
+      status: 'completed',
+      created_at: new Date().toISOString()
+    };
     
-    if (testError) {
-      console.error("Supabase connection test failed:", testError);
-      throw new Error(`Supabase connection error: ${testError.message}`);
-    }
+    console.log("[Supabase Transaction] Creating order with:", orderData);
     
-    if (!testData || testData.length === 0) {
-      console.warn("Supabase connection test returned no data");
-    } else {
-      console.log("Supabase connection verified successfully");
-    }
-  } catch (connectionError) {
-    console.error("Failed to connect to Supabase:", connectionError);
-    throw new Error("Cannot connect to Supabase database");
-  }
-  
-  // Create order in database
-  try {
-    // Create the order - removed ON CONFLICT clause that was causing the error
-    const { data: orderData, error: orderError } = await supabase
+    // Insert the order and return the ID
+    const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert({
-        customer_name: customerName || "Guest",
-        payment_method: "Cash",
-        payment_status: 'completed',
-        total_amount: total,
-        status: 'completed'
-      })
-      .select('id');
+      .insert(orderData)
+      .select('id')
+      .single();
     
     if (orderError) {
-      console.error("Supabase order creation error:", orderError);
+      console.error("[Supabase Transaction] Order creation error:", orderError);
+      console.error("[Supabase Transaction] Order data attempted:", orderData);
       throw orderError;
     }
     
-    if (!orderData || orderData.length === 0) {
-      throw new Error("Failed to create order - no order ID returned");
+    if (!order || !order.id) {
+      console.error("[Supabase Transaction] No order ID returned after insert");
+      throw new Error("Failed to create order: No ID returned");
     }
     
-    const orderId = orderData[0].id;
-    console.log("Supabase order created with ID:", orderId);
+    const orderId = order.id;
+    console.log("[Supabase Transaction] Order created with ID:", orderId);
     
     // Create order items
     const orderItems = items.map(item => ({
@@ -67,15 +55,21 @@ export const processSupabaseTransaction = async (
       subtotal: item.price * item.quantity
     }));
     
+    console.log("[Supabase Transaction] Creating order items:", orderItems.length);
+    
     const { error: itemsError } = await supabase
       .from('order_items')
       .insert(orderItems);
     
     if (itemsError) {
-      console.error("Supabase order items error:", itemsError);
+      console.error("[Supabase Transaction] Order items creation error:", itemsError);
+      console.error("[Supabase Transaction] First item attempted:", orderItems[0]);
       throw itemsError;
     }
     
+    console.log("[Supabase Transaction] Order items created successfully");
+    
+    // Return success result
     return {
       success: true,
       transactionId: orderId,
@@ -89,7 +83,12 @@ export const processSupabaseTransaction = async (
       }
     };
   } catch (error) {
-    console.error("Supabase transaction error:", error);
+    console.error("[Supabase Transaction] Error:", error);
+    console.error("[Supabase Transaction] Error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     throw error;
   }
 };
