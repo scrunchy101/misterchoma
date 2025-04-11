@@ -78,10 +78,45 @@ export const processTransaction = async (
     let result: TransactionResult;
     
     console.log(`[Transaction] Processing with ${usePrimaryDb}...`);
-    if (usePrimaryDb === 'firebase') {
-      result = await processFirebaseTransaction(items, customerName, total);
-    } else {
-      result = await processSupabaseTransaction(items, customerName, total);
+    try {
+      if (usePrimaryDb === 'firebase') {
+        result = await processFirebaseTransaction(items, customerName, total);
+      } else {
+        result = await processSupabaseTransaction(items, customerName, total);
+      }
+    } catch (dbError) {
+      // If the first attempt failed, try the alternative if available
+      console.error(`[Transaction] Error with ${usePrimaryDb}:`, dbError);
+      
+      if (usePrimaryDb === 'firebase' && connections.supabase) {
+        console.log("[Transaction] Trying Supabase as fallback after Firebase error");
+        try {
+          result = await processSupabaseTransaction(items, customerName, total);
+        } catch (fallbackError) {
+          console.error("[Transaction] Fallback to Supabase also failed:", fallbackError);
+          return {
+            success: false,
+            error: `Both databases failed. Firebase: ${dbError.message}, Supabase: ${fallbackError.message}`
+          };
+        }
+      } else if (usePrimaryDb === 'supabase' && connections.firebase) {
+        console.log("[Transaction] Trying Firebase as fallback after Supabase error");
+        try {
+          result = await processFirebaseTransaction(items, customerName, total);
+        } catch (fallbackError) {
+          console.error("[Transaction] Fallback to Firebase also failed:", fallbackError);
+          return {
+            success: false,
+            error: `Both databases failed. Supabase: ${dbError.message}, Firebase: ${fallbackError.message}`
+          };
+        }
+      } else {
+        // No fallback available
+        return {
+          success: false,
+          error: dbError.message || `${usePrimaryDb} transaction failed`
+        };
+      }
     }
     
     console.log(`[Transaction] Result:`, result);

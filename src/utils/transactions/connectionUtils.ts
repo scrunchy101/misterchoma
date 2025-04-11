@@ -30,8 +30,10 @@ export const checkDatabaseConnections = async (): Promise<DatabaseConnections> =
   try {
     console.log("[Connection] Checking Supabase connection...");
     const start = Date.now();
+    
+    // Use a simpler query for Supabase connection check - just check if the service is responsive
     const { data, error } = await Promise.race([
-      supabase.from('menu_items').select('id').limit(1),
+      supabase.from('menu_items').select('count'),
       new Promise<any>((_, reject) => 
         setTimeout(() => reject(new Error("Supabase connection timeout after 5000ms")), 5000)
       )
@@ -75,6 +77,8 @@ export const checkDatabaseConnections = async (): Promise<DatabaseConnections> =
     } else {
       const start = Date.now();
       try {
+        // Note: We know from logs that this Firebase check is failing due to browser storage access
+        // Let's handle that case specifically to provide better error messages
         const testRef = collection(db, "test_connection");  // Use a test collection
         const q = query(testRef, limit(1));
         
@@ -97,11 +101,14 @@ export const checkDatabaseConnections = async (): Promise<DatabaseConnections> =
           name: firestoreError instanceof Error ? firestoreError.name : 'Unknown'
         });
         
-        // Check if this is a CORS or permission error
+        // Check if this is a browser storage error
         const errorMsg = String(firestoreError);
-        if (errorMsg.includes("storage is not allowed") || 
-            errorMsg.includes("Access to storage") || 
-            errorMsg.includes("CORS")) {
+        if (errorMsg.includes("Access to storage is not allowed")) {
+          console.error("[Connection] Firebase error: Browser storage access denied - this is expected in some environments");
+          result.errors.firebase = "Browser storage access denied - this is expected in some environments";
+        } else if (errorMsg.includes("storage is not allowed") || 
+                  errorMsg.includes("Access to storage") || 
+                  errorMsg.includes("CORS")) {
           console.error("[Connection] Firebase error appears to be CORS or storage access related");
           result.errors.firebase = "Browser storage or CORS issue - check browser settings";
         } else if (errorMsg.includes("permission-denied")) {
@@ -124,7 +131,7 @@ export const checkDatabaseConnections = async (): Promise<DatabaseConnections> =
     result.firebase = false;
   }
   
-  // Determine primary database availability
+  // Determine primary database availability - prefer Supabase since Firebase has storage issues
   if (result.supabase) {
     result.primaryAvailable = 'supabase';
   } else if (result.firebase) {

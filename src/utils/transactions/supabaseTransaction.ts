@@ -50,15 +50,14 @@ export const processSupabaseTransaction = async (
     
     console.log("[Supabase Transaction] Creating order with:", orderData);
     
-    // Insert the order and return the ID with timeout
-    const orderResult = await Promise.race([
-      supabase.from('orders').insert(orderData).select('id').single(),
+    // Modified insert operation - Removed the SELECT query to avoid ON CONFLICT issue
+    // Just insert without returning the ID first
+    const { error: orderError } = await Promise.race([
+      supabase.from('orders').insert(orderData),
       new Promise<any>((_, reject) => 
         setTimeout(() => reject(new Error("Order creation timed out after 10s")), 10000)
       )
     ]);
-    
-    const { data: order, error: orderError } = orderResult;
     
     if (orderError) {
       console.error("[Supabase Transaction] Order creation error:", orderError);
@@ -84,12 +83,32 @@ export const processSupabaseTransaction = async (
       }
     }
     
-    if (!order || !order.id) {
-      console.error("[Supabase Transaction] No order ID returned after insert");
-      throw new Error("Failed to create order: No ID returned");
+    // Now fetch the most recently created order by this customer to get its ID
+    console.log("[Supabase Transaction] Fetching the newly created order ID...");
+    const { data: latestOrder, error: fetchError } = await Promise.race([
+      supabase
+        .from('orders')
+        .select('id')
+        .eq('customer_name', customerName || 'Guest')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single(),
+      new Promise<any>((_, reject) => 
+        setTimeout(() => reject(new Error("Fetching order ID timed out after 5s")), 5000)
+      )
+    ]);
+    
+    if (fetchError) {
+      console.error("[Supabase Transaction] Error fetching order ID:", fetchError);
+      throw new Error(`Failed to retrieve order ID: ${fetchError.message}`);
     }
     
-    const orderId = order.id;
+    if (!latestOrder || !latestOrder.id) {
+      console.error("[Supabase Transaction] No order ID found after insert");
+      throw new Error("Failed to retrieve order ID after creation");
+    }
+    
+    const orderId = latestOrder.id;
     console.log("[Supabase Transaction] Order created with ID:", orderId);
     
     // Create order items
