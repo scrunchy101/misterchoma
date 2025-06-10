@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,9 +75,9 @@ const DatabaseConnectionTest = () => {
     try {
       console.log("[Test] Testing Supabase write operation...");
       
-      // First check if connection is available
+      // First check if connection is available by testing with existing menu_items table
       const { data, error: connectionError } = await supabase
-        .from('test_data')
+        .from('menu_items')
         .select('count')
         .limit(1);
       
@@ -87,44 +86,31 @@ const DatabaseConnectionTest = () => {
         throw new Error(`Supabase connection error: ${connectionError.message}`);
       }
       
-      // Attempt a write operation
+      // Attempt a write operation to menu_items table
       const testRecord = {
-        message: "Test data",
-        timestamp: new Date().toISOString(),
-        source: "connection_test"
+        name: "Test Item - Connection Test",
+        description: "This is a test item for connection testing",
+        price: 0.01,
+        category: "Test",
+        is_available: false
       };
       
-      const { error: writeError } = await supabase
-        .from('test_data')
-        .insert(testRecord);
+      const { data: insertData, error: writeError } = await supabase
+        .from('menu_items')
+        .insert(testRecord)
+        .select()
+        .single();
       
       if (writeError) {
-        // If table doesn't exist, try creating it first
-        if (writeError.code === "42P01") { // relation does not exist
-          console.log("[Test] Creating test_data table in Supabase...");
-          
-          // Try to create the test table using SQL
-          const { error: createTableError } = await supabase.rpc(
-            'create_test_table',
-            {}
-          );
-          
-          if (createTableError) {
-            console.error("[Test] Failed to create test table:", createTableError);
-            throw new Error(`Could not create test table: ${createTableError.message}`);
-          }
-          
-          // Try the insert again
-          const { error: retryError } = await supabase
-            .from('test_data')
-            .insert(testRecord);
-          
-          if (retryError) {
-            throw new Error(`Write failed after table creation: ${retryError.message}`);
-          }
-        } else {
-          throw new Error(`Supabase write failed: ${writeError.message}`);
-        }
+        throw new Error(`Supabase write failed: ${writeError.message}`);
+      }
+      
+      // Clean up the test record
+      if (insertData) {
+        await supabase
+          .from('menu_items')
+          .delete()
+          .eq('id', insertData.id);
       }
       
       console.log("[Test] Supabase write successful!");

@@ -8,7 +8,7 @@ import Employees from "./pages/Employees";
 import POS from "./pages/POS";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { UIProvider } from "@/contexts/UIContext";
