@@ -92,7 +92,7 @@ export const SimplePOSProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       console.log("Processing order:", { customerName, employeeId, items: cart.length, total });
       
-      // Create order
+      // Create order - simplified without ON CONFLICT
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
