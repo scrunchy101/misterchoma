@@ -12,7 +12,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { UIProvider } from "@/contexts/UIContext";
-import { AuthProvider } from "@/contexts/AuthContext"; 
+import { AuthProvider } from "@/context/AuthContext"; 
 import DatabaseConnectionTest from "@/pages/DatabaseConnectionTest";
 
 const App = () => {
