@@ -34,7 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleExpand
 }) => {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const currentPath = location.pathname;
 
   const navigation = [
@@ -57,7 +57,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleLogout = () => {
-    logout();
+    if (signOut) {
+      signOut();
+    }
   };
 
   return (
@@ -133,11 +135,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <>
             <div className="flex items-center">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.photoURL || ""} />
-                <AvatarFallback>{getInitials(user?.displayName || user?.email || "User")}</AvatarFallback>
+                <AvatarImage src={(profile as any)?.avatar_url || (user?.user_metadata?.avatar_url as string) || ""} />
+                <AvatarFallback>{getInitials((profile as any)?.full_name || (user?.user_metadata?.name as string) || user?.email || "User")}</AvatarFallback>
               </Avatar>
               <div className="ml-2">
-                <p className="text-sm font-medium">{user?.displayName || "User"}</p>
+                <p className="text-sm font-medium">{(profile as any)?.full_name || (user?.user_metadata?.name as string) || "User"}</p>
                 <p className="text-xs text-muted-foreground truncate max-w-[120px]">
                   {user?.email || ""}
                 </p>
@@ -154,8 +156,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           <>
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.photoURL || ""} />
-              <AvatarFallback>{getInitials(user?.displayName || user?.email || "User")}</AvatarFallback>
+              <AvatarImage src={(profile as any)?.avatar_url || (user?.user_metadata?.avatar_url as string) || ""} />
+              <AvatarFallback>{getInitials((profile as any)?.full_name || (user?.user_metadata?.name as string) || user?.email || "User")}</AvatarFallback>
             </Avatar>
             
             <div className="flex flex-col space-y-2">
