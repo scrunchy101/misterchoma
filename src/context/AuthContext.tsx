@@ -81,9 +81,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (successCallback) successCallback();
     } catch (error: any) {
       console.error(`${failureTitle} error:`, error);
+      
+      // Provide more specific error messages
+      let errorMessage = error.message || "An unexpected error occurred.";
+      
+      if (error.message?.includes('fetch')) {
+        errorMessage = "Connection failed. Please check your internet connection and try again.";
+      } else if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = "Invalid email or password. Please check your credentials.";
+      }
+      
       toast({
         title: `${failureTitle} failed`,
-        description: error.message || "An unexpected error occurred.",
+        description: errorMessage,
         variant: "destructive"
       });
       throw error;
