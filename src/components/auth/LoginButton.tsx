@@ -25,7 +25,7 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
     if (profile) {
       signOut();
     } else {
-      navigate("/auth");
+      navigate("/login");
     }
   };
 

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,7 @@ export const UserMenu: React.FC = () => {
       <Button 
         variant="outline" 
         className="text-white bg-transparent border-gray-600 hover:bg-gray-700"
-        onClick={() => navigate("/auth")}
+        onClick={() => navigate("/login")}
       >
         Sign In
       </Button>
