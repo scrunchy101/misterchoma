@@ -27,17 +27,6 @@ const initSupabaseClient = () => {
         autoRefreshToken: true,
         detectSessionInUrl: true,
       },
-      global: {
-        fetch: (url, options) => {
-          // Set a timeout for fetch requests
-          return Promise.race([
-            fetch(url, options),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error("Fetch timeout after 10s")), 10000)
-            )
-          ]) as Promise<Response>;
-        }
-      }
     });
     
     console.log("[Supabase] Client created successfully");
