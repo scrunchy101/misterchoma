@@ -1,5 +1,5 @@
 
-import { supabase, checkSupabaseConnection } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { Profile } from '@/types/auth';
 
 export const fetchProfile = async (userId: string): Promise<Profile | null> => {
@@ -21,12 +21,6 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
 };
 
 export const signInWithPassword = async (email: string, password: string) => {
-  // Test connection first
-  const connectionTest = await checkSupabaseConnection();
-  if (!connectionTest.connected) {
-    throw new Error(`Database connection failed: ${connectionTest.error?.message || 'Unknown connection error'}`);
-  }
-  
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
 };
@@ -54,17 +48,7 @@ export const signInAsAdmin = async () => {
     console.log('[Auth] Attempting admin login...');
     
     try {
-        // Test Supabase connection first
-        console.log('[Auth] Testing Supabase connection...');
-        const connectionTest = await checkSupabaseConnection();
-        
-        if (!connectionTest.connected) {
-            const errorMsg = `Supabase connection failed: ${connectionTest.error?.message || 'Unknown connection error'}`;
-            console.error('[Auth]', errorMsg);
-            throw new Error(errorMsg);
-        }
-        
-        console.log('[Auth] Connection test passed, attempting login...');
+        console.log('[Auth] Attempting login...');
         
         const { data, error } = await supabase.auth.signInWithPassword({
             email: "misterchoma@gmail.com",
