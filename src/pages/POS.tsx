@@ -1,9 +1,14 @@
 
 import React from "react";
-import { SimplePOSPage } from "@/components/pos/SimplePOSPage";
+import { CleanPOSPage } from "@/components/pos/CleanPOSPage";
+import { SimplePOSProvider } from "@/components/pos/SimplePOSSystem";
 
 const POS: React.FC = () => {
-  return <SimplePOSPage />;
+  return (
+    <SimplePOSProvider>
+      <CleanPOSPage />
+    </SimplePOSProvider>
+  );
 };
 
 export default POS;
