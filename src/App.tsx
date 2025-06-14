@@ -18,9 +18,9 @@ import DatabaseConnectionTest from "@/pages/DatabaseConnectionTest";
 const App = () => {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="theme">
-      <AuthProvider>
-        <UIProvider>
-          <Router>
+      <Router>
+        <AuthProvider>
+          <UIProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
@@ -32,10 +32,10 @@ const App = () => {
               <Route path="/database-test" element={<ProtectedRoute><DatabaseConnectionTest /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </Router>
-          <Toaster />
-        </UIProvider>
-      </AuthProvider>
+            <Toaster />
+          </UIProvider>
+        </AuthProvider>
+      </Router>
     </ThemeProvider>
   );
 };
